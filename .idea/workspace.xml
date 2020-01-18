@@ -2,11 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c812cfe5-30d3-4a49-bd6d-b21aaeaa37e6" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/thavalon/templates/thavalon/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ThavalonWeb/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/ThavalonWeb/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testing.py" beforeDir="false" afterPath="$PROJECT_DIR$/testing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/thavalon/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/thavalon/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/thavalon/templates/thavalon/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/templates/thavalon/index.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
