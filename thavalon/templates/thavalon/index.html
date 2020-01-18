@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+</head>
+<body>
+    {% if current_game is not None %}
+        <ul>
+        {% for player_key, value in current_game.player_dict.items %}
+            <li>{{ player_key }}</li>
+            <li>{{ value }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No game is running.</p>
+    {% endif %}
+</body>
+</html>
