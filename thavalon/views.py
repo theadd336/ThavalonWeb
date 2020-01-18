@@ -21,3 +21,7 @@ class HomeView:
     def do_not_open(request, game_id):
         response = "You're viewing the DoNotOpen for game %s."
         return HttpResponse(response % game_id)
+
+    @staticmethod
+    def new_game(request):
+        return render(request, "thavalon/cookiejar.html", {})
