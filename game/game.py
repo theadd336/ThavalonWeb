@@ -5,6 +5,7 @@ class Game:
         self._has_started = False
         self.player_dict = {"a": "Paul", "b": "Andrew"}
         self.UUID = "Testing"
+
     def add_player(self, session_id: str, player_name: str):
         if len(self._player_dict) >= self.num_players:
             raise ValueError("This game is currently full.")
