@@ -1,0 +1,50 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lobby Information</title>
+</head>
+<body>
+    {% csrf_token %}
+    <input id="joinGame" type="button" value="Join Game" onclick="joinGame();" />
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    {% block javascript %}
+    <script>
+        function joinGame() {
+            var csrftoken = getCookie('csrftoken');
+            $.ajax({
+                type: 'POST',
+                dataType: "json",
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                },
+                url: '{% url 'joingame' %}',
+                success: function(data) {
+                    if (data.success !== 1) {
+                        alert(data.error);
+                    }
+                }
+            });
+        }
+    </script>
+    <script>
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+    {% endblock %}
+</body>
+</html>

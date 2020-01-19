@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="c812cfe5-30d3-4a49-bd6d-b21aaeaa37e6" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ThavalonWeb/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/ThavalonWeb/settings.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/thavalon/templates/thavalon/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/templates/thavalon/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/thavalon/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/thavalon/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/views.py" afterDir="false" />
@@ -16,8 +15,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
         <option value="HTML File" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
@@ -90,10 +89,10 @@
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
     <state width="2539" height="401" key="GridCell.Tab.0.right/0.0.2560.1400/3840.0.2560.1400@0.0.2560.1400" timestamp="1579334561515" />
-    <state x="977" y="524" key="com.intellij.ide.util.TipDialog" timestamp="1579377353720">
+    <state x="977" y="524" key="com.intellij.ide.util.TipDialog" timestamp="1579455179961">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state x="977" y="524" key="com.intellij.ide.util.TipDialog/0.0.2560.1400/3840.0.2560.1400@0.0.2560.1400" timestamp="1579377353720" />
+    <state x="977" y="524" key="com.intellij.ide.util.TipDialog/0.0.2560.1400/3840.0.2560.1400@0.0.2560.1400" timestamp="1579455179961" />
     <state x="943" y="315" width="672" height="678" key="search.everywhere.popup" timestamp="1579378411035">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
