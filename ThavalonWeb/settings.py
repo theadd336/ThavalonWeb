@@ -51,6 +51,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'ThavalonWeb.urls'
 
+SESSION_ENGINE = "django.contrib.sessions.backends.file"
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
