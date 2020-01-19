@@ -1,7 +1,7 @@
 import uuid
 from .game import Game
 from .singleton import Singleton
-from typing import Tuple
+
 
 class GameManager(metaclass=Singleton):
     def __init__(self):
