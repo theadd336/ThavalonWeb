@@ -1,22 +1,36 @@
+from .player import Player
+from typing import Dict
+
+MAX_NUM_PLAYERS = 10
+
+
 class Game:
-    def __init__(self):
-        self.num_players = 1
-        self._player_dict = {}
-        self._has_started = False
-        self.player_dict = {"a": "Paul", "b": "Andrew"}
-        self.UUID = "Testing"
-    def add_player(self, session_id: str, player_name: str):
-        if len(self._player_dict) >= self.num_players:
-            raise ValueError("This game is currently full.")
+    def __init__(self) -> None:
+        self.session_id_to_player: Dict[str, Player] = {}
 
-        registered_name = self._player_dict.get(session_id)
-        if registered_name is not None:
-            raise KeyError("Player %s is already in the game." % registered_name)
-        self._player_dict[session_id] = player_name
+    def get_num_players(self) -> int:
+        return len(self.session_id_to_player)
 
-    def start_game(self):
-        if self._has_started:
-            raise EnvironmentError("Game already in progress.")
-        self._has_started = True
-        self._player_dict.keys()
-        # Do things
+    def is_game_full(self) -> bool:
+        return self.get_num_players() == MAX_NUM_PLAYERS
+
+    def add_player(self, session_id: str, name: str) -> None:
+        if self.is_game_full():
+            raise ValueError(f"Game currently has max {MAX_NUM_PLAYERS} players, cannot add new player.")
+        if session_id in self.session_id_to_player:
+            raise ValueError(f"Session id {session_id} already in playermanager.")
+        if name in [player.name for player in self.session_id_to_player.values()]:
+            raise ValueError(f"Player with name {name} already in game.")
+        player = Player(name)
+        self.session_id_to_player[session_id] = player
+        return player
+
+    def get_player(self, session_id: str) -> Player:
+        if session_id not in self.session_id_to_player:
+            raise ValueError(f"Player with session id {session_id} does not exist")
+        return self.session_id_to_player[session_id]
+
+    def remove_player(self, session_id: str) -> None:
+        if session_id not in self.session_id_to_player:
+            raise ValueError(f"Player with session id {session_id} does not exist")
+        del self.session_id_to_player[session_id]

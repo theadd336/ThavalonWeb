@@ -1,13 +1,14 @@
 import uuid
 from .game import Game
 from .singleton import Singleton
-from typing import Tuple
+from typing import Dict
+
 
 class GameManager(metaclass=Singleton):
-    def __init__(self):
-        self.uuid_to_game = {}
+    def __init__(self) -> None:
+        self.uuid_to_game: Dict[str, Game] = {}
 
-    def create_new_game(self) -> Tuple[str, Game]:
+    def create_new_game(self) -> str:
         game_uuid = str(uuid.uuid4())
         game = Game()
         if game_uuid in self.uuid_to_game:
