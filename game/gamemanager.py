@@ -1,11 +1,12 @@
 import uuid
 from .game import Game
 from .singleton import Singleton
+from typing import Dict
 
 
 class GameManager(metaclass=Singleton):
     def __init__(self) -> None:
-        self.uuid_to_game = {}
+        self.uuid_to_game: Dict[str, Game] = {}
 
     def create_new_game(self) -> str:
         game_uuid = str(uuid.uuid4())

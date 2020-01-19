@@ -1,11 +1,12 @@
 from .player import Player
+from typing import Dict
 
 MAX_NUM_PLAYERS = 10
 
 
 class Game:
     def __init__(self) -> None:
-        self.session_id_to_player = {}
+        self.session_id_to_player: Dict[str, Player] = {}
 
     def get_num_players(self) -> int:
         return len(self.session_id_to_player)
