@@ -1,6 +1,6 @@
-class ThavalonGame:
-    def __init__(self, num_players: int):
-        self.num_players = num_players
+class Game:
+    def __init__(self):
+        self.num_players = 1
         self._player_dict = {}
         self._has_started = False
         self.player_dict = {"a": "Paul", "b": "Andrew"}

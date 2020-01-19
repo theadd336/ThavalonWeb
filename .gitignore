@@ -7,9 +7,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# PyCharm Files
-.idea/
-
 # C extensions
 *.so
 
@@ -110,3 +107,6 @@ dmypy.json
 .pyre/
 
 # End of https://www.gitignore.io/api/python
+
+.idea
+venv
