@@ -4,6 +4,7 @@ from game.gamemanager import GameManager
 
 
 def test_create_new_game() -> None:
+    assert False
     gm = GameManager()
     assert isinstance(gm.create_new_game(), str)
 
