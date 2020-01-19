@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.generic import View, TemplateView
-from game.game import ThavalonGame
+from game.game import Game
+from game.gamemanager import GameManager
 # Create your views here.
 
 
@@ -11,9 +12,13 @@ class HomeView(TemplateView):
     # def index(self, request):
     #     return render(request, "thavalon/index.html", context)
     #
-    # def spectate_game(self, request, game_id):
-    #     response = "You're currently spectating game %s."
-    #     return HttpResponse(response % request.session["current_game"])
+    @staticmethod
+    def spectate_game(request, game_id):
+        response = "You're currently spectating game %s. The number of players is %d."
+        game_manager = GameManager()
+        game_id = request.session["current_game"]
+        game = game_manager.get_game(game_id)
+        return HttpResponse(response % (request.session["current_game"], game.num_players))
     #
     # def do_not_open(self, request, game_id):
     #     response = "You're viewing the DoNotOpen for game %s."
@@ -32,5 +37,7 @@ class NewGameView(TemplateView):
     @staticmethod
     def new_game(request):
         request.session.flush()
-        request.session["current_game"] = "testing"
+        game_manager = GameManager()
+        request.session["current_game"] = game_manager.create_new_game()
+        print(request.session["current_game"])
         return render(request, "thavalon/cookiejar.html", {})
