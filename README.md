@@ -8,9 +8,7 @@ try:
 except ImportError:
     raise ImportError("Requires asyncio.")
 
-# As per ImportError above, this module is never imported on python 2, but
-
-to:
+to the following:
 
 try:
     from asyncio import get_event_loop, set_event_loop_policy, WindowsSelectorEventLoopPolicy
