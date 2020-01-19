@@ -34,7 +34,6 @@ class HomeView(TemplateView):
 
 class NewLobbyView(View):
     template_name = "thavalon/lobby.html"
-
     @staticmethod
     def new_game(request):
         request.session.flush()
