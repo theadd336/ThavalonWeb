@@ -1,15 +1,36 @@
-{% load static %}<!DOCTYPE html>
+{% extends "thavalon/base.html" %}
+<!DOCTYPE html>
 <html lang="en">
+{% block header %}
 <head>
     <meta charset="UTF-8">
     <title>Lobby Information</title>
 </head>
+{% endblock %}
 <body>
-    {% csrf_token %}
+    {% block content %}
     <input id="joinGame" type="button" value="Join Game" onclick="joinGame();" />
+    <form>
+        <div class="player_number">
+            {{ waiting_players.number }}
+        </div>
+        <div class="player_name">
+            {{ waiting_players.name }}
+        </div>
+    </form>
 
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    {% block javascript %}
+    <table id="player_table" style="width:50%">
+        <thead>
+            <tr>
+                <th>Number</th>
+                <th>Player</th>
+            </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+
     <script>
         function joinGame() {
             var csrftoken = getCookie('csrftoken');
@@ -23,27 +44,16 @@
                 success: function(data) {
                     if (data.success !== 1) {
                         alert(data.error);
+                        return;
                     }
+                    addRow(data.number, data.name)
                 }
             });
         }
-    </script>
-    <script>
-        function getCookie(name) {
-            var cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                var cookies = document.cookie.split(';');
-                for (var i = 0; i < cookies.length; i++) {
-                    var cookie = cookies[i].trim();
-                    // Does this cookie string begin with the name we want?
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
+        function addRow(player_number, player_name) {
+            $("#player_table tbody").append("<tr><td>" + player_number + "</td><td>" + player_name + "</td></tr>");
         }
+
     </script>
     {% endblock %}
 </body>

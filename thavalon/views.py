@@ -3,6 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.generic import View, TemplateView
 from game.gamemanager import GameManager
 import uuid
+import channels
 # Create your views here.
 
 
@@ -53,9 +54,19 @@ class NewLobbyView(View):
             response["error"] = "This game does not exist."
             return JsonResponse(response)
         try:
-            current_game.add_player(player_id, "Paul!")
+            player_number = current_game.add_player(player_id, "Paul!")
         except ValueError as error:
             response["error"] = "An error occurred while joining the game: " + str(error)
             return JsonResponse(response)
         response["success"] = 1
+        response["number"] = 1
+        response["name"] = "Paul"
         return JsonResponse(response)
+
+
+class GameLobbiesView(TemplateView):
+    template_name = "thavalon/gamelobbies.html"
+
+
+def room(request, room_name):
+    return render(request, 'chat/room.html', {'room_name': room_name})
