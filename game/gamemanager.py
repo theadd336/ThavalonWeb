@@ -4,7 +4,7 @@ from .singleton import Singleton
 
 
 class GameManager(metaclass=Singleton):
-    def __init__(self):
+    def __init__(self) -> None:
         self.uuid_to_game = {}
 
     def create_new_game(self) -> str:

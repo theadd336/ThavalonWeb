@@ -1,23 +1,22 @@
+from .playermanager import PlayerManager
+
+MAX_NUM_PLAYERS = 10
+
+
 class Game:
-    def __init__(self):
-        self.num_players = 1
-        self._player_dict = {}
-        self._has_started = False
-        self.player_dict = {"a": "Paul", "b": "Andrew"}
-        self.UUID = "Testing"
+    def __init__(self) -> None:
+        self.player_manager = PlayerManager()
 
-    def add_player(self, session_id: str, player_name: str):
-        if len(self._player_dict) >= self.num_players:
-            raise ValueError("This game is currently full.")
+    def get_num_players(self) -> int:
+        return len(self.player_manager.session_id_to_player)
 
-        registered_name = self._player_dict.get(session_id)
-        if registered_name is not None:
-            raise KeyError("Player %s is already in the game." % registered_name)
-        self._player_dict[session_id] = player_name
+    def is_game_full(self) -> bool:
+        return self.get_num_players() == MAX_NUM_PLAYERS
 
-    def start_game(self):
-        if self._has_started:
-            raise EnvironmentError("Game already in progress.")
-        self._has_started = True
-        self._player_dict.keys()
-        # Do things
+    def add_player(self, session_id: str, player_name: str) -> None:
+        if self.is_game_full():
+            raise ValueError(f"Game currently has max {MAX_NUM_PLAYERS} players, cannot add new player.")
+        self.player_manager.add_player(session_id, player_name)
+
+    def remove_player(self, session_id: str) -> None:
+        self.player_manager.remove_player(session_id)
