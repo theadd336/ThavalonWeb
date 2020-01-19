@@ -53,9 +53,11 @@ class NewLobbyView(View):
             response["error"] = "This game does not exist."
             return JsonResponse(response)
         try:
-            current_game.add_player(player_id, "Paul!")
+            player_number = current_game.add_player(player_id, "Paul!")
         except ValueError as error:
             response["error"] = "An error occurred while joining the game: " + str(error)
             return JsonResponse(response)
         response["success"] = 1
+        response["number"] = 1
+        response["name"] = "Paul"
         return JsonResponse(response)

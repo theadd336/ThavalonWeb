@@ -3,8 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="c812cfe5-30d3-4a49-bd6d-b21aaeaa37e6" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/thavalon/templates/thavalon/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/templates/thavalon/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/thavalon/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/thavalon/templates/thavalon/lobby.html" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/templates/thavalon/lobby.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/thavalon/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -15,8 +14,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="HTML File" />
         <option value="Python Script" />
+        <option value="HTML File" />
       </list>
     </option>
   </component>
