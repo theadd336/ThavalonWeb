@@ -1,0 +1,2 @@
+ThavalonWeb
+django>=3.0.2
