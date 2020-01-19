@@ -1,8 +1,8 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.generic import View, TemplateView
-from game.game import Game
 from game.gamemanager import GameManager
+import uuid
 # Create your views here.
 
 
@@ -31,13 +31,31 @@ class HomeView(TemplateView):
     #     return render(request, "thavalon/cookiejar.html", {})
 
 
-class NewGameView(TemplateView):
-    template_name = "thavalon/cookiejar.html"
+class NewLobbyView(View):
+    template_name = "thavalon/lobby.html"
 
     @staticmethod
     def new_game(request):
         request.session.flush()
         game_manager = GameManager()
         request.session["current_game"] = game_manager.create_new_game()
-        print(request.session["current_game"])
-        return render(request, "thavalon/cookiejar.html", {})
+        request.session["player_id"] = str(uuid.uuid4())
+        return render(request, "thavalon/lobby.html", {})
+
+    @staticmethod
+    def join_game(request):
+        player_id = request.session.get("player_id")
+        game_id = request.session.get("current_game")
+        game_manager = GameManager()
+        current_game = game_manager.get_game(game_id)
+        response = {"success": 0}
+        if current_game is None:
+            response["error"] = "This game does not exist."
+            return JsonResponse(response)
+        try:
+            current_game.add_player(player_id, "Paul!")
+        except ValueError as error:
+            response["error"] = "An error occurred while joining the game: " + str(error)
+            return JsonResponse(response)
+        response["success"] = 1
+        return JsonResponse(response)

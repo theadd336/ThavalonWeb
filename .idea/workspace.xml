@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="00a0600d-5910-421a-913a-6e9f4cb3879c" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/thavalon/forms/lobbyforms.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/thavalon/static/jquery-3.4.1.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/thavalon/templates/thavalon/lobby.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/thavalon/templates/thavalon/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/templates/thavalon/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/thavalon/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/thavalon/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/thavalon/views.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectId" id="1WccTJDJvXncGop4YJ3tUXD7AIX" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="00a0600d-5910-421a-913a-6e9f4cb3879c" name="Default Changelist" comment="" />
+      <created>1579452330377</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1579452330377</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="1421" y="344" key="SettingsEditor" timestamp="1579413187437">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state x="1421" y="344" key="SettingsEditor/0.0.2560.1400@0.0.2560.1400" timestamp="1579413187437" />
+    <state x="1561" y="430" width="700" height="530" key="recent.locations.popup" timestamp="1579407683353">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state x="1561" y="430" width="700" height="530" key="recent.locations.popup/0.0.2560.1400@0.0.2560.1400" timestamp="1579407683353" />
+    <state x="1576" y="357" width="670" height="676" key="search.everywhere.popup" timestamp="1579413684697">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state x="1576" y="357" width="670" height="676" key="search.everywhere.popup/0.0.2560.1400@0.0.2560.1400" timestamp="1579413684697" />
+  </component>
+</project>
