@@ -30,22 +30,54 @@ def test_is_game_full(num_game_players, expected_full_game) -> None:
     assert game.is_game_full() == expected_full_game
 
 
-def test_add_existing_player_errors() -> None:
+def test_add_player_full_game_fails():
+    game = Game()
+    mock_is_game_full = Mock()
+    mock_is_game_full.return_value = True
+    game.is_game_full = mock_is_game_full
+    with pytest.raises(ValueError):
+        game.add_player("session_id", "name")
+
+def test_add_player():
+    game = Game()
+    game.add_player("session_id", "name")
+    assert "session_id" in game.session_id_to_player
+    assert game.session_id_to_player["session_id"].name == "name"
+
+
+def test_add_player_existing_session_id_errors():
     game = Game()
     game.add_player("session_id", "name")
     with pytest.raises(ValueError):
-        game.add_player("session_id", "new name")
+        game.add_player("session_id", "name2")
 
 
-def test_add_player() -> None:
+def test_add_player_existing_name_errors():
+    game = Game()
+    game.add_player("session _id", "name")
+    with pytest.raises(ValueError):
+        game.add_player("session_id2", "name")
+
+
+def test_get_player():
     game = Game()
     game.add_player("session_id", "name")
-    assert "session_id" in game.player_manager.session_id_to_player
-    assert game.player_manager.session_id_to_player["session_id"].name == "name"
+    assert game.get_player("session_id").name == "name"
 
 
-def test_remove_player() -> None:
+def test_get_nonexistent_player_errors():
+    game = Game()
+    with pytest.raises(ValueError):
+        game.get_player("session_id")
+
+
+def test_remove_player():
     game = Game()
     game.add_player("session_id", "name")
     game.remove_player("session_id")
-    assert "session_id" not in game.player_manager.session_id_to_player
+
+
+def test_remove_nonexistent_player_errors():
+    game = Game()
+    with pytest.raises(ValueError):
+        game.remove_player("session_id")
