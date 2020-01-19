@@ -17,3 +17,5 @@ except ImportError:
 
 if sys.platform == 'win32':
     set_event_loop_policy(WindowsSelectorEventLoopPolicy())
+
+https://stackoverflow.com/questions/58908293/i-keep-getting-notimplementederror-error-when-starting-django-server
