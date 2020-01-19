@@ -3,6 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.generic import View, TemplateView
 from game.gamemanager import GameManager
 import uuid
+import channels
 # Create your views here.
 
 
@@ -61,3 +62,11 @@ class NewLobbyView(View):
         response["number"] = 1
         response["name"] = "Paul"
         return JsonResponse(response)
+
+
+class GameLobbiesView(TemplateView):
+    template_name = "thavalon/gamelobbies.html"
+
+
+def room(request, room_name):
+    return render(request, 'chat/room.html', {'room_name': room_name})
