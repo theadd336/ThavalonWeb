@@ -3,7 +3,6 @@ from django.http import HttpResponse, JsonResponse
 from django.views.generic import View, TemplateView
 from game.gamemanager import GameManager
 import uuid
-import channels
 # Create your views here.
 
 
