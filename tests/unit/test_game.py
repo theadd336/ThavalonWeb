@@ -38,6 +38,7 @@ def test_add_player_full_game_fails():
     with pytest.raises(ValueError):
         game.add_player("session_id", "name")
 
+
 def test_add_player():
     game = Game()
     game.add_player("session_id", "name")
@@ -81,3 +82,14 @@ def test_remove_nonexistent_player_errors():
     game = Game()
     with pytest.raises(ValueError):
         game.remove_player("session_id")
+
+
+def test_is_player_in_game_false():
+    game = Game()
+    assert not game.is_player_in_game("FAKE")
+
+
+def test_is_player_in_game_true():
+    game = Game()
+    game.add_player("session_id", "name")
+    assert game.is_player_in_game("session_id")
