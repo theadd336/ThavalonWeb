@@ -32,28 +32,29 @@
     </table>
 
     <script>
+        var chatSocket = new WebSocket(
+            'ws://' + window.location.host +
+            '/ws/thavalon/{{ game_id|escapejs }}/');
+
+        chatSocket.onmessage = function(e) {
+            var data = JSON.parse(e.data);
+            if (data.type === "on.player.join") {
+                alert(data.player_name);
+                return;
+            }
+            else {
+                var success = data.success;
+                alert(success);
+            }
+        };
+
         function joinGame() {
-            var csrftoken = getCookie('csrftoken');
-            $.ajax({
-                type: 'POST',
-                dataType: "json",
-                beforeSend: function(xhr) {
-                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                },
-                url: '{% url 'joingame' %}',
-                success: function(data) {
-                    if (data.success !== 1) {
-                        alert(data.error);
-                        return;
-                    }
-                    addRow(data.number, data.name)
-                }
-            });
+            chatSocket.send(JSON.stringify({ "player_name": "Paul" }));
         }
+
         function addRow(player_number, player_name) {
             $("#player_table tbody").append("<tr><td>" + player_number + "</td><td>" + player_name + "</td></tr>");
         }
-
     </script>
     {% endblock %}
 </body>
