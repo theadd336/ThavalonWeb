@@ -6,12 +6,12 @@ import uuid
 # Create your views here.
 
 
-class HomeView(TemplateView):
-    template_name = "thavalon/index.html"
+class HomeView(View):
+    @staticmethod
+    def load(request):
+        template_name = "thavalon/ShittyPaulindex.html"
+        return render(request, template_name)
 
-    # def index(self, request):
-    #     return render(request, "thavalon/index.html", context)
-    #
     @staticmethod
     def spectate_game(request, game_id):
         response = "You're currently spectating game %s. The number of players is %d."
@@ -19,7 +19,16 @@ class HomeView(TemplateView):
         game_id = request.session["current_game"]
         game = game_manager.get_game(game_id)
         return HttpResponse(response % (request.session["current_game"], game.num_players))
-    #
+
+    @staticmethod
+    def create_new_game(request):
+        request.session.flush()
+        game_manager = GameManager()
+        request.session["game_id"] = game_manager.create_new_game()
+        request.session["player_id"] = str(uuid.uuid4())
+        response = {"game_id": request.session["game_id"]}
+        return JsonResponse(response)
+
     # def do_not_open(self, request, game_id):
     #     response = "You're viewing the DoNotOpen for game %s."
     #     return HttpResponse(response % game_id)
@@ -34,17 +43,14 @@ class HomeView(TemplateView):
 class NewLobbyView(View):
     template_name = "thavalon/lobby.html"
     @staticmethod
-    def new_game(request):
-        request.session.flush()
-        game_manager = GameManager()
-        request.session["current_game"] = game_manager.create_new_game()
-        request.session["player_id"] = str(uuid.uuid4())
-        return render(request, "thavalon/lobby.html", {})
+    def new_game(request, game_id):
+        return render(request, "thavalon/lobby.html", {'game_id': game_id})
 
     @staticmethod
     def join_game(request):
         player_id = request.session.get("player_id")
-        game_id = request.session.get("current_game")
+        game_id = request.session.get("game_id")
+        print(game_id)
         game_manager = GameManager()
         current_game = game_manager.get_game(game_id)
         response = {"success": 0}

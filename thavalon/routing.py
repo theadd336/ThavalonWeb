@@ -1,6 +1,7 @@
-from django.urls import re_path
+from django.urls import path
 from . import consumers
 
 websocket_urlpatterns = [
-    re_path(r"ws/thavalon/(?P<room_name>\w+)/$", consumers.ChatConsumer),
+    path("ws/thavalon/Lobby1/<slug:room_name>/", consumers.ChatConsumer),
+    path("ws/thavalon/<slug:game_id>/", consumers.LobbyConsumer),
 ]

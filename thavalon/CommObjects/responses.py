@@ -13,9 +13,9 @@ class Response(ABC):
 
 
 class JoinGameResponse(Response):
-    def __init__(self, success=0, error_message="", player_number=0):
+    def __init__(self, success=False, error_message="", player_number=0):
         super().__init__(success, error_message)
-        self.player_number = 0
+        self.player_number = player_number
 
     def send(self) -> Dict[str, int]:
         object_dict = dict()
