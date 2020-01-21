@@ -1,0 +1,46 @@
+{% extends "thavalon/base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+{% block header %}
+<head>
+    <meta charset="UTF-8">
+    <title>Thavalon Home</title>
+</head>
+{% endblock %}
+<body>
+{% block content %}
+<h1>
+    Welcome to the Thavalon Home Page
+</h1>
+
+<button onclick="window.location.href = '{% url "create_new_game" %}'">
+    New Game
+</button>
+
+<button onclick="window.location.href = '{% url "view_game_lobbies" %}'">
+    Join Game
+</button>
+
+<button onclick="create_new_game()">
+    Create New Game
+</button>
+
+<script>
+    function create_new_game() {
+        var csrftoken = getCookie('csrftoken');
+        $.ajax({
+            type: 'POST',
+            dataType: "json",
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            },
+            url: '{% url 'create_new_game' %}',
+            success: function(data) {
+                window.location.pathname = '/thavalon/' + data.game_id + '/';
+            }
+        });
+    }
+</script>
+{% endblock %}
+</body>
+</html>
