@@ -64,6 +64,9 @@ class Game:
             raise ValueError(f"Player with session id {session_id} does not exist")
         return self.session_id_to_player[session_id]
 
+    def is_player_in_game(self, session_id: str) -> bool:
+        return "session_id" in self.session_id_to_player
+
     def remove_player(self, session_id: str) -> None:
         if session_id not in self.session_id_to_player:
             raise ValueError(f"Player with session id {session_id} does not exist")
