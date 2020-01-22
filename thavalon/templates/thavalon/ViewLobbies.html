@@ -1,16 +1,21 @@
+{% extends "thavalon/base.html" %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
+{% block header %}
 <head>
     <meta charset="UTF-8">
     <title>Thavalon Home</title>
-    <link rel="stylesheet" href="css/master.css">
-    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="{% static 'thavalon/css/master.css' %}">
+    <link rel="stylesheet" href="{% static 'thavalon/css/bootstrap.css' %}">
+    <!--
     <script src="js/jquery.js"></script>
     <script src="js/bootstrap.bundle.min.js"></script>
-
+    -->
 </head>
+{% endblock %}
 <body>
-
+{% block content %}
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand" href="index.html">Home</a>
 
@@ -45,7 +50,7 @@
                     <li class="list-group-item">Paul</li>
                     <li class="list-group-item">Andrew</li>
                     <li class="list-group-item">Meg</li>
-                    <li class="list-group-item"><a href="LobbyWaiting.html" class="btn-join text-success">Join</a></li>
+                    <li class="list-group-item"><a onclick="create_new_game()" href="#" class="btn-join text-success">Join</a></li>
                 </ul>
             </li>
             <li class="list-group-item"><h3>Lobby</h3>
@@ -76,5 +81,6 @@
           });
       }
   </script>
+{% endblock %}
 </body>
 </html>

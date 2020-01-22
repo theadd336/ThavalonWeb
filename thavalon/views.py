@@ -61,9 +61,12 @@ class NewLobbyView(View):
         return JsonResponse(response)
 
 
-class GameLobbiesView(TemplateView):
-    template_name = "thavalon/gamelobbies.html"
+class GameLobbiesView():
+    template_name = "thavalon/ViewLobbies.html"
 
+    @staticmethod
+    def load_lobbies(request):
+        return render(request, GameLobbiesView.template_name)
 
 def room(request, room_name):
     return render(request, "thavalon/room.html", {'room_name': room_name})
