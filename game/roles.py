@@ -13,3 +13,6 @@ class Role(ABC):
         self.team = team
         self.is_reverser = is_reverser
 
+    @abstractmethod
+    def get_description(self):
+        pass

@@ -3,6 +3,3 @@ class Player:
         self.session_id = session_id
         self.name = name
         self.role = None
-
-    def __repr__(self) -> str:
-        return self.session_id

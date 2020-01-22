@@ -1,3 +1,4 @@
+pytest
 asgiref
 django>=3.0.2
 channels>=2.4

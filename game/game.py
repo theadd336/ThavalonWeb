@@ -1,7 +1,7 @@
 import random
 from .player import Player
 from enum import Enum
-from typing import Dict, List
+from typing import Any, Dict, List
 
 _MIN_NUM_PLAYERS = 5
 _MAX_NUM_PLAYERS = 10
@@ -38,8 +38,8 @@ class Game:
         # the current proposal number, 1-indexed.
         self.proposal_num: int = 1
 
-        # the current mission number, 1-indexed.
-        self.mission_num: int = 1
+        # the current mission number, 0-indexed.
+        self.mission_num: int = 0
 
     # methods for adding players
     def get_num_players(self) -> int:
@@ -72,8 +72,19 @@ class Game:
             raise ValueError(f"Player with session id {session_id} does not exist")
         del self.session_id_to_player[session_id]
 
+    def get_starting_info(self, session_id: str) -> Dict[str, Any]:
+        if session_id not in self.session_id_to_player:
+            raise ValueError(f"Player with session id {session_id} does not exist")
+        return {
+            "player_role": self.session_id_to_player[session_id].role,
+            "proposal_order": self.proposal_order,
+            "first_proposer": self.proposal_order[-2],
+            "second_proposer": self.proposal_order[-1],
+            "num_on_mission": _MISSION_SIZE_TO_PROPOSAL_SIZE[self.get_num_players()][self.mission_num]
+        }
+
     # method for starting the game
-    def start_game(self):
+    def start_game(self) -> None:
         # validate players
         num_players = self.get_num_players()
         if num_players < _MIN_NUM_PLAYERS:
@@ -82,13 +93,5 @@ class Game:
             raise ValueError(f"Game somehow has more than {_MAX_NUM_PLAYERS}, unable to start")
 
         # generate seating order
-        self.proposal_order = list(self.session_id_to_player.values())
+        self.proposal_order = [player.name for player in self.session_id_to_player.values()]
         random.shuffle(self.proposal_order)
-
-        return {
-            "player_info": {}, # TODO: Make player info
-            "proposal_order": self.proposal_order,
-            "first_proposer": self.proposal_order[-2],
-            "second_proposer": self.proposal_order[-1],
-            "num_on_mission": _MISSION_SIZE_TO_PROPOSAL_SIZE[self.get_num_players()][self.mission_num]
-        }
