@@ -60,5 +60,21 @@
     </div>
   </div>
 
+  <script>
+      function create_new_game() {
+          var csrftoken = getCookie('csrftoken');
+          $.ajax({
+              type: 'POST',
+              dataType: "json",
+              beforeSend: function(xhr) {
+                  xhr.setRequestHeader("X-CSRFToken", csrftoken);
+              },
+              url: '{% url 'create_new_game' %}',
+              success: function(data) {
+                  window.location.pathname = '/thavalon/' + data.game_id + '/';
+              }
+          });
+      }
+  </script>
 </body>
 </html>

@@ -13,14 +13,6 @@ class HomeView(View):
         return render(request, template_name)
 
     @staticmethod
-    def spectate_game(request, game_id):
-        response = "You're currently spectating game %s. The number of players is %d."
-        game_manager = GameManager()
-        game_id = request.session["current_game"]
-        game = game_manager.get_game(game_id)
-        return HttpResponse(response % (request.session["current_game"], game.num_players))
-
-    @staticmethod
     def create_new_game(request):
         request.session.flush()
         game_manager = GameManager()
