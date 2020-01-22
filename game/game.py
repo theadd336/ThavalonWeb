@@ -6,7 +6,7 @@ from typing import Dict, List
 _MIN_NUM_PLAYERS = 5
 _MAX_NUM_PLAYERS = 10
 
-MISSION_SIZE_TO_PROPOSAL_SIZE = {
+_MISSION_SIZE_TO_PROPOSAL_SIZE = {
     5: [2, 3, 2, 3, 3],
     6: [2, 3, 4, 3, 4],
     7: [2, 3, 3, 4, 4],
@@ -57,7 +57,7 @@ class Game:
             raise ValueError(f"Player with name {name} already in game.")
         player = Player(session_id, name)
         self.session_id_to_player[session_id] = player
-        return session_id
+        return self.get_num_players()
 
     def get_player(self, session_id: str) -> Player:
         if session_id not in self.session_id_to_player:
@@ -90,5 +90,5 @@ class Game:
             "proposal_order": self.proposal_order,
             "first_proposer": self.proposal_order[-2],
             "second_proposer": self.proposal_order[-1],
-            "num_on_mission": MISSION_SIZE_TO_PROPOSAL_SIZE[self.get_num_players()][self.mission_num]
+            "num_on_mission": _MISSION_SIZE_TO_PROPOSAL_SIZE[self.get_num_players()][self.mission_num]
         }

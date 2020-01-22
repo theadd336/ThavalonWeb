@@ -41,7 +41,7 @@ def test_add_player_full_game_fails():
 
 def test_add_player():
     game = Game()
-    game.add_player("session_id", "name")
+    assert game.add_player("session_id", "name") == 1
     assert "session_id" in game.session_id_to_player
     assert game.session_id_to_player["session_id"].name == "name"
 
