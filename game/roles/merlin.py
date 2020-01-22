@@ -3,7 +3,11 @@ from ..role import Role, Team
 
 class Merlin(Role):
     def __init__(self):
+<<<<<<< HEAD
         super.__init__("Merlin", Team.GOOD)
+=======
+        super().__init__("Merlin", Team.GOOD)
+>>>>>>> e1e26e06c6554cb11baf277cadf1c3c5a2195c64
 
     def get_description(self):
         return "You are Merlin [GOOD].\n\n" \

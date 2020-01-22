@@ -9,7 +9,6 @@ import uuid
 class HomeView(View):
     @staticmethod
     def load(request):
-        # template_name = "thavalon/ShittyPaulindex.html"
         template_name = "thavalon/index.html"
         return render(request, template_name)
 
@@ -42,11 +41,10 @@ class HomeView(View):
 
 
 class NewLobbyView(View):
-    template_name = "thavalon/lobby.html"
+    template_name = "thavalon/LobbyWaiting.html"
 
     @staticmethod
     def new_game(request, game_id):
-        # return render(request, "thavalon/lobby.html", {'game_id': game_id})
         return render(request, "thavalon/LobbyWaiting.html", {"game_id": game_id})
 
     @staticmethod

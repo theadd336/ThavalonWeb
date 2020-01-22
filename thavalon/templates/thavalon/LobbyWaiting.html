@@ -75,6 +75,10 @@
         function joinGame() {
             chatSocket.send(JSON.stringify({ "type": "on_player_join", "player_name": "Paul" }));
         }
+
+        function addRow(player_number, player_name) {
+            $("#player_table tbody").append("<tr><td>" + player_number + "</td><td>" + player_name + "</td></tr>");
+        }
     </script>
 {% endblock %}
 </body>
