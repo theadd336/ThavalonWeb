@@ -16,6 +16,12 @@ _MISSION_SIZE_TO_PROPOSAL_SIZE = {
 }
 
 
+class Vote(Enum):
+    SUCCESS = 0
+    FAIL = 1
+    REVERSE = 2
+
+
 class GameState(Enum):
     IN_LOBBY = 0
     IN_PROGRESS = 1
