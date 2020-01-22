@@ -1,15 +1,16 @@
+{% extends "thavalon/base.html" %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
+{% block header %}
 <head>
     <meta charset="UTF-8">
     <title>Thavalon Home</title>
-    <link rel="stylesheet" href="css/bootstrap.css">
-    <script src="js/jquery.js"></script>
-    <script src="js/bootstrap.bundle.min.js"></script>
-
+    <link rel="stylesheet" href="{% static 'thavalon/css/bootstrap.css' %}">
 </head>
+{% endblock %}
 <body>
-
+  {% block content %}
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand" href="index.html">Home</a>
 
@@ -20,7 +21,7 @@
           <a class="nav-link" href="ViewLobbies.html">View Lobbies <span class="sr-only"></span></a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#">Start A Lobby<span class="sr-only"></span></a>
+          <a class="nav-link" onclick="create_new_game()" href="#">Start A Lobby<span class="sr-only"></span></a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="#">Start The Game<span class="sr-only"></span></a>
@@ -40,16 +41,28 @@
     </div>
   </nav>
 
-
-
-
-
+  <script>
+      function create_new_game() {
+          var csrftoken = getCookie('csrftoken');
+          $.ajax({
+              type: 'POST',
+              dataType: "json",
+              beforeSend: function(xhr) {
+                  xhr.setRequestHeader("X-CSRFToken", csrftoken);
+              },
+              url: '{% url 'create_new_game' %}',
+              success: function(data) {
+                  window.location.pathname = '/thavalon/' + data.game_id + '/';
+              }
+          });
+      }
+    $(function () {
+      $('.example-popover').popover({
+        container: 'body'
+      })
+    })
+  </script>
+{% endblock %}
 </body>
 </html>
-<script>
-$(function () {
-  $('.example-popover').popover({
-    container: 'body'
-  })
-})
-</script>
+
