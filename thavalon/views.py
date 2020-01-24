@@ -2,29 +2,23 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import View, TemplateView
 from game.gamemanager import GameManager
+from .lobbymanager import LobbyManager
 import uuid
 # Create your views here.
 
+_GAME_MANAGER = GameManager()
+_LOBBY_MANAGER = LobbyManager()
 
 class HomeView(View):
     @staticmethod
     def load(request):
-        template_name = "thavalon/ShittyPaulindex.html"
+        template_name = "thavalon/index.html"
         return render(request, template_name)
-
-    @staticmethod
-    def spectate_game(request, game_id):
-        response = "You're currently spectating game %s. The number of players is %d."
-        game_manager = GameManager()
-        game_id = request.session["current_game"]
-        game = game_manager.get_game(game_id)
-        return HttpResponse(response % (request.session["current_game"], game.num_players))
 
     @staticmethod
     def create_new_game(request):
         request.session.flush()
-        game_manager = GameManager()
-        request.session["game_id"] = game_manager.create_new_game()
+        request.session["game_id"] = _GAME_MANAGER.create_new_game()
         request.session["player_id"] = str(uuid.uuid4())
         response = {"game_id": request.session["game_id"]}
         return JsonResponse(response)
@@ -41,10 +35,11 @@ class HomeView(View):
 
 
 class NewLobbyView(View):
-    template_name = "thavalon/lobby.html"
+    template_name = "thavalon/LobbyWaiting.html"
+
     @staticmethod
     def new_game(request, game_id):
-        return render(request, "thavalon/lobby.html", {'game_id': game_id})
+        return render(request, "thavalon/LobbyWaiting.html", {"game_id": game_id})
 
     @staticmethod
     def join_game(request):
@@ -68,9 +63,12 @@ class NewLobbyView(View):
         return JsonResponse(response)
 
 
-class GameLobbiesView(TemplateView):
-    template_name = "thavalon/gamelobbies.html"
+class GameLobbiesView():
+    template_name = "thavalon/ViewLobbies.html"
 
+    @staticmethod
+    def load_lobbies(request):
+        return render(request, GameLobbiesView.template_name)
 
 def room(request, room_name):
     return render(request, "thavalon/room.html", {'room_name': room_name})
