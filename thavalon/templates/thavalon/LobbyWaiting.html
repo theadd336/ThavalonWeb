@@ -8,6 +8,7 @@
     <title>Thavalon Home</title>
     <link rel="stylesheet" href="{% static 'thavalon/css/master.css' %}">
     <link rel="stylesheet" href="{% static 'thavalon/css/bootstrap.css' %}">
+    <script src="{% static 'thavalon/js/lobbywaiting.js' %}"></script>
     <!--
     <script src="js/jquery.js"></script>
     <script src="js/bootstrap.bundle.min.js"></script>
@@ -44,17 +45,20 @@
         <ul class="list-group ul-borderless">
             <li class="list-group-item"><h3>Lobby</h3>
                 <ol class="list-group">
+                    <!--
                     <li class="list-group-item">Paul</li>
                     <li class="list-group-item">Andrew</li>
                     <li class="list-group-item">Meg</li>
                     <li class="list-group-item">Darcy</li>
                     <li class="list-group-item text-warning"><span>Waiting for Lobby Leader to start game</span></li>
+                    -->
                 </ol>
             </li>
         </ul>
       </div>
     </div>
   </div>
+<!--
     <script>
         var chatSocket = new WebSocket(
             'ws://' + window.location.host +
@@ -79,7 +83,7 @@
         function addRow(player_number, player_name) {
             $("#player_table tbody").append("<tr><td>" + player_number + "</td><td>" + player_name + "</td></tr>");
         }
-    </script>
+    </script> -->
 {% endblock %}
 </body>
 </html>

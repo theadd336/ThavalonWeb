@@ -63,7 +63,7 @@ class Game:
             raise ValueError(f"Player with name {name} already in game.")
         player = Player(session_id, name)
         self.session_id_to_player[session_id] = player
-        return self.get_num_players()
+        return [player.name for player in self.session_id_to_player.values()]
 
     def get_player(self, session_id: str) -> Player:
         if session_id not in self.session_id_to_player:

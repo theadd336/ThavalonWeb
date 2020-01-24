@@ -2,9 +2,12 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import View, TemplateView
 from game.gamemanager import GameManager
+from .lobbymanager import LobbyManager
 import uuid
 # Create your views here.
 
+_GAME_MANAGER = GameManager()
+_LOBBY_MANAGER = LobbyManager()
 
 class HomeView(View):
     @staticmethod
@@ -15,8 +18,7 @@ class HomeView(View):
     @staticmethod
     def create_new_game(request):
         request.session.flush()
-        game_manager = GameManager()
-        request.session["game_id"] = game_manager.create_new_game()
+        request.session["game_id"] = _GAME_MANAGER.create_new_game()
         request.session["player_id"] = str(uuid.uuid4())
         response = {"game_id": request.session["game_id"]}
         return JsonResponse(response)
