@@ -20,7 +20,7 @@ class HomeView(View):
         request.session.flush()
         request.session["game_id"] = _GAME_MANAGER.create_new_game()
         request.session["player_id"] = str(uuid.uuid4())
-        response = {"game_id": request.session["game_id"]}
+        response = {"lobby_id": 1}
         return JsonResponse(response)
 
     # def do_not_open(self, request, game_id):
