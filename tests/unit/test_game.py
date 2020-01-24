@@ -43,9 +43,10 @@ def test_add_player_full_game_fails() -> None:
 
 def test_add_player() -> None:
     game = Game()
-    assert game.add_player("session_id", "name") == 1
+    assert game.add_player("session_id", "name") == ["name"]
     assert "session_id" in game.session_id_to_player
     assert game.session_id_to_player["session_id"].name == "name"
+    assert game.add_player("session_id2", "name2") == ["name", "name2"]
 
 
 def test_add_player_existing_session_id_errors() -> None:
@@ -77,7 +78,8 @@ def test_get_nonexistent_player_errors() -> None:
 def test_remove_player() -> None:
     game = Game()
     game.add_player("session_id", "name")
-    game.remove_player("session_id")
+    game.add_player("session_id2", "name2")
+    assert game.remove_player("session_id") == ["name2"]
 
 
 def test_remove_nonexistent_player_errors() -> None:

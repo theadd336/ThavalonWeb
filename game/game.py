@@ -54,7 +54,7 @@ class Game:
     def is_game_full(self) -> bool:
         return self.get_num_players() == _MAX_NUM_PLAYERS
 
-    def add_player(self, session_id: str, name: str) -> str:
+    def add_player(self, session_id: str, name: str) -> List[str]:
         if self.is_game_full():
             raise ValueError(f"Game currently has max {_MAX_NUM_PLAYERS} players, cannot add new player.")
         if session_id in self.session_id_to_player:
@@ -73,10 +73,11 @@ class Game:
     def is_player_in_game(self, session_id: str) -> bool:
         return "session_id" in self.session_id_to_player
 
-    def remove_player(self, session_id: str) -> None:
+    def remove_player(self, session_id: str) -> List[str]:
         if session_id not in self.session_id_to_player:
             raise ValueError(f"Player with session id {session_id} does not exist")
         del self.session_id_to_player[session_id]
+        return [player.name for player in self.session_id_to_player.values()]
 
     def get_starting_info(self, session_id: str) -> Dict[str, Any]:
         if session_id not in self.session_id_to_player:
