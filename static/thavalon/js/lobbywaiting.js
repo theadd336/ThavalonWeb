@@ -22,6 +22,4 @@ function createHTMLString(playerHTMLString, playerName) {
 	return playerHTMLString + "<li class=\"list-group-item\">" + playerName + "</li>";
 }
 
-function onGameStart(data) {
-	return;
-}
+

@@ -4,6 +4,7 @@ from django.views.generic import View, TemplateView
 from game.gamemanager import GameManager
 from .lobbymanager import LobbyManager
 import uuid
+import json
 # Create your views here.
 
 _GAME_MANAGER = GameManager()
@@ -29,17 +30,20 @@ class GameLobbiesView:
 
     @staticmethod
     def load_lobbies(request):
-        return render(request, GameLobbiesView.template_name)
+        lobby_ids = _LOBBY_MANAGER.list_all_lobbies()
+        player_names = []
+        for lobby_id in lobby_ids:
+            game_id = _LOBBY_MANAGER.get_game_from_lobby(lobby_id)
+            game = _GAME_MANAGER.get_game(game_id)
+        return render(request, GameLobbiesView.template_name, {"lobbyIds": json.dumps(lobby_ids)})
 
     @staticmethod
     def create_new_game(request):
-        request.session.flush()
+
         game_id = _GAME_MANAGER.create_new_game()
         lobby_id = _LOBBY_MANAGER.create_new_lobby(game_id)
-        request.session["game_id"] = game_id
-        request.session["player_id"] = str(uuid.uuid4())
+
         response = {"lobby_id": lobby_id}
-        print(game_id)
         return JsonResponse(response)
 
     @staticmethod
@@ -61,7 +65,17 @@ class GameLobbiesView:
             return JsonResponse(response)
         response["success"] = 1
         response["game_id"] = game_id
+        request.session.flush()
+        request.session["game_id"] = game_id
+        request.session["player_id"] = player_id
         return JsonResponse(response)
+
+
+class GameView:
+    @staticmethod
+    def load_game_page(request, game_id):
+        return render(request, "thavalon/GameLobby.html", {"game_id": game_id})
+
 
 def room(request, room_name):
     return render(request, "thavalon/room.html", {'room_name': room_name})

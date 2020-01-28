@@ -1,6 +1,7 @@
-function csrfSafeMethod(method) {
-    // these HTTP methods do not require CSRF protection
-    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+function onPageLoad(lobbyIds) {
+	for (let lobbyId of lobbyIds) {
+		addNewLobby(lobbyId);
+	}
 }
 
 function addNewLobby(lobbyId) {
@@ -17,6 +18,8 @@ function addNewLobby(lobbyId) {
 function createNewList(lobbyId) {
 	let listNode = document.createElement("LI");
 	listNode.classList.add("list-group-item");
+	listNode.classList.add("borderless");
+	listNode.classList.add("div-lobby");
 	listNode.id = lobbyId + "playerList";
 	listNode.innerHTML = "<h3>Lobby " + lobbyId + "</h3>";
 	listNode.appendChild(createUnorderedList(lobbyId));
@@ -46,8 +49,13 @@ function formatJoinButtonLink(lobbyId) {
 	linkNode.classList.add("btn-join");
 	linkNode.classList.add("text-success")
 	linkNode.innerHTML = "Join";
-	linkNode.id = lobbyId + "link";
+	linkNode.id = lobbyId;
 	return linkNode;
+}
+
+function csrfSafeMethod(method) {
+    // these HTTP methods do not require CSRF protection
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
 }
 
 function getCookie(name) {

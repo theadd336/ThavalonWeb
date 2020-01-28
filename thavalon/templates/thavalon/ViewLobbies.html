@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="{% static 'thavalon/css/bootstrap.css' %}">
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="{% static 'thavalon/js/ViewLobbies.js' %}"></script>
+    <script>
+      window.onload = function() {
+          onPageLoad({{ lobbyIds|safe }});
+      }
+    </script>
     <!--
     <script src="js/jquery.js"></script>
     <script src="js/bootstrap.bundle.min.js"></script>
@@ -85,7 +90,6 @@
 
     function joinGame(lobbyId) {
         if (lobbyId === null) { return; }
-        lobbyId = lobbyId.substring(0, lobbyId.length - 4)
         let csrftoken = getCookie("csrftoken");
         $.ajax({
             type: "POST",

@@ -1,5 +1,5 @@
 from game.singleton import Singleton
-from typing import Dict, Union
+from typing import Dict, List
 
 
 class LobbyManager(metaclass=Singleton):
@@ -30,3 +30,6 @@ class LobbyManager(metaclass=Singleton):
         del self._game_to_lobby[game_id]
         del self._lobby_to_game[lobby]
         self._count -= 1
+
+    def list_all_lobbies(self) -> List[str]:
+        return [lobby_id for lobby_id in self._lobby_to_game.keys()]

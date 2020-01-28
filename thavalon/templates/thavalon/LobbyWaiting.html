@@ -14,7 +14,7 @@
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="index.html">Home</a>
+    <a class="navbar-brand" href="/thavalon">Home</a>
 
 
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -23,7 +23,7 @@
           <a class="nav-link" href="#">Leave Lobby</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="GameLobby.html">Start Game</a>
+          <a class="nav-link" onclick="startGame()" href="#">Start Game</a>
         </li>
       </ul>
       <ul class="navbar-nav flex-row ml-md-auto d-none d-md-flex">
@@ -68,6 +68,17 @@
 			    onGameStart(data);
 	        }
         }
+
+      function startGame() {
+        const data = {"type": "start_game"};
+        chatSocket.send(JSON.stringify(data));
+      }
+
+      function onGameStart(data) {
+        const gameId = data.game_id;
+        window.location.pathname = "{% url 'game_page' game_id %}";
+      }
+
   </script>
 </body>
 </html>
