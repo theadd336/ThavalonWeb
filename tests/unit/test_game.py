@@ -1,6 +1,7 @@
 import random
 import pytest
 from game.game import Game, GameState
+from game.player import Player
 from typing import List
 from unittest.mock import Mock
 
@@ -101,10 +102,11 @@ def test_is_player_in_game_false() -> None:
     assert not game.is_player_in_game("FAKE")
 
 
-def test_is_player_in_game_true() -> None:
+@pytest.mark.parametrize("session_id", ["session_id", "test"])
+def test_is_player_in_game_true(session_id) -> None:
     game = Game()
-    game.add_player("session_id", "name")
-    assert game.is_player_in_game("session_id")
+    game.add_player(session_id, "name")
+    assert game.is_player_in_game(session_id)
 
 
 def test_get_starting_info_invalid_player_errors() -> None:
@@ -128,34 +130,6 @@ def test_get_starting_info() -> None:
     assert result["num_on_mission"] == 2
 
 
-# TODO: Add back in this test
-"""
-@pytest.mark.parametrize("number_of_players", [4, 11])
-def test_start_game_invalid_number_players(number_of_players: int) -> None:
-    game = Game()
-    mock_get_num_players = Mock()
-    mock_get_num_players.return_value = number_of_players
-    game.get_num_players = mock_get_num_players
-
-    with pytest.raises(ValueError):
-        game.start_game()
-"""
-
-
-def test_start_game() -> None:
-    game = Game()
-    game.add_player("session_id1", "name1")
-    game.add_player("session_id2", "name2")
-    game.add_player("session_id3", "name3")
-    game.add_player("session_id4", "name4")
-    game.add_player("session_id5", "name5")
-
-    random.seed(0)  # set seed to 0 so proposal order will be consistent
-    game.start_game()
-    assert game.proposal_order == ["name3", "name1", "name2", "name5", "name4"]
-    # TODO: Test roles assign properly
-
-
 @pytest.mark.parametrize("game_state", [GameState.IN_PROGRESS, GameState.DONE])
 def test_add_player_not_in_lobby_ends(game_state):
     game = Game()
@@ -173,3 +147,63 @@ def test_remove_player_not_in_lobby_ends(game_state):
     with pytest.raises(ValueError) as exc:
         game.remove_player("session_id")
     assert str(exc.value) == "Can only remove player while in lobby."
+
+# TODO: Add back in this test
+"""
+@pytest.mark.parametrize("number_of_players", [4, 11])
+def test_start_game_invalid_number_players(number_of_players: int) -> None:
+    game = Game()
+    mock_get_num_players = Mock()
+    mock_get_num_players.return_value = number_of_players
+    game.get_num_players = mock_get_num_players
+
+    with pytest.raises(ValueError):
+        game.start_game()
+"""
+
+
+def test_start_game_verify_proposal_order() -> None:
+    game = Game()
+    game.add_player("session_id1", "name1")
+    game.add_player("session_id2", "name2")
+    game.add_player("session_id3", "name3")
+    game.add_player("session_id4", "name4")
+    game.add_player("session_id5", "name5")
+
+    random.seed(0)  # set seed to 0 so proposal order will be consistent
+    game.start_game()
+    assert game.proposal_order == ["name3", "name1", "name2", "name5", "name4"]
+
+
+# @pytest.mark.parametrize("num_players, session_id_to_players", [
+#     (
+#         5,
+#         {
+#             "id1": Player("id1", "Andrew"),
+#             "id2": Player("id2", "Arya"),
+#             "id3": Player("id3", "")
+#         }
+#     )
+# ])
+# def test_start_game_players_assigned(num_players) -> None:
+#     game = Game()
+#
+#     mock_get_num_players = Mock()
+#     game.get_num_players = mock_get_num_players
+#
+#
+#
+#     andrew = Player("id1", "Andrew")
+#     arya = Player("id2", "Arya")
+#     jared = Player("id3", "Jared")
+#     meg = Player("id4", "Meg")
+#     paul = Player("id5", "Paul")
+#
+#     game = Game()
+#     game.add_player(andrew)
+#     game.add_player(arya)
+#     game.add_player(jared)
+#     game.add_player(meg)
+#     game.add_player(paul)
+#
+#     game.start_game()

@@ -93,7 +93,7 @@ class Game:
         return self.session_id_to_player[session_id]
 
     def is_player_in_game(self, session_id: str) -> bool:
-        return "session_id" in self.session_id_to_player
+        return session_id in self.session_id_to_player
 
     def remove_player(self, session_id: str) -> List[str]:
         if self.game_state != GameState.IN_LOBBY:
@@ -119,6 +119,7 @@ class Game:
     # method for starting the game
     def start_game(self) -> None:
         # validate players
+        # import pdb; pdb.set_trace()
         num_players = self.get_num_players()
         if num_players < _MIN_NUM_PLAYERS:
             raise ValueError(f"Game must have at least {_MIN_NUM_PLAYERS} to be started")
@@ -141,9 +142,10 @@ class Game:
         good_role_indices = random.sample(range(0, len(_GOOD_ROLES)), num_good)
         evil_role_indices = random.sample(range(0, len(_EVIL_ROLES)), num_evil)
 
-
+        # assign first N players a good role
         for player, good_role_index in zip(players[:num_good], good_role_indices):
             player.role = _GOOD_ROLES[good_role_index]()
 
+        # assign rest of players an evil role
         for player, evil_role_index in zip(players[num_good:], evil_role_indices):
             player.role = _GOOD_ROLES[evil_role_index]()
