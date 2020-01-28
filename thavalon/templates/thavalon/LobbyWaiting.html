@@ -1,8 +1,6 @@
-{% extends "thavalon/base.html" %}
-{% load static %}
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
-{% block header %}
 <head>
     <meta charset="UTF-8">
     <title>Thavalon Home</title>
@@ -14,11 +12,9 @@
     <script src="js/bootstrap.bundle.min.js"></script>
     -->
 </head>
-{% endblock %}
 <body>
-{% block content %}
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="index.html">Home</a>
+    <a class="navbar-brand" href="/thavalon">Home</a>
 
 
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -27,7 +23,7 @@
           <a class="nav-link" href="#">Leave Lobby</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="GameLobby.html">Start Game</a>
+          <a class="nav-link" onclick="startGame()" href="#">Start Game</a>
         </li>
       </ul>
       <ul class="navbar-nav flex-row ml-md-auto d-none d-md-flex">
@@ -58,32 +54,31 @@
       </div>
     </div>
   </div>
-<!--
-    <script>
-        var chatSocket = new WebSocket(
-            'ws://' + window.location.host +
-            '/ws/thavalon/{{ game_id|escapejs }}/');
-
-        chatSocket.onmessage = function(e) {
-            var data = JSON.parse(e.data);
-            if (data.type === "on.player.join") {
-                alert(data.player_name);
-                return;
-            }
-            else {
-                var success = data.success;
-                alert(success);
-            }
-        };
-
-        function joinGame() {
-            chatSocket.send(JSON.stringify({ "type": "on_player_join", "player_name": "Paul" }));
+  <script>
+      // Connect to the websocket.
+      var chatSocket = new WebSocket('ws://' + window.location.host +
+	    '/ws/thavalon/{{ game_id|escapejs }}/');
+	  // Sort incoming messages based on the message type.
+      chatSocket.onmessage = function(e) {
+	    let data = JSON.parse(e.data);
+	    switch(data.type) {
+		    case "on_player_join_leave":
+			    onPlayerJoinLeave(data);
+		    case "on_game_start":
+			    onGameStart(data);
+	        }
         }
 
-        function addRow(player_number, player_name) {
-            $("#player_table tbody").append("<tr><td>" + player_number + "</td><td>" + player_name + "</td></tr>");
-        }
-    </script> -->
-{% endblock %}
+      function startGame() {
+        const data = {"type": "start_game"};
+        chatSocket.send(JSON.stringify(data));
+      }
+
+      function onGameStart(data) {
+        const gameId = data.game_id;
+        window.location.pathname = "{% url 'game_page' game_id %}";
+      }
+
+  </script>
 </body>
 </html>

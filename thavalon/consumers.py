@@ -36,7 +36,6 @@ class ChatConsumer(WebsocketConsumer):
     # Receive message from WebSocket
     def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        print(text_data_json)
         message = text_data_json['message']
 
         # Send message to room group
@@ -69,7 +68,7 @@ class LobbyConsumer(WebsocketConsumer):
         self._message_types = {
             "on_player_join": self.join_game,
             "on_player_leave": self.leave_game,
-            "on_start_game": self.start_game
+            "start_game": self.start_game
         }
 
     def connect(self):
@@ -80,6 +79,9 @@ class LobbyConsumer(WebsocketConsumer):
         self.accept()
 
     def disconnect(self, code):
+        self.game.remove_player(self.player_id)
+        self.scope["session"].flush()
+        self.scope["session"].save()
         async_to_sync(self.channel_layer.group_discard)(
             self.lobby_group_name,
             self.channel_name
@@ -140,8 +142,12 @@ class LobbyConsumer(WebsocketConsumer):
         self.send(text_data=json.dumps(event))
 
     def start_game(self, _):
-        self.game.start_game()
+        try:
+            self.game.start_game()
+        except ValueError:
+            return
         async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "on_start_game"})
+        return
 
     def on_game_start(self, event):
         self.scope["session"]["game_id"] = self.game_id

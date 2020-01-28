@@ -1,5 +1,5 @@
 from game.singleton import Singleton
-from typing import Dict, Union
+from typing import Dict, List
 
 
 class LobbyManager(metaclass=Singleton):
@@ -18,7 +18,7 @@ class LobbyManager(metaclass=Singleton):
         return self._count
 
     def get_game_from_lobby(self, lobby_index: str) -> str:
-        if type(lobby_index) != type(str):
+        if type(lobby_index) != str:
             raise TypeError("Lobby index must be a string.")
         return self._lobby_to_game[lobby_index]
 
@@ -30,3 +30,6 @@ class LobbyManager(metaclass=Singleton):
         del self._game_to_lobby[game_id]
         del self._lobby_to_game[lobby]
         self._count -= 1
+
+    def list_all_lobbies(self) -> List[str]:
+        return [lobby_id for lobby_id in self._lobby_to_game.keys()]

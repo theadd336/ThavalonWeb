@@ -1,5 +1,6 @@
-{% load static %}
 <!DOCTYPE html>
+{% load static %}
+{% csrf_token %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,6 +9,11 @@
     <link rel="stylesheet" href="{% static 'thavalon/css/bootstrap.css' %}">
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="{% static 'thavalon/js/ViewLobbies.js' %}"></script>
+    <script>
+      window.onload = function() {
+          onPageLoad({{ lobbyIds|safe }});
+      }
+    </script>
     <!--
     <script src="js/jquery.js"></script>
     <script src="js/bootstrap.bundle.min.js"></script>
@@ -43,6 +49,7 @@
     <div class="row">
       <div class="col-6">
         <ul class="list-group ul-borderless" id="allLobbies">
+            <!--
             <li class="list-group-item" id=""><h3>Lobby</h3>
                 <ul class="list-group">
                     <li class="list-group-item">Paul</li>
@@ -51,13 +58,7 @@
                     <li class="list-group-item"><a onclick="create_new_game()" href="#" class="btn-join text-success">Join</a></li>
                 </ul>
             </li>
-            <li class="list-group-item"><h3>Lobby</h3>
-                <ul class="list-group">
-                    <li class="list-group-item">Darcy</li>
-                    <li class="list-group-item">Peter</li>
-                    <li class="list-group-item"><a href="LobbyWaiting.html" class="btn-join text-success">Join</a></li>
-                </ul>
-            </li>
+            -->
         </ul>
       </div>
     </div>
@@ -86,6 +87,36 @@
 
         })
     }
+
+    function joinGame(lobbyId) {
+        if (lobbyId === null) { return; }
+        let csrftoken = getCookie("csrftoken");
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            data: {"lobby_id": lobbyId, "player_name": "Paul"},
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            },
+            url: "{% url 'join_game' %}",
+            success: function(data) {
+                if (data.success !== 1) {
+                    alert(data.error);
+                    return;
+                }
+                if (data.game_id === undefined || data.game_id === null) {
+                    alert("big dum");
+                    return;
+                }
+                window.location.pathname = '/thavalon/' + data.game_id + '/';
+                return;
+            }
+
+        })
+    }
+
 </script>
 </body>
 </html>

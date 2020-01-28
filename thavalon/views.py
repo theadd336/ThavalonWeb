@@ -4,6 +4,7 @@ from django.views.generic import View, TemplateView
 from game.gamemanager import GameManager
 from .lobbymanager import LobbyManager
 import uuid
+import json
 # Create your views here.
 
 _GAME_MANAGER = GameManager()
@@ -15,60 +16,66 @@ class HomeView(View):
         template_name = "thavalon/index.html"
         return render(request, template_name)
 
-    @staticmethod
-    def create_new_game(request):
-        request.session.flush()
-        request.session["game_id"] = _GAME_MANAGER.create_new_game()
-        request.session["player_id"] = str(uuid.uuid4())
-        response = {"lobby_id": 1}
-        return JsonResponse(response)
 
-    # def do_not_open(self, request, game_id):
-    #     response = "You're viewing the DoNotOpen for game %s."
-    #     return HttpResponse(response % game_id)
-    #
-    # def new_game(self, request):
-    #     request.session.flush()
-    #     game_id = GameManager.create_new_game()
-    #     request.session["current_game"] = game_id
-    #     return render(request, "thavalon/cookiejar.html", {})
-
-
-class NewLobbyView(View):
+class LobbyWaitingView(View):
     template_name = "thavalon/LobbyWaiting.html"
 
     @staticmethod
-    def new_game(request, game_id):
+    def load(request, game_id):
         return render(request, "thavalon/LobbyWaiting.html", {"game_id": game_id})
+
+
+class GameLobbiesView:
+    template_name = "thavalon/ViewLobbies.html"
+
+    @staticmethod
+    def load_lobbies(request):
+        lobby_ids = _LOBBY_MANAGER.list_all_lobbies()
+        player_names = []
+        for lobby_id in lobby_ids:
+            game_id = _LOBBY_MANAGER.get_game_from_lobby(lobby_id)
+            game = _GAME_MANAGER.get_game(game_id)
+        return render(request, GameLobbiesView.template_name, {"lobbyIds": json.dumps(lobby_ids)})
+
+    @staticmethod
+    def create_new_game(request):
+
+        game_id = _GAME_MANAGER.create_new_game()
+        lobby_id = _LOBBY_MANAGER.create_new_lobby(game_id)
+
+        response = {"lobby_id": lobby_id}
+        return JsonResponse(response)
 
     @staticmethod
     def join_game(request):
-        player_id = request.session.get("player_id")
-        game_id = request.session.get("game_id")
-        print(game_id)
-        game_manager = GameManager()
-        current_game = game_manager.get_game(game_id)
+        player_id = str(uuid.uuid4())
+        player_name = str(request.POST.get("player_name"))
+        lobby_id = str(request.POST.get("lobby_id"))
+        game_id = _LOBBY_MANAGER.get_game_from_lobby(lobby_id)
+
+        current_game = _GAME_MANAGER.get_game(game_id)
         response = {"success": 0}
         if current_game is None:
             response["error"] = "This game does not exist."
             return JsonResponse(response)
         try:
-            player_number = current_game.add_player(player_id, "Paul!")
+            player_list = current_game.add_player(player_id, player_name)
         except ValueError as error:
             response["error"] = "An error occurred while joining the game: " + str(error)
             return JsonResponse(response)
         response["success"] = 1
-        response["number"] = 1
-        response["name"] = "Paul"
+        response["game_id"] = game_id
+        request.session.flush()
+        request.session["game_id"] = game_id
+        request.session["player_id"] = player_id
         return JsonResponse(response)
 
 
-class GameLobbiesView():
-    template_name = "thavalon/ViewLobbies.html"
-
+class GameView:
     @staticmethod
-    def load_lobbies(request):
-        return render(request, GameLobbiesView.template_name)
+    def load_game_page(request, game_id):
+        return render(request, "thavalon/GameLobby.html", {"game_id": game_id})
+
 
 def room(request, room_name):
     return render(request, "thavalon/room.html", {'room_name': room_name})

@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+{% csrf_token %}
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Thavalon Home</title>
-    <link rel="stylesheet" href="css/master.css">
-    <link rel="stylesheet" href="css/bootstrap.css">
-    <script src="js/jquery.js"></script>
+    <link rel="stylesheet" href="{% static 'thavalon/css/master.css' %}">
+    <link rel="stylesheet" href="{% static 'thavalon/css/bootstrap.css' %}">
     <script src="js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
