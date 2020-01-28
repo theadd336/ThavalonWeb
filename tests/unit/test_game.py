@@ -118,14 +118,15 @@ def test_get_starting_info() -> None:
     mock_get_num_players = Mock()
     mock_get_num_players.return_value = 5
     game.get_num_players = mock_get_num_players
-    game.proposal_order = ["1", "2", "3", "4", "5"] # hard code for tests
+    game.proposal_order = ["1", "2", "3", "4", "5"]  # hard code for tests
     game.add_player("session_id", "name")
     result = game.get_starting_info("session_id")
-    assert result["player_role"] is None # None because will be generated in start game
+    assert result["player_role"] is None  # None because will be generated in start game
     assert result["proposal_order"] == ["1", "2", "3", "4", "5"]
     assert result["first_proposer"] == "4"
     assert result["second_proposer"] == "5"
     assert result["num_on_mission"] == 2
+
 
 # TODO: Add back in this test
 """
@@ -140,6 +141,7 @@ def test_start_game_invalid_number_players(number_of_players: int) -> None:
         game.start_game()
 """
 
+
 def test_start_game() -> None:
     game = Game()
     game.add_player("session_id1", "name1")
@@ -148,7 +150,7 @@ def test_start_game() -> None:
     game.add_player("session_id4", "name4")
     game.add_player("session_id5", "name5")
 
-    random.seed(0) # set seed to 0 so proposal order will be consistent
+    random.seed(0)  # set seed to 0 so proposal order will be consistent
     game.start_game()
     assert game.proposal_order == ["name3", "name2", "name1", "name5", "name4"]
     # TODO: Test roles assign properly
@@ -164,7 +166,7 @@ def test_add_player_not_in_lobby_ends(game_state):
 
 
 @pytest.mark.parametrize("game_state", [GameState.IN_PROGRESS, GameState.DONE])
-def test_add_player_not_in_lobby_ends(game_state):
+def test_remove_player_not_in_lobby_ends(game_state):
     game = Game()
     game.add_player("session_id", "name")
     game.game_state = game_state

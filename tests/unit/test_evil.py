@@ -1,9 +1,7 @@
 import pytest
 from conftest import colgrevance, titania
-from game.player import Player
 from game.role import Team
 from game.roles.evil import Evil
-from unittest.mock import Mock, PropertyMock
 
 
 @pytest.mark.parametrize("see_colgrevance, see_titania, expected_string", [
@@ -14,7 +12,7 @@ from unittest.mock import Mock, PropertyMock
                  "see).\nTitania has infiltrated your ranks. (One of the people is not Evil).")
 ])
 def test_seeing_colgrevance_and_titania(see_colgrevance, see_titania, expected_string):
-    Evil.__abstractmethods__= set()
+    Evil.__abstractmethods__ = set()
     evil = Evil("Evil", Team.EVIL)
     if see_colgrevance:
         evil.add_seen_player(colgrevance)

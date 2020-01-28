@@ -1,4 +1,4 @@
-from ..role import Player, Role, Team
+from ..role import Role, Team
 
 
 class Lover(Role):
