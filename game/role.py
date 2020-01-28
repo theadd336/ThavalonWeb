@@ -29,6 +29,7 @@ class Role(ABC):
     def add_seen_player(self, player: Player) -> bool:
         self.players_seen.append(player)
 
+    # TODO: Test
     # TODO: Override for Agravaine to always return Fail
     def _validate_vote(self, vote: Vote) -> bool:
         # only reversers can reverse
@@ -39,3 +40,13 @@ class Role(ABC):
             return self.team == Team.EVIL
         # successes are always allowed
         return True
+
+    # TODO: Test
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self.role_name == other.role_name
+
+    # TODO: Test
+    def __ne__(self, other):
+        return not self.__eq__(other)

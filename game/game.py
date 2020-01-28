@@ -5,9 +5,8 @@ from game.roles.merlin import Merlin
 from game.roles.mordred import Mordred
 from game.roles.morgana import Morgana
 from game.roles.tristan import Tristan
-from game.game_constants import GameState, Vote
+from game.game_constants import GameState
 from typing import Any, Dict, List
-
 
 _MIN_NUM_PLAYERS = 2
 _MAX_NUM_PLAYERS = 10
@@ -119,7 +118,6 @@ class Game:
     # method for starting the game
     def start_game(self) -> None:
         # validate players
-        # import pdb; pdb.set_trace()
         num_players = self.get_num_players()
         if num_players < _MIN_NUM_PLAYERS:
             raise ValueError(f"Game must have at least {_MIN_NUM_PLAYERS} to be started")
@@ -142,10 +140,27 @@ class Game:
         good_role_indices = random.sample(range(0, len(_GOOD_ROLES)), num_good)
         evil_role_indices = random.sample(range(0, len(_EVIL_ROLES)), num_evil)
 
+        # TODO: check single lover
+        # if 2 lovers, fine. if no lovers, fine
+        # if 1 lover, flip a coin
+        #      True -> reroll another role into another lover
+        #      False -> reroll lone lover into another role
+
+
+
         # assign first N players a good role
         for player, good_role_index in zip(players[:num_good], good_role_indices):
             player.role = _GOOD_ROLES[good_role_index]()
 
         # assign rest of players an evil role
         for player, evil_role_index in zip(players[num_good:], evil_role_indices):
-            player.role = _GOOD_ROLES[evil_role_index]()
+            player.role = _EVIL_ROLES[evil_role_index]()
+
+        # TODO: properly test
+        for index, player in enumerate(players):
+            for other_player in players[index+1:]:
+                if player != other_player:
+                    player.role.add_seen_player(other_player)
+                    other_player.role.add_seen_player(player)
+
+        self.game_state = GameState.IN_PROGRESS
