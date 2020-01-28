@@ -75,7 +75,7 @@
       }
 
       function onGameStart(data) {
-        const gameId = data.game_id;
+        chatSocket.close(1);
         window.location.pathname = "{% url 'game_page' game_id %}";
       }
 

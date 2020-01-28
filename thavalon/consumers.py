@@ -79,9 +79,8 @@ class LobbyConsumer(WebsocketConsumer):
         self.accept()
 
     def disconnect(self, code):
-        self.game.remove_player(self.player_id)
-        self.scope["session"].flush()
-        self.scope["session"].save()
+        if code != 1:
+            self.game.remove_player(self.player_id)
         async_to_sync(self.channel_layer.group_discard)(
             self.lobby_group_name,
             self.channel_name
@@ -149,7 +148,7 @@ class LobbyConsumer(WebsocketConsumer):
         async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "on_start_game"})
         return
 
-    def on_game_start(self, event):
+    def on_start_game(self, event):
         self.scope["session"]["game_id"] = self.game_id
         self.scope["session"].save()
-        self.send(json.dumps(event))
+        self.send(text_data=json.dumps(event))

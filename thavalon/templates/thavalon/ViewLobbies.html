@@ -47,8 +47,7 @@
 
   <div class="container pt-5">
     <div class="row">
-      <div class="col-6">
-        <ul class="list-group ul-borderless" id="allLobbies">
+      <div class="col-6" id="allLobbies">
             <!--
             <li class="list-group-item" id=""><h3>Lobby</h3>
                 <ul class="list-group">
@@ -59,7 +58,6 @@
                 </ul>
             </li>
             -->
-        </ul>
       </div>
     </div>
   </div>
@@ -90,11 +88,12 @@
 
     function joinGame(lobbyId) {
         if (lobbyId === null) { return; }
-        let csrftoken = getCookie("csrftoken");
+        const csrftoken = getCookie("csrftoken");
+        const player_name = document.getElementById(lobbyId + "txtUserName").value;
         $.ajax({
             type: "POST",
             dataType: "json",
-            data: {"lobby_id": lobbyId, "player_name": "Paul"},
+            data: {"lobby_id": lobbyId, "player_name": player_name},
             beforeSend: function(xhr, settings) {
                 if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
                     xhr.setRequestHeader("X-CSRFToken", csrftoken);
@@ -116,7 +115,6 @@
 
         })
     }
-
 </script>
 </body>
 </html>

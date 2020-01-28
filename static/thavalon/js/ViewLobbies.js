@@ -8,50 +8,102 @@ function addNewLobby(lobbyId) {
 	if (document.getElementById(lobbyId + "playerList") !== null) {
 		return;
 	}
-
-	let allLobbies = document.getElementById("allLobbies");
-	let newPlayerList = createNewList(lobbyId);
-	allLobbies.appendChild(newPlayerList);
+	// Get the div containing all lobbies.
+	const allLobbies = document.getElementById("allLobbies");
+	// Create the new div that will contain the new lobby. This is where the header is.
+	const listDiv = createListDiv(lobbyId);
+	// Append the button to join the game and its related forms.
+	listDiv.appendChild(createNewPlayerList(lobbyId));
+	// Append the new lobby to allLobies
+	allLobbies.appendChild(listDiv);
 	return;
 }
 
-function createNewList(lobbyId) {
-	let listNode = document.createElement("LI");
-	listNode.classList.add("list-group-item");
-	listNode.classList.add("borderless");
-	listNode.classList.add("div-lobby");
+function createListDiv(lobbyId) {
+	// Create a new div with the appropriate classes and add a lobby header.
+	const divNode = document.createElement("DIV");
+	divNode.classList.add("list-group-item", "borderless", "div-lobby");
+	divNode.innerHTML = "<h3>Lobby " + lobbyId + "</h3>";
+	return divNode;
+}
+
+function createNewPlayerList(lobbyId) {
+	// Create a new ordered list. This is where the player names will go.
+	const listNode = document.createElement("OL");
+	listNode.classList.add("list-group");
 	listNode.id = lobbyId + "playerList";
-	listNode.innerHTML = "<h3>Lobby " + lobbyId + "</h3>";
-	listNode.appendChild(createUnorderedList(lobbyId));
+	// At the bottom, append the list entry for the submit button and forms.
+	listNode.appendChild(createListForForm(lobbyId));
 	return listNode;
 }
 
-function createUnorderedList(lobbyId) {
-	let unorderedListNode = document.createElement("UL");
-	unorderedListNode.classList.add("list-group");
-	unorderedListNode.id = lobbyId + "unorderedList";
-	unorderedListNode.appendChild(addJoinButton(lobbyId));
-	return unorderedListNode;
+function createListForForm(lobbyId) {
+	// Create the list entry for the submit button and the form.
+	const listForFormNode = document.createElement("LI");
+	listForFormNode.classList.add("list-group-item");
+	// Append the form to the list entry and return it.
+	listForFormNode.appendChild(setupForm(lobbyId));
+	return listForFormNode;
 }
 
-function addJoinButton(lobbyId) {
-	let joinButtonNode = document.createElement("LI");
-	joinButtonNode.classList.add("list-group-item");
-	joinButtonNode.id = lobbyId + "joinButton";
-	joinButtonNode.appendChild(formatJoinButtonLink(lobbyId))
-	return joinButtonNode;
+
+function setupForm(lobbyId) {
+	// Set up the
+	const formNode = document.createElement("FORM");
+	const formDivNode = document.createElement("DIV");
+	formDivNode.classList.add("input-group");
+	formDivNode.setAttribute("style", "width:250px;");
+	formDivNode.appendChild(createOuterButton());
+	formDivNode.appendChild(createNameForm(lobbyId));
+	formDivNode.appendChild(createSpan(lobbyId));
+	formNode.appendChild(formDivNode);
+	return formNode;
 }
 
-function formatJoinButtonLink(lobbyId) {
-	let linkNode = document.createElement("A");
-	linkNode.setAttribute("onclick", "joinGame(this.id)");
-	linkNode.setAttribute("href","#");
-	linkNode.classList.add("btn-join");
-	linkNode.classList.add("text-success")
-	linkNode.innerHTML = "Join";
-	linkNode.id = lobbyId;
-	return linkNode;
+function createOuterButton() {
+	const outerButtonNode = document.createElement("BUTTON");
+	outerButtonNode.setAttribute("type", "button");
+	outerButtonNode.classList.add("btn", "btn-primary", "btnToggle");
+	outerButtonNode.innerHTML = "Join This Lobby";
+	return outerButtonNode;
 }
+
+function createNameForm(lobbyId) {
+	const inputNode = document.createElement("INPUT");
+	inputNode.setAttribute("type", "text");
+	inputNode.classList.add("form-control", "with-border", "toggleMe");
+	inputNode.id = lobbyId + "txtUserName";
+	inputNode.setAttribute("style", "display:none;");
+	inputNode.setAttribute("placeholder", "Enter display name");
+	return inputNode;
+
+}
+
+function createSpan(lobbyId) {
+	const spanNode = document.createElement("SPAN");
+	spanNode.classList.add("input-group-btn");
+	spanNode.appendChild(createSubmitButton(lobbyId));
+	return spanNode;
+}
+
+function createSubmitButton(lobbyId) {
+	const submitButtonNode = document.createElement("BUTTON");
+	submitButtonNode.setAttribute("type", "button");
+	submitButtonNode.classList.add("btn", "btn-primary", "toggleMe");
+	submitButtonNode.setAttribute("style", "display:none");
+	submitButtonNode.id = lobbyId;
+	submitButtonNode.setAttribute("onclick", "joinGame(this.id)");
+	submitButtonNode.setAttribute("href", "#");
+	submitButtonNode.innerHTML = "Join!";
+	return submitButtonNode;
+}
+
+$(function() {
+    $(document).on("click",".btnToggle", function() {
+        $(this).parent().find(".toggleMe").toggle();
+        $(this).hide();
+    })
+});
 
 function csrfSafeMethod(method) {
     // these HTTP methods do not require CSRF protection
