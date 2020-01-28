@@ -152,7 +152,7 @@ def test_start_game() -> None:
 
     random.seed(0)  # set seed to 0 so proposal order will be consistent
     game.start_game()
-    assert game.proposal_order == ["name3", "name2", "name1", "name5", "name4"]
+    assert game.proposal_order == ["name3", "name1", "name2", "name5", "name4"]
     # TODO: Test roles assign properly
 
 

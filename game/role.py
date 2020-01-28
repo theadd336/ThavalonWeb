@@ -1,4 +1,4 @@
-from .game import Vote
+from .game_constants import Vote
 from .player import Player
 from abc import ABC, abstractmethod
 from enum import Enum

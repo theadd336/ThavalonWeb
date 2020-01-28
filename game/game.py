@@ -1,7 +1,13 @@
 import random
 from .player import Player
-from enum import Enum
+from game.roles.iseult import Iseult
+from game.roles.merlin import Merlin
+from game.roles.mordred import Mordred
+from game.roles.morgana import Morgana
+from game.roles.tristan import Tristan
+from game.game_constants import GameState, Vote
 from typing import Any, Dict, List
+
 
 _MIN_NUM_PLAYERS = 2
 _MAX_NUM_PLAYERS = 10
@@ -18,17 +24,20 @@ _MISSION_SIZE_TO_PROPOSAL_SIZE = {
     10: [3, 4, 4, 5, 5]
 }
 
+_GAME_SIZE_TO_GOOD_COUNT = {
+    2: 1,
+    3: 2,
+    4: 2,
+    5: 3,
+    6: 4,
+    7: 4,
+    8: 5,
+    9: 6,
+    10: 6
+}
 
-class Vote(Enum):
-    SUCCESS = 0
-    FAIL = 1
-    REVERSE = 2
-
-
-class GameState(Enum):
-    IN_LOBBY = 0
-    IN_PROGRESS = 1
-    DONE = 2
+_GOOD_ROLES = [Iseult, Merlin, Tristan]
+_EVIL_ROLES = [Mordred, Morgana]
 
 
 class Game:
@@ -116,6 +125,25 @@ class Game:
         if num_players > _MAX_NUM_PLAYERS:
             raise ValueError(f"Game somehow has more than {_MAX_NUM_PLAYERS}, unable to start")
 
-        # generate seating order
-        self.proposal_order = [player.name for player in self.session_id_to_player.values()]
+        # shuffle player in order
+        players = list(self.session_id_to_player.values())
+        random.shuffle(players)
+
+        # proposal order is player names shuffled
+        self.proposal_order = [player.name for player in players]
         random.shuffle(self.proposal_order)
+
+        # get number good/evil in game
+        num_good = _GAME_SIZE_TO_GOOD_COUNT[num_players]
+        num_evil = num_players - num_good
+
+        # generate which good/evil roles are in game
+        good_role_indices = random.sample(range(0, len(_GOOD_ROLES)), num_good)
+        evil_role_indices = random.sample(range(0, len(_EVIL_ROLES)), num_evil)
+
+
+        for player, good_role_index in zip(players[:num_good], good_role_indices):
+            player.role = _GOOD_ROLES[good_role_index]()
+
+        for player, evil_role_index in zip(players[num_good:], evil_role_indices):
+            player.role = _GOOD_ROLES[evil_role_index]()
