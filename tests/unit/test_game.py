@@ -32,6 +32,14 @@ def test_is_game_full(num_game_players: int, expected_full_game: bool) -> None:
     assert game.is_game_full() == expected_full_game
 
 
+def test_get_players_in_game() -> None:
+    game = Game()
+    game.add_player("session_id", "name")
+    assert game.get_player_names_in_game() == ["name"]
+    game.add_player("session_id2", "name2")
+    assert game.get_player_names_in_game() == ["name", "name2"]
+
+
 def test_add_player_full_game_fails() -> None:
     game = Game()
     mock_is_game_full = Mock()

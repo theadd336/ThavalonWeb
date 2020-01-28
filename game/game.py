@@ -33,6 +33,8 @@ class Game:
         # Main Game Info
         # map session id to actual player object
         self.session_id_to_player: Dict[str, Player] = {}
+        # map player name to session_id
+        self.player_name_to_session_id: Dict[str, str] = {}
         # current state of game
         self.game_state: GameState = GameState.IN_LOBBY
 
@@ -54,6 +56,9 @@ class Game:
     def is_game_full(self) -> bool:
         return self.get_num_players() == _MAX_NUM_PLAYERS
 
+    def get_player_names_in_game(self) -> List[str]:
+        return [player.name for player in self.session_id_to_player.values()]
+
     def add_player(self, session_id: str, name: str) -> List[str]:
         if self.is_game_full():
             raise ValueError(f"Game currently has max {_MAX_NUM_PLAYERS} players, cannot add new player.")
@@ -61,8 +66,11 @@ class Game:
             raise ValueError(f"Session id {session_id} already in playermanager.")
         if name in [player.name for player in self.session_id_to_player.values()]:
             raise ValueError(f"Player with name {name} already in game.")
+        if name in self.player_name_to_session_id:
+            raise ValueError(f"Player with name {name} already in game.")
         player = Player(session_id, name)
         self.session_id_to_player[session_id] = player
+        self.player_name_to_session_id[name] = session_id
         return [player.name for player in self.session_id_to_player.values()]
 
     def get_player(self, session_id: str) -> Player:
@@ -76,6 +84,8 @@ class Game:
     def remove_player(self, session_id: str) -> List[str]:
         if session_id not in self.session_id_to_player:
             raise ValueError(f"Player with session id {session_id} does not exist")
+        player_name = self.session_id_to_player[session_id].name
+        del self.player_name_to_session_id[player_name]
         del self.session_id_to_player[session_id]
         return [player.name for player in self.session_id_to_player.values()]
 
