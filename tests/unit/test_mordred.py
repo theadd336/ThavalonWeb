@@ -1,7 +1,6 @@
 import pytest
-from game.player import Player
+from conftest import iseult, merlin, morgana, tristan
 from game.roles.mordred import Mordred
-from unittest.mock import Mock, PropertyMock
 
 
 def test_use_ability_fails():
@@ -12,13 +11,18 @@ def test_use_ability_fails():
 
 def test_get_description():
     mordred = Mordred()
-    player1 = Player("session_id", "Evil")
-    evil_mock = Mock()
-    type(evil_mock).role_name = PropertyMock(return_value="Morgana")
-    player1.role = evil_mock
-    mordred.add_seen_player(player1)
-
+    mordred.add_seen_player(morgana)
     expected = "You are Mordred [EVIL].\n\nYou are hidden from all Good Information roles.\nLike other Evil " \
-               "characters, you know who else is Evil (except Colgrevance).\n\nEvil is Evil."
-
+               "characters, you know who else is Evil (except Colgrevance).\n\nMorgana is Evil."
     assert mordred.get_description() == expected
+
+
+@pytest.mark.parametrize("player, expected", [
+    (iseult, False),
+    (merlin, False),
+    (morgana, True),
+    (tristan, False)
+])
+def test_add_players(player, expected):
+    mordred = Mordred()
+    assert mordred.add_seen_player(player) == expected

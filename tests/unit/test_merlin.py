@@ -1,5 +1,5 @@
 import pytest
-from conftest import morgana, mordred, iseult, tristan
+from conftest import mordred, morgana, iseult, tristan
 from game.roles.merlin import Merlin
 
 
