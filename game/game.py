@@ -3,10 +3,13 @@ from .player import Player
 from enum import Enum
 from typing import Any, Dict, List
 
-_MIN_NUM_PLAYERS = 5
+_MIN_NUM_PLAYERS = 2
 _MAX_NUM_PLAYERS = 10
 
 _MISSION_SIZE_TO_PROPOSAL_SIZE = {
+    2: [1, 1, 2, 2, 2],
+    3: [1, 2, 3, 3, 3],
+    4: [1, 2, 3, 2, 3],
     5: [2, 3, 2, 3, 3],
     6: [2, 3, 4, 3, 4],
     7: [2, 3, 3, 4, 4],

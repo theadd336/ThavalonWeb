@@ -15,7 +15,8 @@ class Merlin(Role):
         ])
 
     def add_seen_player(self, player: Player) -> bool:
-        if (player.role.team == Team.EVIL and player.role.role_name == "Mordred") or player.role.role_name:
+        if (player.role.team == Team.EVIL and player.role.role_name != "Mordred") or \
+                player.role.role_name == "Lancelot":
             super().add_seen_player(player)
             return True
         return False

@@ -14,7 +14,8 @@ class Evil(Role):
             self.saw_colgrevance = True
         elif player.role.role_name == "Titania":
             self.saw_titania = True
-        if player.role.team == Team.EVIL and player.role.role_name != "Colgrevance":
+        if (player.role.team == Team.EVIL and player.role.role_name != "Colgrevance") or \
+                player.role.role_name == "Titania":
             super().add_seen_player(player)
             return True
         return False
