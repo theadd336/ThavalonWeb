@@ -40,7 +40,7 @@
       <div class="col-6">
         <ul class="list-group ul-borderless">
             <li class="list-group-item"><h3>Lobby</h3>
-                <ol class="list-group">
+                <ol class="list-group" id="waitingPlayers">
                     <!--
                     <li class="list-group-item">Paul</li>
                     <li class="list-group-item">Andrew</li>
@@ -61,11 +61,14 @@
 	  // Sort incoming messages based on the message type.
       chatSocket.onmessage = function(e) {
 	    let data = JSON.parse(e.data);
+	    alert(data.type);
 	    switch(data.type) {
 		    case "on_player_join_leave":
 			    onPlayerJoinLeave(data);
+			    break;
 		    case "on_start_game":
 			    onStartGame(data);
+			    break;
 	        }
         }
 

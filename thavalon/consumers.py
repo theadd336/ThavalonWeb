@@ -73,10 +73,19 @@ class LobbyConsumer(WebsocketConsumer):
 
     def connect(self):
         self.game_id = self.lobby_group_name = self.scope["url_route"]["kwargs"]["game_id"]
-        self.game = _GAME_MANAGER.get_game(self.game_id)
-        self.player_id = self.scope["session"]["player_id"]
+
+        try:
+            self.game = _GAME_MANAGER.get_game(self.game_id)
+            self.player_id = self.scope["session"]["player_id"]
+        except ValueError:
+            return
+
+        if not self.game.is_player_in_game(self.player_id):
+            return
         async_to_sync(self.channel_layer.group_add)(self.lobby_group_name, self.channel_name)
         self.accept()
+        self.join_game({"player_names": self.game.get_player_names_in_game()})
+        return
 
     def disconnect(self, code):
         if code != 4000:
@@ -95,28 +104,13 @@ class LobbyConsumer(WebsocketConsumer):
         function_to_call(text_data)
 
     def join_game(self, joining_player_data):
-        # Load the player's name from the json object.
-        player_name = joining_player_data["player_name"]
-        # Load the session, game ID, and player ID, and game. The game should exist
-        # at this point, since it's created when a new game is created.
-        game = _GAME_MANAGER.get_game(self.game_id)
-        response = responses.JoinLeaveGameResponse("on_player_join")
-        # Try joining the game. If we encounter errors, tell only the client requesting to join the game.
-        # Return the error message.
-        try:
-            player_number = self.game.add_player(self.player_id, player_name)
-        except ValueError as e:
-            response.error_message = "An error occurred while joining the game: " + str(e)
-            self.send(text_data=json.dumps(response.send()))
-            return
-        # We successfully joined the game. Tell the caller that and send our new player's information
-        # to all listeners.
-        response.player_number = player_number
-        async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, response.send())
+        joining_player_data["type"] = "on_player_join_leave"
+        async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, joining_player_data)
         return
 
-    def on_player_join(self, event):
+    def on_player_join_leave(self, event):
         # Pass new player information to the listening clients
+        print(event)
         self.send(text_data=json.dumps(event))
 
     def leave_game(self, _):
