@@ -1,6 +1,6 @@
 import os
 import sys
-from mock import Mock, PropertyMock
+from unittest.mock import Mock, PropertyMock
 
 # add path to ThavalonWeb to sys.path, for tests to successfully import from game
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
