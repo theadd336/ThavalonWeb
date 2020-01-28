@@ -39,5 +39,3 @@ class Role(ABC):
             return self.team == Team.EVIL
         # successes are always allowed
         return True
-
-

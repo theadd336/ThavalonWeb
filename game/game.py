@@ -64,7 +64,7 @@ class Game:
 
     def add_player(self, session_id: str, name: str) -> List[str]:
         if self.game_state != GameState.IN_LOBBY:
-            raise ValueError("Can only add player while in game.")
+            raise ValueError("Can only add player while in lobby.")
         if self.is_game_full():
             raise ValueError(f"Game currently has max {_MAX_NUM_PLAYERS} players, cannot add new player.")
         if session_id in self.session_id_to_player:
