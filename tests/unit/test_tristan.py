@@ -1,6 +1,6 @@
 import pytest
-from game.player import Player
 from game.roles.tristan import Tristan
+from conftest import iseult, morgana, merlin, mordred
 
 
 def test_use_ability_fails():
@@ -11,19 +11,19 @@ def test_use_ability_fails():
 
 def test_get_description():
     tristan = Tristan()
-    player = Player("session_id", "Test")
-    tristan.add_seen_player(player)
-
+    tristan.add_seen_player(iseult)
     expected = "You are Tristan [GOOD].\n\nThe person you see is also Good and is aware that you are Good.\n" \
-               "You and Iseult are collectively a valid Assassination target.\n\nTest is Iseult."
+               "You and Iseult are collectively a valid Assassination target.\n\nIseult is Iseult."
 
     assert tristan.get_description() == expected
 
 
-def test_add_two_players_fails():
+@pytest.mark.parametrize("player, expected", [
+    (morgana, False),
+    (merlin, False),
+    (mordred, False),
+    (iseult, True)
+])
+def test_add_players(player, expected):
     tristan = Tristan()
-    player = Player("session_id", "Test")
-    tristan.add_seen_player(player)
-    with pytest.raises(ValueError):
-        player2 = Player("session_id2", "Name")
-        tristan.add_seen_player(player2)
+    assert tristan.add_seen_player(player) == expected

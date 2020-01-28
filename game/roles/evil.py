@@ -9,12 +9,16 @@ class Evil(Role):
         self.saw_titania: bool = False
         super().__init__(role_name, team, is_reverser)
 
-    def add_seen_player(self, player: Player) -> None:
+    def add_seen_player(self, player: Player) -> bool:
         if player.role.role_name == "Colgrevance":
             self.saw_colgrevance = True
         elif player.role.role_name == "Titania":
             self.saw_titania = True
-        super().add_seen_player(player)
+        if (player.role.team == Team.EVIL and player.role.role_name != "Colgrevance") or \
+                player.role.role_name == "Titania":
+            super().add_seen_player(player)
+            return True
+        return False
 
     def get_shared_description(self) -> str:
         result: List[str] = ["Like other Evil characters, you know who else is Evil (except Colgrevance).\n"]

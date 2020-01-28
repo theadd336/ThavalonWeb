@@ -3,10 +3,13 @@ from .player import Player
 from enum import Enum
 from typing import Any, Dict, List
 
-_MIN_NUM_PLAYERS = 5
+_MIN_NUM_PLAYERS = 2
 _MAX_NUM_PLAYERS = 10
 
 _MISSION_SIZE_TO_PROPOSAL_SIZE = {
+    2: [1, 1, 2, 2, 2],
+    3: [1, 2, 3, 3, 3],
+    4: [1, 2, 3, 2, 3],
     5: [2, 3, 2, 3, 3],
     6: [2, 3, 4, 3, 4],
     7: [2, 3, 3, 4, 4],
@@ -33,6 +36,8 @@ class Game:
         # Main Game Info
         # map session id to actual player object
         self.session_id_to_player: Dict[str, Player] = {}
+        # map player name to session_id
+        self.player_name_to_session_id: Dict[str, str] = {}
         # current state of game
         self.game_state: GameState = GameState.IN_LOBBY
 
@@ -54,15 +59,23 @@ class Game:
     def is_game_full(self) -> bool:
         return self.get_num_players() == _MAX_NUM_PLAYERS
 
+    def get_player_names_in_game(self) -> List[str]:
+        return [player.name for player in self.session_id_to_player.values()]
+
     def add_player(self, session_id: str, name: str) -> List[str]:
+        if self.game_state != GameState.IN_LOBBY:
+            raise ValueError("Can only add player while in game.")
         if self.is_game_full():
             raise ValueError(f"Game currently has max {_MAX_NUM_PLAYERS} players, cannot add new player.")
         if session_id in self.session_id_to_player:
             raise ValueError(f"Session id {session_id} already in playermanager.")
         if name in [player.name for player in self.session_id_to_player.values()]:
             raise ValueError(f"Player with name {name} already in game.")
+        if name in self.player_name_to_session_id:
+            raise ValueError(f"Player with name {name} already in game.")
         player = Player(session_id, name)
         self.session_id_to_player[session_id] = player
+        self.player_name_to_session_id[name] = session_id
         return [player.name for player in self.session_id_to_player.values()]
 
     def get_player(self, session_id: str) -> Player:
@@ -74,8 +87,12 @@ class Game:
         return "session_id" in self.session_id_to_player
 
     def remove_player(self, session_id: str) -> List[str]:
+        if self.game_state != GameState.IN_LOBBY:
+            raise ValueError("Can only remove player while in lobby.")
         if session_id not in self.session_id_to_player:
             raise ValueError(f"Player with session id {session_id} does not exist")
+        player_name = self.session_id_to_player[session_id].name
+        del self.player_name_to_session_id[player_name]
         del self.session_id_to_player[session_id]
         return [player.name for player in self.session_id_to_player.values()]
 

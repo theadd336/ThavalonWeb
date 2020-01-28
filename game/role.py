@@ -25,7 +25,8 @@ class Role(ABC):
     def use_ability(self) -> None:
         pass
 
-    def add_seen_player(self, player: Player) -> None:
+    @abstractmethod
+    def add_seen_player(self, player: Player) -> bool:
         self.players_seen.append(player)
 
     # TODO: Override for Agravaine to always return Fail

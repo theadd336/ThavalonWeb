@@ -17,8 +17,3 @@ class Lover(Role):
 
     def use_ability(self):
         raise ValueError(f"{self.role_name} does not have an ability to use.")
-
-    def add_seen_player(self, player: Player) -> None:
-        if len(self.players_seen) == 1:
-            raise ValueError(f"{self.role_name} can see at most one other person.")
-        super().add_seen_player(player)
