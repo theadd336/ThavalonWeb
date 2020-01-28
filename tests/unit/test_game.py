@@ -1,6 +1,6 @@
 import random
 import pytest
-from game.game import Game
+from game.game import Game, GameState
 from typing import List
 from unittest.mock import Mock
 
@@ -151,3 +151,22 @@ def test_start_game() -> None:
     game.start_game()
     assert game.proposal_order == ["name3", "name2", "name1", "name5", "name4"]
     # TODO: Test roles assign properly
+
+
+@pytest.mark.parametrize("game_state", [GameState.IN_PROGRESS, GameState.DONE])
+def test_add_player_not_in_lobby_ends(game_state):
+    game = Game()
+    game.game_state = game_state
+    with pytest.raises(ValueError) as exc:
+        game.add_player("session_id", "name")
+    assert str(exc.value) == "Can only add player while in lobby."
+
+
+@pytest.mark.parametrize("game_state", [GameState.IN_PROGRESS, GameState.DONE])
+def test_add_player_not_in_lobby_ends(game_state):
+    game = Game()
+    game.add_player("session_id", "name")
+    game.game_state = game_state
+    with pytest.raises(ValueError) as exc:
+        game.remove_player("session_id")
+    assert str(exc.value) == "Can only remove player while in lobby."
