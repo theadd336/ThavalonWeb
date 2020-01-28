@@ -41,8 +41,8 @@ function addJoinButton(lobbyId) {
 
 function formatJoinButtonLink(lobbyId) {
 	let linkNode = document.createElement("A");
-	linkNode.setAttribute("onclick", "");
-	linkNode.setAttribute("href","");
+	linkNode.setAttribute("onclick", "joinGame(this.id)");
+	linkNode.setAttribute("href","#");
 	linkNode.classList.add("btn-join");
 	linkNode.classList.add("text-success")
 	linkNode.innerHTML = "Join";

@@ -18,7 +18,7 @@ class LobbyManager(metaclass=Singleton):
         return self._count
 
     def get_game_from_lobby(self, lobby_index: str) -> str:
-        if type(lobby_index) != type(str):
+        if type(lobby_index) != str:
             raise TypeError("Lobby index must be a string.")
         return self._lobby_to_game[lobby_index]
 
