@@ -23,13 +23,13 @@ class JoinLeaveGameResponse(Response):
     def __init__(self, message_type: str,
                  success: bool = False,
                  error_message: str = "",
-                 player_number: int = 0,
+                 player_names: List[str] = None,
                  player_list: List[str] = None):
         super().__init__(message_type, success, error_message)
-        self.player_number = player_number
+        self.player_names = player_names
         self.player_list = player_list
 
     def _send_core(self, object_dict):
-        object_dict["player_number"] = self.player_number
+        object_dict["player_names"] = self.player_names
         object_dict["player_list"] = self.player_list
         return object_dict

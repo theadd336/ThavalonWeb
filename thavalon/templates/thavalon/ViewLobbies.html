@@ -11,7 +11,7 @@
     <script src="{% static 'thavalon/js/ViewLobbies.js' %}"></script>
     <script>
       window.onload = function() {
-          onPageLoad({{ lobbyIds|safe }});
+          onPageLoad({{ lobbyIds|safe }}, {{ playerNames|safe}});
       }
     </script>
     <!--
