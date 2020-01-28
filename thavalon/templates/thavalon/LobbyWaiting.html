@@ -75,7 +75,6 @@
       }
 
       function onStartGame(data) {
-        alert("working");
         chatSocket.close(4000);
         window.location.pathname = "{% url 'game_page' game_id %}";
       }
