@@ -173,6 +173,7 @@ def test_start_game_verify_proposal_order() -> None:
     random.seed(0)  # set seed to 0 so proposal order will be consistent
     game.start_game()
     assert game.proposal_order == ["name3", "name1", "name2", "name5", "name4"]
+    # TODO: Test roles assign properly
 
 
 # @pytest.mark.parametrize("num_players, session_id_to_players", [
