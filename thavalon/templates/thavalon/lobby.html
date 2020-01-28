@@ -49,7 +49,7 @@
         };
 
         function joinGame() {
-            chatSocket.send(JSON.stringify({ "player_name": "Paul" }));
+            chatSocket.send(JSON.stringify({ "type": "on_player_join", "player_name": "Paul" }));
         }
 
         function addRow(player_number, player_name) {

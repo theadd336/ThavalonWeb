@@ -1,17 +1,20 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Thavalon Home</title>
-    <link rel="stylesheet" href="css/master.css">
-    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="{% static 'thavalon/css/master.css' %}">
+    <link rel="stylesheet" href="{% static 'thavalon/css/bootstrap.css' %}">
+    <script src="{% static 'thavalon/js/lobbywaiting.js' %}"></script>
+    <!--
     <script src="js/jquery.js"></script>
     <script src="js/bootstrap.bundle.min.js"></script>
+    -->
 </head>
 <body>
-
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="index.html">Home</a>
+    <a class="navbar-brand" href="/thavalon">Home</a>
 
 
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -20,7 +23,7 @@
           <a class="nav-link" href="#">Leave Lobby</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="GameLobby.html">Start Game</a>
+          <a class="nav-link" onclick="startGame()" href="#">Start Game</a>
         </li>
       </ul>
       <ul class="navbar-nav flex-row ml-md-auto d-none d-md-flex">
@@ -38,17 +41,44 @@
         <ul class="list-group ul-borderless">
             <li class="list-group-item"><h3>Lobby</h3>
                 <ol class="list-group">
+                    <!--
                     <li class="list-group-item">Paul</li>
                     <li class="list-group-item">Andrew</li>
                     <li class="list-group-item">Meg</li>
                     <li class="list-group-item">Darcy</li>
                     <li class="list-group-item text-warning"><span>Waiting for Lobby Leader to start game</span></li>
+                    -->
                 </ol>
             </li>
         </ul>
       </div>
     </div>
   </div>
+  <script>
+      // Connect to the websocket.
+      var chatSocket = new WebSocket('ws://' + window.location.host +
+	    '/ws/thavalon/{{ game_id|escapejs }}/');
+	  // Sort incoming messages based on the message type.
+      chatSocket.onmessage = function(e) {
+	    let data = JSON.parse(e.data);
+	    switch(data.type) {
+		    case "on_player_join_leave":
+			    onPlayerJoinLeave(data);
+		    case "on_start_game":
+			    onStartGame(data);
+	        }
+        }
 
+      function startGame() {
+        const data = {"type": "start_game"};
+        chatSocket.send(JSON.stringify(data));
+      }
+
+      function onStartGame(data) {
+        chatSocket.close(4000);
+        window.location.pathname = "{% url 'game_page' game_id %}";
+      }
+
+  </script>
 </body>
 </html>
