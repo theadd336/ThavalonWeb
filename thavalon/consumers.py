@@ -79,7 +79,7 @@ class LobbyConsumer(WebsocketConsumer):
         self.accept()
 
     def disconnect(self, code):
-        if code != 1:
+        if code != 4000:
             self.game.remove_player(self.player_id)
         async_to_sync(self.channel_layer.group_discard)(
             self.lobby_group_name,

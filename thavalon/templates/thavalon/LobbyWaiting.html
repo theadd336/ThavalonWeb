@@ -64,8 +64,8 @@
 	    switch(data.type) {
 		    case "on_player_join_leave":
 			    onPlayerJoinLeave(data);
-		    case "on_game_start":
-			    onGameStart(data);
+		    case "on_start_game":
+			    onStartGame(data);
 	        }
         }
 
@@ -74,8 +74,9 @@
         chatSocket.send(JSON.stringify(data));
       }
 
-      function onGameStart(data) {
-        chatSocket.close(1);
+      function onStartGame(data) {
+        alert("working");
+        chatSocket.close(4000);
         window.location.pathname = "{% url 'game_page' game_id %}";
       }
 
