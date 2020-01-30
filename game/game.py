@@ -61,7 +61,7 @@ class Game:
         # for declarations, index in proposer (0-indexed) to declared role name
         self.declarations: Dict[int, str] = {}
         # last vote info in game, mapping player to vote
-        self.last_vote_info = Dict[str, str] = {}
+        self.last_vote_info: Dict[str, str] = {}
 
         # Information about proposals
         # the proposal, or seating, order of players
