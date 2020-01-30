@@ -1,6 +1,6 @@
 import random
 import pytest
-from game.game import Game, GameState
+from game.game import Game, LobbyStatus
 from game.player import Player
 from typing import List
 from unittest.mock import Mock
@@ -130,20 +130,20 @@ def test_get_starting_info() -> None:
     assert result["num_on_mission"] == 2
 
 
-@pytest.mark.parametrize("game_state", [GameState.IN_PROGRESS, GameState.DONE])
-def test_add_player_not_in_lobby_ends(game_state):
+@pytest.mark.parametrize("lobby_status", [LobbyStatus.IN_PROGRESS, LobbyStatus.DONE])
+def test_add_player_not_in_lobby_ends(lobby_status):
     game = Game()
-    game.game_state = game_state
+    game.lobby_status = lobby_status
     with pytest.raises(ValueError) as exc:
         game.add_player("session_id", "name")
     assert str(exc.value) == "Can only add player while in lobby."
 
 
-@pytest.mark.parametrize("game_state", [GameState.IN_PROGRESS, GameState.DONE])
-def test_remove_player_not_in_lobby_ends(game_state):
+@pytest.mark.parametrize("lobby_status", [LobbyStatus.IN_PROGRESS, LobbyStatus.DONE])
+def test_remove_player_not_in_lobby_ends(lobby_status):
     game = Game()
     game.add_player("session_id", "name")
-    game.game_state = game_state
+    game.lobby_status = lobby_status
     with pytest.raises(ValueError) as exc:
         game.remove_player("session_id")
     assert str(exc.value) == "Can only remove player while in lobby."
@@ -212,7 +212,7 @@ def test_start_game_verify_proposal_order() -> None:
 ])
 def test_start_game_players_assigned(num_players, session_id_to_player) -> None:
     game = Game()
-    assert game.game_state == GameState.IN_LOBBY
+    assert game.lobby_status == LobbyStatus.JOINING
     mock_get_num_players = Mock()
     mock_get_num_players.return_value = num_players
     game.get_num_players = mock_get_num_players
@@ -230,4 +230,4 @@ def test_start_game_players_assigned(num_players, session_id_to_player) -> None:
     if "Iseult" in seen_role_names:
         assert "Tristan" in seen_role_names
 
-    assert game.game_state == GameState.IN_PROGRESS
+    assert game.lobby_status == LobbyStatus.IN_PROGRESS

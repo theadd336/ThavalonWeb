@@ -85,7 +85,7 @@ class Game:
         return [player.name for player in self.session_id_to_player.values()]
 
     def add_player(self, session_id: str, name: str) -> List[str]:
-        if self.lobby_status != LobbyStatus.WAITING:
+        if self.lobby_status != LobbyStatus.JOINING:
             raise ValueError("Can only add player while in lobby.")
         if self.is_game_full():
             raise ValueError(f"Game currently has max {_MAX_NUM_PLAYERS} players, cannot add new player.")
@@ -109,7 +109,7 @@ class Game:
         return session_id in self.session_id_to_player
 
     def remove_player(self, session_id: str) -> List[str]:
-        if self.lobby_status != LobbyStatus.WAITING:
+        if self.lobby_status != LobbyStatus.JOINING:
             raise ValueError("Can only remove player while in lobby.")
         if session_id not in self.session_id_to_player:
             raise ValueError(f"Player with session id {session_id} does not exist")
