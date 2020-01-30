@@ -187,3 +187,7 @@ class Game:
                     other_player.role.add_seen_player(player)
 
         self.game_state = GameState.IN_PROGRESS
+
+    def get_game_state(self, session_id: str) -> Dict[str, Any]:
+        result_dict = {}
+        return result_dict
