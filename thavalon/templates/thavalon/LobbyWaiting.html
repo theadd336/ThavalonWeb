@@ -61,7 +61,6 @@
 	  // Sort incoming messages based on the message type.
       chatSocket.onmessage = function(e) {
 	    let data = JSON.parse(e.data);
-	    alert(data.type);
 	    switch(data.type) {
 		    case "on_player_join_leave":
 			    onPlayerJoinLeave(data);
