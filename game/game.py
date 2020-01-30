@@ -10,10 +10,11 @@ from game.roles.tristan import Tristan
 from game.game_constants import GameState
 from typing import Any, Dict, List
 
-_MIN_NUM_PLAYERS = 2
+_MIN_NUM_PLAYERS = 1
 _MAX_NUM_PLAYERS = 10
 
 _MISSION_SIZE_TO_PROPOSAL_SIZE = {
+    1: [1, 1, 1, 1, 1],
     2: [1, 1, 2, 2, 2],
     3: [1, 2, 3, 3, 3],
     4: [1, 2, 3, 2, 3],
@@ -26,6 +27,7 @@ _MISSION_SIZE_TO_PROPOSAL_SIZE = {
 }
 
 _GAME_SIZE_TO_GOOD_COUNT = {
+    1: 0,
     2: 2,
     3: 2,
     4: 2,
@@ -178,7 +180,6 @@ class Game:
         for player, evil_role_index in zip(players[num_good:], evil_role_indices):
             player.role = _EVIL_ROLES[evil_role_index]()
 
-        # TODO: properly test
         for index, player in enumerate(players):
             for other_player in players[index+1:]:
                 if player != other_player:

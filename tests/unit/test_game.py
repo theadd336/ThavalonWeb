@@ -179,6 +179,12 @@ def test_start_game_verify_proposal_order() -> None:
 @pytest.mark.repeat(10)
 @pytest.mark.parametrize("num_players, session_id_to_player", [
     (
+        1,
+        {
+            "id1": Player("id1", "Mordred")
+        }
+    ),
+    (
         2,
         {
             "id1": Player("id1", "Tyler"),
