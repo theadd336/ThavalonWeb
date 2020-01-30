@@ -194,7 +194,7 @@ class GameConsumer(WebsocketConsumer):
         response = responses.GameStateResponse()
         # Try loading gamestate information. Handle any errors and tell the client about them.
         try:
-            gamestate = self.game.get_game_state(self.player_id)
+            gamestate = self.game.get_gamestate(self.player_id)
         except ValueError as e:
             response.error_message = "Error while loading information: " + str(e)
             self.send(response.send)
@@ -202,12 +202,12 @@ class GameConsumer(WebsocketConsumer):
 
         # No errors. Now, we need to parse the information and send it the client
         response.success = True
-        # response.role_information = gamestate.get("role_information")
-        response.role_information = {"role": "Mordred", "team": 1, "information": "evilllll"}
-        # response.proposal_order = gamestate["proposal_order"]
-        # response.mission_sizes = gamestate["mission_sizes"]
-        # response.mission_results = gamestate["mission_results"]
-        # response.current_phase = gamestate["current_phase"].value
+        response.role_information = gamestate.get("role_information")
+        # response.role_information = {"role": "Mordred", "team": 1, "information": "evilllll"}
+        response.proposal_order = gamestate.get("proposal_order")
+        response.mission_sizes = gamestate.get("mission_sizes")
+        response.mission_results = gamestate.get("mission_results")
+        response.current_phase = gamestate.get("current_phase").value
         # response.mission_players = gamestate["mission_state"]
         # response.proposer_index = gamestate["proposer"]
         # response.proposal_num = gamestate["current_proposal_num"]
