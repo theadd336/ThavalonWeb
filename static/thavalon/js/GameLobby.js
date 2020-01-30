@@ -2,6 +2,7 @@ function populateGameState(gamestate) {
     if (gamestate === null || gamestate === undefined) { return; }
     populateRoleBlurb(gamestate.roleInformation);
     populateRoleInformation(gamestate.roleInformation.information);
+    populatePlayerOrder(gamestate.proposalOrder);
 }
 
 function populateRoleBlurb(roleInformation) {
@@ -33,4 +34,16 @@ function populateRoleInformation(information) {
     roleInformationLocation.textContent = "-------------------------\r\n";
     roleInformationLocation.textContent += information + "\r\n";
     roleInformationLocation.textContent += "-------------------------";
+}
+
+function populatePlayerOrder(playerOrder) {
+    const playerOrderNode = document.getElementById("playerOrderLocation");
+    let count = 0;
+    for (let playerName of playerOrder) {
+        let playerListEntry = document.createElement("LI");
+        playerListEntry.textContent = playerName;
+        playerListEntry.id = count;
+        playerOrderNode.appendChild(playerListEntry);
+        count++;
+    }
 }

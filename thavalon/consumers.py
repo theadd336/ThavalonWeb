@@ -208,9 +208,9 @@ class GameConsumer(WebsocketConsumer):
         response.mission_sizes = gamestate.get("mission_sizes")
         response.mission_results = gamestate.get("mission_results")
         response.current_phase = gamestate.get("current_phase").value
-        # response.mission_players = gamestate["mission_state"]
-        # response.proposer_index = gamestate["proposer"]
-        # response.proposal_num = gamestate["current_proposal_num"]
+        response.mission_players = gamestate.get("mission_state")
+        response.proposer_index = gamestate.get("proposer")
+        response.proposal_num = gamestate.get("current_proposal_num")
         self.send(json.dumps(response.send()))
         return
 

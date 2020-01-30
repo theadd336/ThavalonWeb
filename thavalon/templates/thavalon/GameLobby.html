@@ -43,19 +43,19 @@
     <div class="row">
       <div class="col-1"></div>
       <div class="col-2">
-        <img src="images/black-coin.png" height="175px" width="175px" />
+        <img src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
       </div>
       <div class="col-2">
-        <img src="images/red-coin.png" height="175px" width="175px"/>
+        <img src="{% static 'thavalon/images/red-coin.png' %}" height="175px" width="175px"/>
       </div>
       <div class="col-2">
-        <img src="images/black-coin.png" class="img-grayscale" height="175px" width="175px"/>
+        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px"/>
       </div>
       <div class="col-2">
-        <img src="images/black-coin.png" class="img-grayscale"  height="175px" width="175px"/>
+        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
       </div>
       <div class="col-2">
-        <img src="images/black-coin.png" class="img-grayscale"  height="175px" width="175px"/>
+        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
       </div>
       <div class="col-1"></div>
     </div>
@@ -90,25 +90,21 @@
              <h3>You have been sent on a mission, please select a card:</h3>
              <div class="row">
                <div class="col-2">
-                 <img src="images/black-coin.png" height="175px" width="175px" />
+                 <img src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
                  Success
                </div>
                <div class="col-2">
-                 <img src="images/red-coin.png" height="175px" width="175px"/>
+                 <img src="{% static 'thavalon/images/red-coin.png' %}" height="175px" width="175px"/>
                  Fail
                </div>
                <div class="col-2">
-                 <img src="images/circle-png.png"height="175px" width="175px"/>
+                 <img src="{% static 'thavalon/images/circle-png.png' %}"height="175px" width="175px"/>
                  Reverse
                </div>
              </div>
            </div>
            <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
-             <ol class="rounded-list">
-               <li>name</li>
-               <li>name</li>
-               <li>name</li>
-               <li>name</li>
+             <ol class="rounded-list" id="playerOrderLocation">
              </ol>
            </div>
          </div>
@@ -124,6 +120,10 @@
 	    '/ws/thavalon/{{ game_id|escapejs }}/game/');
 	gameWebSocket.onmessage = function(e) {
 	    let data = JSON.parse(e.data);
+	    if (!data.success) {
+	      alert(data.error_message);
+	      return;
+	    }
 	    switch(data.type) {
 		    case "gamestate":
 			    populateGameState(data);
