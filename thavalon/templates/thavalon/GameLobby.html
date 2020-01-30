@@ -7,7 +7,9 @@
     <title>Thavalon Home</title>
     <link rel="stylesheet" href="{% static 'thavalon/css/master.css' %}">
     <link rel="stylesheet" href="{% static 'thavalon/css/bootstrap.css' %}">
-    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="{% static 'thavalon/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'thavalon/js/GameLobby.js' %}"></script>
 </head>
 <body>
 
@@ -75,16 +77,8 @@
          </nav>
          <div class="tab-content py-3 px-3 px-sm-0" id="nav-tabContent">
            <div class="tab-pane fade show active" id="nav-info" role="tabpanel" aria-labelledby="nav-info-tab">
-             <pre>
-             ----------------------------------------
-             You are Iseult [Good]
-             ----------------------------------------
-             The person you see is also Good and is aware that you are Good.
-             You and Tristan are collectively a valid Assassination target.
-             ----------------------------------------
-             Andrew is Tristan.
-             ----------------------------------------
-           </pre>
+             <pre id="roleInformationLocation">
+             </pre>
            </div>
            <div class="tab-pane fade" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
 
@@ -123,7 +117,22 @@
      </div>
    </div>
   <template id="roleBlurbTemplate">
-    <span></span>
+    <span><span></span></span>
   </template>
+  <script>
+    var gameWebSocket = new WebSocket('ws://' + window.location.host +
+	    '/ws/thavalon/{{ game_id|escapejs }}/game/');
+	gameWebSocket.onmessage = function(e) {
+	    let data = JSON.parse(e.data);
+	    switch(data.type) {
+		    case "gamestate":
+			    populateGameState(data);
+			    break;
+		    case "on_start_game":
+			    onStartGame(data);
+			    break;
+	        }
+        }
+  </script>
 </body>
 </html>
