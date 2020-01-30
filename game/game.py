@@ -7,7 +7,7 @@ from game.roles.mordred import Mordred
 from game.roles.morgana import Morgana
 from game.roles.percival import Percival
 from game.roles.tristan import Tristan
-from game.game_constants import GameState
+from game.game_constants import GamePhase, LobbyStatus, MissionResult, MissionCard
 from typing import Any, Dict, List
 
 _MIN_NUM_PLAYERS = 1
@@ -51,15 +51,25 @@ class Game:
         # map player name to session_id
         self.player_name_to_session_id: Dict[str, str] = {}
         # current state of game
-        self.game_state: GameState = GameState.IN_LOBBY
+        self.lobby_status: LobbyStatus = LobbyStatus.JOINING
+        # current phase when game is in progress
+        self.game_phase: GamePhase = GamePhase.PROPOSAL
+        # mission number results
+        self.mission_num_to_result: Dict[int, MissionResult] = {}
+        # mission number to players on mission
+        self.mission_players: Dict[int, List[str]] = {}
+        # for declarations, index in proposer (0-indexed) to declared role name
+        self.declarations: Dict[int, str] = {}
+        # last vote info in game, mapping player to vote
+        self.last_vote_info = Dict[str, str] = {}
 
         # Information about proposals
         # the proposal, or seating, order of players
         self.proposal_order: List[str] = []
-        # the index number of the current proposer, 0-indexed
-        self.proposer_idx: int = 0
+        # the index number of the current proposer(s), 0-indexed
+        self.proposers: List[int] = []
         # the current proposal number, 1-indexed.
-        self.proposal_num: int = 1
+        self.current_proposal_num: int = 1
 
         # the current mission number, 0-indexed.
         self.mission_num: int = 0
@@ -75,7 +85,7 @@ class Game:
         return [player.name for player in self.session_id_to_player.values()]
 
     def add_player(self, session_id: str, name: str) -> List[str]:
-        if self.game_state != GameState.IN_LOBBY:
+        if self.lobby_status != LobbyStatus.WAITING:
             raise ValueError("Can only add player while in lobby.")
         if self.is_game_full():
             raise ValueError(f"Game currently has max {_MAX_NUM_PLAYERS} players, cannot add new player.")
@@ -99,7 +109,7 @@ class Game:
         return session_id in self.session_id_to_player
 
     def remove_player(self, session_id: str) -> List[str]:
-        if self.game_state != GameState.IN_LOBBY:
+        if self.lobby_status != LobbyStatus.WAITING:
             raise ValueError("Can only remove player while in lobby.")
         if session_id not in self.session_id_to_player:
             raise ValueError(f"Player with session id {session_id} does not exist")
@@ -136,6 +146,9 @@ class Game:
         self.proposal_order = [player.name for player in players]
         random.shuffle(self.proposal_order)
 
+        # first two proposers are last 2 in proposal order
+        self.proposers = self.proposal_order[-2:]
+
         # get number good/evil in game
         num_good = _GAME_SIZE_TO_GOOD_COUNT[num_players]
         num_evil = num_players - num_good
@@ -163,7 +176,7 @@ class Game:
             lone_lover_idx = iseult_idx if iseult_idx != -1 else tristan_idx
             if random.choice([True, False]):
                 # True - replace lone lover with new role
-                lover_roles_not_in_game = list(set(_GOOD_ROLES) - set(good_roles_in_game) - set([Iseult, Tristan]))
+                lover_roles_not_in_game = list(set(_GOOD_ROLES) - set(good_roles_in_game) - {Iseult, Tristan})
                 good_roles_in_game[lone_lover_idx] = random.choice(lover_roles_not_in_game)
             else:
                 # False - replace another role with other lover
@@ -186,8 +199,28 @@ class Game:
                     player.role.add_seen_player(other_player)
                     other_player.role.add_seen_player(player)
 
-        self.game_state = GameState.IN_PROGRESS
+        self.lobby_status = LobbyStatus.IN_PROGRESS
 
-    def get_game_state(self, session_id: str) -> Dict[str, Any]:
+    # TODO: Test
+    def get_gamestate(self, session_id: str) -> Dict[str, Any]:
+        if self.lobby_status != LobbyStatus.IN_PROGRESS:
+            raise ValueError("Can only get gamestate if game in progress")
         result_dict = {}
+        # load info relevant to player
+        player = self.get_player(session_id)
+        result_dict["role_information"] = {
+            "role": player.role.role_name,
+            "team": player.role.team.value,
+            "information": player.role.get_description()
+        }
+        # load info relevant to state of game
+        result_dict["proposal_order"] = self.proposal_order
+        result_dict["mission_sizes"] = _GAME_SIZE_TO_GOOD_COUNT[self.get_num_players()]
+        result_dict["mission_results"] = self.mission_num_to_result
+        result_dict["current_phase"] = self.game_phase
+        result_dict["mission_players"] = self.mission_players
+        result_dict["proposer"] = self.proposers
+        result_dict["current_proposal_num"] = self.current_proposal_num
+        result_dict["declarations"] = self.declarations
+        result_dict["last_vote_information"] = self.last_vote_info
         return result_dict

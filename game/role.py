@@ -1,4 +1,4 @@
-from .game_constants import Vote
+from .game_constants import MissionCard
 from .player import Player
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -6,8 +6,8 @@ from typing import List
 
 
 class Team(Enum):
-    EVIL = 0
-    GOOD = 1
+    GOOD = 0
+    EVIL = 1
 
 
 class Role(ABC):
@@ -31,12 +31,12 @@ class Role(ABC):
 
     # TODO: Test
     # TODO: Override for Agravaine to always return Fail
-    def _validate_vote(self, vote: Vote) -> bool:
+    def _validate_mission_card(self, card: MissionCard) -> bool:
         # only reversers can reverse
-        if vote == Vote.REVERSE:
+        if card == MissionCard.REVERSE:
             return self.is_reverser
         # only evil is allowed to fail
-        if vote == Vote.FAIL:
+        if card == MissionCard.FAIL:
             return self.team == Team.EVIL
         # successes are always allowed
         return True
