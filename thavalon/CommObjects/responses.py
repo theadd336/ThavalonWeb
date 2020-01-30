@@ -33,3 +33,31 @@ class JoinLeaveGameResponse(Response):
         object_dict["player_names"] = self.player_names
         object_dict["player_list"] = self.player_list
         return object_dict
+
+
+class GameStateResponse(Response):
+    def __init__(self, success: bool = False, error_message: str = ""):
+        super().__init__("gamestate", success, error_message)
+        self.proposal_order = None
+        self.mission_sizes = None
+        self.mission_results = None
+        self.role_information = ""
+        self.mission_players = None
+        self.proposer_index = None
+        self.proposal_num = 1
+        self.current_phase = None
+        self.declarations = None
+        self.last_vote_information = None
+
+    def _send_core(self, object_dict):
+        object_dict["proposalOrder"] = self.proposal_order
+        object_dict["missionSizes"] = self.mission_sizes
+        object_dict["missionResults"] = self.mission_results
+        object_dict["roleInformation"] = self.role_information
+        object_dict["missionPlayers"] = self.mission_players
+        object_dict["proposerIndex"] = self.proposer_index
+        object_dict["proposalNum"] = self.proposal_num
+        object_dict["currentPhase"] = self.current_phase
+        object_dict["declarations"] = self.declarations
+        object_dict["lastVoteInfo"] = self.last_vote_information
+        return object_dict
