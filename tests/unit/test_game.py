@@ -176,35 +176,58 @@ def test_start_game_verify_proposal_order() -> None:
     # TODO: Test roles assign properly
 
 
-# @pytest.mark.parametrize("num_players, session_id_to_players", [
-#     (
-#         5,
-#         {
-#             "id1": Player("id1", "Andrew"),
-#             "id2": Player("id2", "Arya"),
-#             "id3": Player("id3", "")
-#         }
-#     )
-# ])
-# def test_start_game_players_assigned(num_players) -> None:
-#     game = Game()
-#
-#     mock_get_num_players = Mock()
-#     game.get_num_players = mock_get_num_players
-#
-#
-#
-#     andrew = Player("id1", "Andrew")
-#     arya = Player("id2", "Arya")
-#     jared = Player("id3", "Jared")
-#     meg = Player("id4", "Meg")
-#     paul = Player("id5", "Paul")
-#
-#     game = Game()
-#     game.add_player(andrew)
-#     game.add_player(arya)
-#     game.add_player(jared)
-#     game.add_player(meg)
-#     game.add_player(paul)
-#
-#     game.start_game()
+@pytest.mark.repeat(10)
+@pytest.mark.parametrize("num_players, session_id_to_player", [
+    (
+        1,
+        {
+            "id1": Player("id1", "Mordred")
+        }
+    ),
+    (
+        2,
+        {
+            "id1": Player("id1", "Tyler"),
+            "id2": Player("id2", "Jesse")
+        }
+    ),
+    (
+        3,
+        {
+            "id1": Player("id1", "Galen"),
+            "id2": Player("id2", "Colin"),
+            "id3": Player("id3", "Darcy")
+        }
+    ),
+    (
+        5,
+        {
+            "id1": Player("id1", "Andrew"),
+            "id2": Player("id2", "Arya"),
+            "id3": Player("id3", "Jared"),
+            "id4": Player("id4", "Meg"),
+            "id5": Player("id5", "Paul")
+        }
+    )
+])
+def test_start_game_players_assigned(num_players, session_id_to_player) -> None:
+    game = Game()
+    assert game.game_state == GameState.IN_LOBBY
+    mock_get_num_players = Mock()
+    mock_get_num_players.return_value = num_players
+    game.get_num_players = mock_get_num_players
+
+    game.session_id_to_player = session_id_to_player
+    game.start_game()
+
+    seen_role_names = []
+    for player in session_id_to_player.values():
+        assert player.role.role_name not in seen_role_names
+        seen_role_names.append(player.role.role_name)
+
+    if "Tristan" in seen_role_names:
+        assert "Iseult" in seen_role_names
+    if "Iseult" in seen_role_names:
+        assert "Tristan" in seen_role_names
+
+    assert game.game_state == GameState.IN_PROGRESS

@@ -1,18 +1,20 @@
 import random
 from .player import Player
 from game.roles.iseult import Iseult
+from game.roles.lancelot import Lancelot
 from game.roles.merlin import Merlin
 from game.roles.mordred import Mordred
 from game.roles.morgana import Morgana
+from game.roles.percival import Percival
 from game.roles.tristan import Tristan
-from game.game_constants import GameState, Vote
+from game.game_constants import GameState
 from typing import Any, Dict, List
 
-
-_MIN_NUM_PLAYERS = 2
+_MIN_NUM_PLAYERS = 1
 _MAX_NUM_PLAYERS = 10
 
 _MISSION_SIZE_TO_PROPOSAL_SIZE = {
+    1: [1, 1, 1, 1, 1],
     2: [1, 1, 2, 2, 2],
     3: [1, 2, 3, 3, 3],
     4: [1, 2, 3, 2, 3],
@@ -25,7 +27,8 @@ _MISSION_SIZE_TO_PROPOSAL_SIZE = {
 }
 
 _GAME_SIZE_TO_GOOD_COUNT = {
-    2: 1,
+    1: 0,
+    2: 2,
     3: 2,
     4: 2,
     5: 3,
@@ -36,7 +39,7 @@ _GAME_SIZE_TO_GOOD_COUNT = {
     10: 6
 }
 
-_GOOD_ROLES = [Iseult, Merlin, Tristan]
+_GOOD_ROLES = [Iseult, Lancelot, Merlin, Percival, Tristan]
 _EVIL_ROLES = [Mordred, Morgana]
 
 
@@ -119,7 +122,6 @@ class Game:
     # method for starting the game
     def start_game(self) -> None:
         # validate players
-        # import pdb; pdb.set_trace()
         num_players = self.get_num_players()
         if num_players < _MIN_NUM_PLAYERS:
             raise ValueError(f"Game must have at least {_MIN_NUM_PLAYERS} to be started")
@@ -142,10 +144,46 @@ class Game:
         good_role_indices = random.sample(range(0, len(_GOOD_ROLES)), num_good)
         evil_role_indices = random.sample(range(0, len(_EVIL_ROLES)), num_evil)
 
+        # get lover indices
+        good_roles_in_game = [_GOOD_ROLES[idx] for idx in good_role_indices]
+        iseult_idx = -1
+        tristan_idx = -1
+        try:
+            iseult_idx = good_roles_in_game.index(Iseult)
+        except ValueError:
+            pass
+
+        try:
+            tristan_idx = good_roles_in_game.index(Tristan)
+        except ValueError:
+            pass
+
+        # only care about cases where one lover is in the game
+        if bool(iseult_idx == -1) != bool(tristan_idx == -1):
+            lone_lover_idx = iseult_idx if iseult_idx != -1 else tristan_idx
+            if random.choice([True, False]):
+                # True - replace lone lover with new role
+                lover_roles_not_in_game = list(set(_GOOD_ROLES) - set(good_roles_in_game) - set([Iseult, Tristan]))
+                good_roles_in_game[lone_lover_idx] = random.choice(lover_roles_not_in_game)
+            else:
+                # False - replace another role with other lover
+                other_lover = Iseult if iseult_idx == -1 else Tristan
+                other_role_indices = list(range(num_good))
+                other_role_indices.remove(lone_lover_idx)
+                good_roles_in_game[random.choice(other_role_indices)] = other_lover
+
         # assign first N players a good role
-        for player, good_role_index in zip(players[:num_good], good_role_indices):
-            player.role = _GOOD_ROLES[good_role_index]()
+        for player, good_role in zip(players[:num_good], good_roles_in_game):
+            player.role = good_role()
 
         # assign rest of players an evil role
         for player, evil_role_index in zip(players[num_good:], evil_role_indices):
-            player.role = _GOOD_ROLES[evil_role_index]()
+            player.role = _EVIL_ROLES[evil_role_index]()
+
+        for index, player in enumerate(players):
+            for other_player in players[index+1:]:
+                if player != other_player:
+                    player.role.add_seen_player(other_player)
+                    other_player.role.add_seen_player(player)
+
+        self.game_state = GameState.IN_PROGRESS
