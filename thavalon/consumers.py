@@ -58,7 +58,6 @@ class ChatConsumer(WebsocketConsumer):
 
 
 class LobbyConsumer(WebsocketConsumer):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.lobby_group_name = ""
@@ -146,3 +145,88 @@ class LobbyConsumer(WebsocketConsumer):
         self.scope["session"]["game_id"] = self.game_id
         self.scope["session"].save()
         self.send(text_data=json.dumps(event))
+
+
+class GameConsumer(WebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lobby_group_name = ""
+        self.game_id = ""
+        self.player_id = ""
+        self.game = None
+        self._message_types = {
+            "vote": self.vote,
+            "play_card": self.play_card,
+            "use_ability": self.use_ability,
+            }
+
+    def connect(self):
+        self.game_id = self.lobby_group_name = self.scope["url_route"]["kwargs"]["game_id"]
+        try:
+            self.game = _GAME_MANAGER.get_game(self.game_id)
+            self.player_id = self.scope["session"]["player_id"]
+        except ValueError:
+            return
+
+        self.accept()
+        if not self.game.is_player_in_game(self.player_id):
+            return
+        async_to_sync(self.channel_layer.group_add)(self.lobby_group_name, self.channel_name)
+
+        self.on_connect()
+        return
+
+    def disconnect(self, code):
+        async_to_sync(self.channel_layer.group_discard)(
+            self.lobby_group_name,
+            self.channel_name
+        )
+
+    def receive(self, text_data):
+        text_data = json.loads(text_data)
+        message_type = text_data["type"]
+        function_to_call = self._message_types.get(message_type)
+        if function_to_call is None:
+            raise NotImplementedError
+        function_to_call(text_data)
+
+    def on_connect(self):
+        response = responses.GameStateResponse()
+        # Try loading gamestate information. Handle any errors and tell the client about them.
+        try:
+            gamestate = self.game.get_gamestate(self.player_id)
+        except ValueError as e:
+            response.error_message = "Error while loading information: " + str(e)
+            self.send(response.send)
+            return
+
+        # No errors. Now, we need to parse the information and send it the client
+        response.success = True
+        response.role_information = gamestate["role_information"]
+        response.proposal_order = gamestate["proposal_order"]
+        response.mission_sizes = gamestate["mission_sizes"]
+        response.mission_results = gamestate["mission_results"]
+        response.current_phase = gamestate["current_phase"].value
+        response.mission_players = gamestate["mission_state"]
+        response.proposer_index = gamestate["proposer"]
+        response.proposal_num = gamestate["current_proposal_num"]
+        self.send(response.send())
+        return
+
+    def vote(self):
+        pass
+
+    def play_card(self):
+        pass
+
+    def use_ability(self):
+        pass
+
+    def on_propose(self):
+        pass
+
+    def on_vote_result(self):
+        pass
+
+    def on_mission_result(self):
+        pass
