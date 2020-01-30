@@ -11,7 +11,7 @@ class LobbyManager(metaclass=Singleton):
         self._count = 0
         self._lobby_to_game: Dict[str, str] = dict()
         self._game_to_lobby: Dict[str, str] = dict()
-        self._clear_empty_lobbies(threading.Event())
+        # self._clear_empty_lobbies(threading.Event())
 
     def create_new_lobby(self, game_id: str):
         if self._game_to_lobby.get(game_id) is not None:
