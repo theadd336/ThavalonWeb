@@ -176,6 +176,7 @@ def test_start_game_verify_proposal_order() -> None:
     # TODO: Test roles assign properly
 
 
+@pytest.mark.repeat(10)
 @pytest.mark.parametrize("num_players, session_id_to_player", [
     (
         2,
@@ -213,9 +214,14 @@ def test_start_game_players_assigned(num_players, session_id_to_player) -> None:
     game.session_id_to_player = session_id_to_player
     game.start_game()
 
-    seen_roles = []
+    seen_role_names = []
     for player in session_id_to_player.values():
-        assert player.role not in seen_roles
-        seen_roles.append(player.role)
+        assert player.role.role_name not in seen_role_names
+        seen_role_names.append(player.role.role_name)
+
+    if "Tristan" in seen_role_names:
+        assert "Iseult" in seen_role_names
+    if "Iseult" in seen_role_names:
+        assert "Tristan" in seen_role_names
 
     assert game.game_state == GameState.IN_PROGRESS

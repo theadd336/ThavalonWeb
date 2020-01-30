@@ -10,6 +10,7 @@ from game.roles.iseult import Iseult  # noqa
 from game.roles.merlin import Merlin  # noqa
 from game.roles.mordred import Mordred  # noqa
 from game.roles.morgana import Morgana  # noqa
+from game.roles.percival import Percival  # noqa
 from game.roles.tristan import Tristan  # noqa
 
 iseult = Player("iseult", "Iseult")
@@ -22,6 +23,8 @@ morgana = Player("morgana", "Morgana")
 morgana.role = Morgana()
 tristan = Player("tristan", "Tristan")
 tristan.role = Tristan()
+percival = Player("percival", "Percival")
+percival.role = Percival()
 
 # TODO: replace role mocks with actual roles when available
 colgrevance = Player("colgrevance", "Colgrevance")
