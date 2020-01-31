@@ -203,14 +203,18 @@ class GameConsumer(WebsocketConsumer):
         # No errors. Now, we need to parse the information and send it the client
         response.success = True
         response.role_information = gamestate.get("role_information")
-        # response.role_information = {"role": "Mordred", "team": 1, "information": "evilllll"}
         response.proposal_order = gamestate.get("proposal_order")
         response.mission_sizes = gamestate.get("mission_sizes")
         response.mission_results = gamestate.get("mission_results")
         response.current_phase = gamestate.get("current_phase").value
-        response.mission_players = gamestate.get("mission_state")
+        response.mission_players = gamestate.get("mission_players")
         response.proposer_index = gamestate.get("proposer")
         response.proposal_num = gamestate.get("current_proposal_num")
+        response.max_num_proposals = gamestate.get("max_proposals")
+        response.mission_num = gamestate.get("mission_num")
+        response.current_proposal = gamestate.get("current_proposal")
+        if self.player_id == gamestate.get("proposer_id"):
+            response.is_proposing = True
         self.send(json.dumps(response.send()))
         return
 
