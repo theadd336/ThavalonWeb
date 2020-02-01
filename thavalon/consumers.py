@@ -192,28 +192,45 @@ class GameConsumer(WebsocketConsumer):
 
     def on_connect(self):
         response = responses.GameStateResponse()
-        # Try loading gamestate information. Handle any errors and tell the client about them.
+        # # Try loading gamestate information. Handle any errors and tell the client about them.
+        # try:
+        #     gamestate = self.game.get_gamestate(self.player_id)
+        # except ValueError as e:
+        #     response.error_message = "Error while loading information: " + str(e)
+        #     self.send(response.send)
+        #     return
+        #
+        # # No errors. Now, we need to parse the information and send it the client
+        # response.success = True
+        # response.role_information = gamestate.get("role_information")
+        # response.proposal_order = gamestate.get("proposal_order")
+        # response.mission_sizes = gamestate.get("mission_sizes")
+        # response.mission_results = gamestate.get("mission_results")
+        # response.current_phase = gamestate.get("current_phase").value
+        # response.mission_players = gamestate.get("mission_players")
+        # response.proposer_index = gamestate.get("proposer")
+        # response.proposal_num = gamestate.get("current_proposal_num")
+        # response.max_num_proposals = gamestate.get("max_proposals")
+        # response.mission_num = gamestate.get("mission_num")
+        # response.current_proposal = gamestate.get("current_proposal")
+        # if self.player_id == gamestate.get("proposer_id"):
+        #     response.is_proposing = True
+        # self.send(json.dumps(response.send()))
         try:
-            gamestate = self.game.get_gamestate(self.player_id)
+            player_info = self.game.get_player_info(self.player_id)
+            proposal_info = self.game.get_proposal_info()
         except ValueError as e:
             response.error_message = "Error while loading information: " + str(e)
-            self.send(response.send)
+            self.send(json.dumps(response.send()))
             return
-
-        # No errors. Now, we need to parse the information and send it the client
         response.success = True
-        response.role_information = gamestate.get("role_information")
-        response.proposal_order = gamestate.get("proposal_order")
-        response.mission_sizes = gamestate.get("mission_sizes")
-        response.mission_results = gamestate.get("mission_results")
-        response.current_phase = gamestate.get("current_phase").value
-        response.mission_players = gamestate.get("mission_players")
-        response.proposer_index = gamestate.get("proposer")
-        response.proposal_num = gamestate.get("current_proposal_num")
-        response.max_num_proposals = gamestate.get("max_proposals")
-        response.mission_num = gamestate.get("mission_num")
-        response.current_proposal = gamestate.get("current_proposal")
-        if self.player_id == gamestate.get("proposer_id"):
+        response.role_information = player_info
+        response.proposal_order = proposal_info.get("proposal_order")
+        response.proposer_index = proposal_info.get("proposer_index")
+        response.proposal_size = proposal_info.get("proposal_size")
+        response.max_num_proposals = proposal_info.get("max_num_proposers")
+        response.current_phase = proposal_info.get("game_phase").value
+        if self.player_id == proposal_info.get("proposer_id"):
             response.is_proposing = True
         self.send(json.dumps(response.send()))
         return

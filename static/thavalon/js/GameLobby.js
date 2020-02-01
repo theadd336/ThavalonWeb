@@ -3,17 +3,16 @@ function populateGameState(gamestate) {
     populateRoleBlurb(gamestate.roleInformation);
     populateRoleInformation(gamestate.roleInformation.information);
     populatePlayerOrder(gamestate.proposalOrder);
-    alert(gamestate.proposalOrder);
-    alert(gamestate.proposerIndex);
     switch (gamestate.currentPhase) {
-        case 1:
-            populateProposalTab(gamestate.isProposing,
-            gamestate.proposerIndex,
-            gamestate.proposalOrder,
-            gamestate.proposalNumber,
-            gamestate.maxNumProposals,
-            gamestate.missionSizes[gamestate.missionNum + 1],
-            gamestate.currentProposal);
+        case 0:
+            populateProposalTab(
+                gamestate.isProposing,
+                gamestate.proposerIndex,
+                gamestate.proposalOrder,
+                gamestate.proposalNum,
+                gamestate.maxNumProposals,
+                gamestate.proposalSize,
+                gamestate.currentProposal);
             break;
     }
 }
@@ -63,11 +62,11 @@ function populatePlayerOrder(playerOrder) {
 
 function populateProposalTab(isProposing, proposerIndex, proposalOrder, proposalNumber,
 maxNumProposals, numOnMission, currentProposal) {
-    writeProposalHeader(isProposing, proposalOrder[proposerIndex], proposalNumber, maxNumProposals);
+    writeProposalHeader(isProposing, proposalOrder[proposerIndex], proposalNumber, maxNumProposals, numOnMission);
     if (isProposing) {
         writeProposalBodyProposing(proposalOrder, numOnMission);
     } else {
-        writeProposalBodyOther(proposerName, currentProposal);
+        writeProposalBodyOther(proposalOrder[proposerIndex], currentProposal);
     }
 }
 
@@ -104,7 +103,7 @@ function writeProposalHeader(isProposing, proposerName, proposalNumber, maxNumPr
 function writeProposalBodyOther(proposerName, currentProposal) {
     const proposalBodySection = document.getElementById("proposalVoteContent");
     if (currentProposal == null || currentProposal.length === 0) {
-        proposalBodySection.textContent = `Please wait while ${proposerName} proposes a mission`;
+        proposalBodySection.textContent = `Please wait while ${proposerName} proposes a mission.`;
         return;
     }
     proposalBodySection.textContent = `${proposerName} has proposed:`
@@ -117,4 +116,22 @@ function writeProposalBodyOther(proposerName, currentProposal) {
     proposalBodySection.appendChild(listNode);
 }
 
-function writeProposalBodyProposing(playerOrder, test) { return; }
+function writeProposalBodyProposing(playerOrder, currentProposal) {
+    
+    // TODO: handle the current proposal if player disconnects and reconnects during proposal.
+    // Get the template for the proposer selection list and its location.
+    const proposerSelectionListTemplate = document.getElementById("proposerSelectionListTemplate");
+    const proposerSelectionListLocation = document.getElementById("proposalVoteContent");
+    // Clone the template and add the options.
+    const proposerSelectionList = proposerSelectionListTemplate.content.cloneNode(true);
+    // const selectNode = proposerSelectionList.querySelector("select");
+    // console.log(proposerSelectionList);
+    // for (const playerName of playerOrder) {
+    //     const optionNode = document.createElement("OPTION");
+    //     optionNode.setAttribute("value", playerName);
+    //     optionNode.textContent = playerName;
+    //     selectNode.appendChild(optionNode);
+    // }
+    proposerSelectionListLocation.appendChild(proposerSelectionList);
+    return;
+}

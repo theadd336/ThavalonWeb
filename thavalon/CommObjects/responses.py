@@ -12,7 +12,7 @@ class Response(ABC):
         object_dict = dict()
         object_dict["type"] = self.type
         object_dict["success"] = self.success
-        object_dict["error_message"] = self.error_message
+        object_dict["errorMessage"] = self.error_message
         return self._send_core(object_dict)
 
     def _send_core(self, object_dict):
@@ -52,6 +52,7 @@ class GameStateResponse(Response):
         self.max_num_proposals = 1
         self.mission_num = 1
         self.current_proposal = None
+        self.proposal_size = 0
 
     def _send_core(self, object_dict):
         object_dict["proposalOrder"] = self.proposal_order
@@ -68,4 +69,5 @@ class GameStateResponse(Response):
         object_dict["maxNumProposals"] = self.max_num_proposals
         object_dict["missionNum"] = self.mission_num
         object_dict["currentProposal"] = self.current_proposal
+        object_dict["proposalSize"] = self.proposal_size
         return object_dict

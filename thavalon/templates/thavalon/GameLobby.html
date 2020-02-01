@@ -7,8 +7,11 @@
     <title>Thavalon Home</title>
     <link rel="stylesheet" href="{% static 'thavalon/css/master.css' %}">
     <link rel="stylesheet" href="{% static 'thavalon/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css" />
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="{% static 'thavalon/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
+    <script>$('select').selectpicker();</script>
     <script src="{% static 'thavalon/js/GameLobby.js' %}"></script>
 </head>
 <body>
@@ -120,13 +123,26 @@
   <template id="roleBlurbTemplate">
     <span><span></span></span>
   </template>
+  <template id="proposerSelectionListTemplate">
+<!--    <div class="row">-->
+<!--      <div class="col-md-12">-->
+
+        <select class="selectpicker" multiple data-live-search="true">
+          <option>Paul</option>
+          <option>Jared</option>
+<!--          <option value="" disabled selected>Propose a <div id="proposerSelectionListPlayerNumberTemplate"></div> player mission.</option>-->
+        </select>
+        <label class="mdb-main-label">Proposed Players</label>
+<!--      </div>-->
+<!--    </div>-->
+  </template>
   <script>
     var gameWebSocket = new WebSocket('ws://' + window.location.host +
 	    '/ws/thavalon/{{ game_id|escapejs }}/game/');
 	gameWebSocket.onmessage = function(e) {
 	    let data = JSON.parse(e.data);
 	    if (!data.success) {
-	      alert(data.error_message);
+	      alert(data.errorMessage);
 	      return;
 	    }
 	    switch(data.type) {
