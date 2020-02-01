@@ -275,7 +275,7 @@ def test_get_proposal_info():
 
 
 @pytest.mark.parametrize("lobby_status", [LobbyStatus.JOINING, LobbyStatus.DONE])
-def test_get_proposal_info_invalid_lobby(lobby_status):
+def test_get_round_info_invalid_lobby(lobby_status):
     game = Game()
     game.lobby_status = lobby_status
     with pytest.raises(ValueError):
@@ -302,3 +302,152 @@ def test_get_round_info(mission_num, num_players, expected_info) -> None:
     result = game.get_round_info()
     assert result["mission_num"] == mission_num
     assert result["mission_info"] == expected_info
+
+
+@pytest.mark.parametrize("lobby_status", [LobbyStatus.JOINING, LobbyStatus.DONE])
+def test_set_proposal_info_invalid_lobby(lobby_status):
+    game = Game()
+    game.lobby_status = lobby_status
+    with pytest.raises(ValueError):
+        game.set_proposal([])
+
+
+def test_set_proposal_round_1():
+    game = Game()
+    mock_get_num_players = Mock()
+    mock_get_num_players.return_value = 5
+    game.get_num_players = mock_get_num_players
+    game.mission_num = 0
+    game.proposer_index = 3
+    game.proposal_order_names = ["player1", "player2", "player3", "player4", "player5"]
+    game.proposal_order_players = [
+        Player("1", "player1"),
+        Player("2", "player2"),
+        Player("3", "player3"),
+        Player("4", "player4"),
+        Player("5", "player5")
+    ]
+    game.lobby_status = LobbyStatus.IN_PROGRESS
+
+    result1 = game.set_proposal(["player1", "player2"])
+    assert result1["game_phase"] == GamePhase.PROPOSAL
+    assert result1["proposals"] == [["player1", "player2"]]
+    assert result1["proposal_info"] == {
+        "proposal_order": ["player1", "player2", "player3", "player4", "player5"],
+        "proposer_id": "5",
+        "proposer_index": 4,
+        "proposal_size": 2,
+        "max_num_proposers": 2,
+        "game_phase": GamePhase.PROPOSAL
+    }
+
+    result2 = game.set_proposal(["player3", "player1"])
+    assert result2["game_phase"] == GamePhase.VOTE
+    assert result2["proposals"] == [["player1", "player2"], ["player3", "player1"]]
+    assert game.proposer_index == 0
+    assert game.proposer_id == "1"
+
+
+@pytest.mark.parametrize("mission_num, proposal, expected_result", [
+    (1, ["p1", "p2", "p3"], {
+        "game_phase": GamePhase.VOTE,
+        "proposals": [["p1", "p2", "p3"]]
+    }),
+    (2, ["p3", "p5"], {
+        "game_phase": GamePhase.VOTE,
+        "proposals": [["p3", "p5"]]
+    }),
+    (3, ["p3", "p4", "p2"], {
+        "game_phase": GamePhase.VOTE,
+        "proposals": [["p3", "p4", "p2"]]
+    }),
+    (4, ["p1", "p3", "p5"], {
+        "game_phase": GamePhase.VOTE,
+        "proposals": [["p1", "p3", "p5"]]
+    })
+])
+def test_set_proposal_all_other_rounds(mission_num, proposal, expected_result):
+    game = Game()
+    mock_get_num_players = Mock()
+    mock_get_num_players.return_value = 5
+    game.get_num_players = mock_get_num_players
+    game.mission_num = mission_num
+    game.proposer_index = 0
+    game.proposal_order_names = ["p1", "p2", "p3", "p4", "p5"]
+    game.proposal_order_players = [
+        Player("1", "p1"),
+        Player("2", "p2"),
+        Player("3", "p3"),
+        Player("4", "p4"),
+        Player("5", "p5")
+    ]
+    game.number_votes = 3
+    game.lobby_status = LobbyStatus.IN_PROGRESS
+    assert game.set_proposal(proposal) == expected_result
+    assert game.number_votes == 0
+
+
+def test_set_proposal_with_force_starts_mission():
+    game = Game()
+    game.lobby_status = LobbyStatus.IN_PROGRESS
+    mock_get_num_players = Mock()
+    mock_get_num_players.return_value = 5
+    game.get_num_players = mock_get_num_players
+    game.mission_num = 1
+    game.proposer_index = 0
+    game.proposal_order_names = ["p1", "p2", "p3", "p4", "p5"]
+    game.proposal_order_players = [
+        Player("1", "p1"),
+        Player("2", "p2"),
+        Player("3", "p3"),
+        Player("4", "p4"),
+        Player("5", "p5")
+    ]
+    game.max_num_proposers = 3
+    game.current_proposal_num = 3
+    result = game.set_proposal(["p1", "p2", "p3"])
+    assert result["game_phase"] == GamePhase.MISSION
+    assert result["mission_players"] == ["p1", "p2", "p3"]
+    assert game.current_proposal_num == 1
+
+
+def test_set_invalid_proposal_size_errors():
+    game = Game()
+    mock_get_num_players = Mock()
+    mock_get_num_players.return_value = 5
+    game.get_num_players = mock_get_num_players
+    game.mission_num = 0
+    game.proposal_order_names = ["p1", "p2", "p3", "p4", "p5"]
+    game.proposal_order_players = [
+        Player("1", "p1"),
+        Player("2", "p2"),
+        Player("3", "p3"),
+        Player("4", "p4"),
+        Player("5", "p5")
+    ]
+    game.lobby_status = LobbyStatus.IN_PROGRESS
+    with pytest.raises(ValueError) as excinfo:
+        game.set_proposal(["p1"])
+
+    assert str(excinfo.value) == "Expected proposal of size 2, but instead got ['p1']."
+
+
+def test_set_invalid_proposal_size_errors():
+    game = Game()
+    mock_get_num_players = Mock()
+    mock_get_num_players.return_value = 5
+    game.get_num_players = mock_get_num_players
+    game.mission_num = 0
+    game.proposal_order_names = ["p1", "p2", "p3", "p4", "p5"]
+    game.proposal_order_players = [
+        Player("1", "p1"),
+        Player("2", "p2"),
+        Player("3", "p3"),
+        Player("4", "p4"),
+        Player("5", "p5")
+    ]
+    game.lobby_status = LobbyStatus.IN_PROGRESS
+    with pytest.raises(ValueError) as excinfo:
+        game.set_proposal(["p1", "FAKE"])
+
+    assert str(excinfo.value) == "FAKE is not in the game."

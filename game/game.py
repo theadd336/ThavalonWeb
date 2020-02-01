@@ -78,6 +78,10 @@ class Game:
         # the current proposals. A list because in round 1, there can be 2 simultaneous proposals
         self.current_proposals: List[List[str]] = []
 
+        # Information about voting on proposals
+        # The number of votes made so far
+        self.number_votes: int = 0
+
         # the current mission number, 0-indexed.
         self.mission_num: int = 1
 
@@ -212,6 +216,9 @@ class Game:
             "information": player.role.get_description()
         }
 
+    def get_proposal_size(self) -> int:
+        return _MISSION_NUM_TO_PROPOSAL_SIZE[self.get_num_players()][self.mission_num]
+
     def get_proposal_info(self) -> Dict[str, Any]:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
             raise ValueError("Can only get proposal info when game in progress")
@@ -219,13 +226,13 @@ class Game:
             "proposal_order": self.proposal_order_names,
             "proposer_id": self.proposer_id,
             "proposer_index": self.proposer_index,
-            "proposal_size": _MISSION_NUM_TO_PROPOSAL_SIZE[self.get_num_players()][self.mission_num],
-            "max_num_proposers": self.max_num_proposers,
+            "proposal_size": self.get_proposal_size(),
+            "max_num_proposers": 2 if self.mission_num == 0 else self.max_num_proposers,
             "game_phase": self.game_phase
         }
 
     def get_round_info(self) -> Dict[str, Any]:
-        def get_special_mission_info():
+        def _get_special_mission_info():
             if self.mission_num == 0:
                 return "The first mission has only two proposals. No voting will happen until both proposals are " \
                        "made. Upvote for the first proposal, downvote for the second proposal."
@@ -237,26 +244,98 @@ class Game:
             raise ValueError("Can only get mission info when game in progress")
         return {
             "mission_num": self.mission_num,
-            "mission_info": get_special_mission_info()
+            "mission_info": _get_special_mission_info()
         }
 
-    # def set_proposal(self, player_names: List[str]) -> Dict[str, Any]:
-    #     if self.lobby_status != LobbyStatus.IN_PROGRESS:
-    #         raise ValueError("Can only set proposal when game in progress")
-    #
-    #     def _advance_proposal():
-    #         self.proposer_index = (self.proposer_index + 1) % self.get_num_players()
-    #         self.proposer_id = self.proposal_order_players[self.proposer_index].session_id
-    #
-    #     self.current_proposals.append(player_names)
-    #     if len(self.current_proposals) == 1 and self.mission_num == 0:
-    #         # first mission should have two proposals
-    #         return {
-    #             "game_phase": self.game_phase,
-    #             "proposal": self.current_proposals[0],
-    #             "proposal_info": self.get_proposal_info()
-    #         }
+    def get_mission_info(self, proposal_idx: int) -> Dict[str, Any]:
+        # proposal index is the porposal going. Should always be 0 unless round 1 with downvotes
+        return {
+            "mission_players": self.current_proposals[proposal_idx],
+            "game_phase": self.game_phase
+        }
 
+    def send_mission(self, proposal_idx: int) -> Dict[str, Any]:
+        # handle updating mission info, then return call to get mission info
+        self.current_proposal_num = 1 # reset for next round
+        self.mission_num += 1 # increment 1 for next round
+        self.game_phase = GamePhase.MISSION
+        return self.get_mission_info(proposal_idx)
+
+    def set_proposal(self, player_names: List[str]) -> Dict[str, Any]:
+        if self.lobby_status != LobbyStatus.IN_PROGRESS:
+            raise ValueError("Can only set proposal when game in progress")
+
+        expected_proposal_size = self.get_proposal_size()
+        if len(player_names) != expected_proposal_size:
+            raise ValueError(f"Expected proposal of size {expected_proposal_size}, but instead got {player_names}.")
+        for player_name in player_names:
+            if player_name not in self.proposal_order_names:
+                raise ValueError(f"{player_name} is not in the game.")
+
+        def _advance_proposal():
+            self.current_proposal_num += 1
+            self.number_votes = 0  # reset number votes from prior round
+            self.proposer_index = (self.proposer_index + 1) % self.get_num_players()
+            self.proposer_id = self.proposal_order_players[self.proposer_index].session_id
+
+        self.current_proposals.append(player_names)
+        if len(self.current_proposals) == 1 and self.mission_num == 0:
+            _advance_proposal()
+            return {
+                "game_phase": self.game_phase,
+                "proposals": self.current_proposals,
+                "proposal_info": self.get_proposal_info()
+            }
+
+        if (self.mission_num == 0 and len(self.current_proposals) != 2) or \
+                (self.mission_num != 0 and len(self.current_proposals) != 1):
+            raise ValueError("To enter voting phase, must be first mission with 2 proposals, or only have 1 proposal.")
+
+        # if not mission 1, and current proposal num equals max num proposals, then this mission must go
+        if self.mission_num != 0 and self.current_proposal_num == self.max_num_proposers:
+            return self.send_mission(0) # 0 beecause when not in round 1, there's only 1 proposal to send
+
+        _advance_proposal() # advance proposal for next round
+        self.game_phase = GamePhase.VOTE
+        return {
+            "game_phase": self.game_phase,
+            "proposals": self.current_proposals
+        }
+
+    # TODO: Test
+    def set_vote(self, session_id: str, vote: bool) -> Dict[str, Any]:
+        if self.lobby_status != LobbyStatus.IN_PROGRESS:
+            raise ValueError("Can only set vote when game in progress")
+        player = self.session_id_to_player[session_id]
+        if player.proposal_vote is not None:
+            raise ValueError(f"{player.name} has already voted this round.")
+        player.proposal_vote = vote
+        self.number_votes += 1
+
+        # if still waiting on other to vote, then just send back game phase and vote
+        if self.number_votes != self.get_num_players():
+            return {
+                "game_phase": self.game_phase,
+                "vote": vote
+            }
+
+        # everyone has voted, so process votes
+        # First determine number of upvotes
+        upvotes = 0
+        for player in self.session_id_to_player.values():
+            if player.proposal_vote:
+                upvotes += 1
+
+        # if upvote, send mission. Will always be index 0, even in round 1
+        if upvotes > (self.get_num_players() / 2):
+            return self.send_mission(0)
+
+        # downvotes on mission 1 indicate send second proposal
+        if self.mission_num == 0:
+            return self.send_mission(1)
+
+        # else return next proposal info, which was updated by set_proposal
+        return self.get_proposal_info()
     #
     # # TODO: Test
     # def get_gamestate(self, session_id: str) -> Dict[str, Any]:
