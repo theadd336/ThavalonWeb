@@ -116,7 +116,7 @@ function writeProposalBodyOther(proposerName, currentProposal) {
     proposalBodySection.appendChild(listNode);
 }
 
-function writeProposalBodyProposing(playerOrder, currentProposal) {
+function writeProposalBodyProposing(playerOrder, numOnMission) {
     
     // TODO: handle the current proposal if player disconnects and reconnects during proposal.
     // Get the template for the proposer selection list and its location.
@@ -124,14 +124,44 @@ function writeProposalBodyProposing(playerOrder, currentProposal) {
     const proposerSelectionListLocation = document.getElementById("proposalVoteContent");
     // Clone the template and add the options.
     const proposerSelectionList = proposerSelectionListTemplate.content.cloneNode(true);
-    // const selectNode = proposerSelectionList.querySelector("select");
-    // console.log(proposerSelectionList);
-    // for (const playerName of playerOrder) {
-    //     const optionNode = document.createElement("OPTION");
-    //     optionNode.setAttribute("value", playerName);
-    //     optionNode.textContent = playerName;
-    //     selectNode.appendChild(optionNode);
-    // }
+    const selectNode = proposerSelectionList.querySelector("select");
+    selectNode.setAttribute("data-max-options", numOnMission + 1);
+    selectNode.id = "proposedPlayerList";
+    console.log(proposerSelectionList);
+    for (const playerName of playerOrder) {
+        const optionNode = document.createElement("OPTION");
+        optionNode.setAttribute("value", playerName);
+        optionNode.textContent = playerName;
+        selectNode.appendChild(optionNode);
+    }
     proposerSelectionListLocation.appendChild(proposerSelectionList);
+    $('#proposedPlayerList').selectpicker('render');
     return;
+}
+
+function onPropose(proposalInfo) {
+    writeProposalBodyOther(proposalInfo.proposerName, proposalInfo.proposedPlayerList);
+}
+
+function onMoveToVote(proposalInfo) {
+    writeVoteHeader();
+    writeVoteBody(proposalInfo.playerList)
+}
+
+function writeVoteHeader() {
+    // Set the tab name to "Voting"
+    const tabHeader = document.getElementById("nav-profile-tab");
+    tabHeader.textContent = "Voting";
+}
+
+function writeVoteBody(playerList) {
+    const voteBodySection = document.getElementById("proposalVoteContent");
+    voteBodySection.textContent = "Voting on:"
+    const listNode = document.createElement("UL");
+    for (const playerName of playerList) {
+        const listEntry = document.createElement("LI");
+        listEntry.textContent = playerName;
+        listNode.appendChild(listEntry);
+    }
+    voteBodySection.appendChild(listNode);
 }

@@ -71,3 +71,25 @@ class GameStateResponse(Response):
         object_dict["currentProposal"] = self.current_proposal
         object_dict["proposalSize"] = self.proposal_size
         return object_dict
+
+
+class OnProposeResponse(Response):
+    def __init__(self, proposed_player_list: List[str] = None):
+        super().__init__(message_type="on_propose", success=True)
+        self.proposed_player_list = proposed_player_list
+        self.proposer_name = ""
+
+    def _send_core(self, object_dict):
+        object_dict["proposedPlayerList"] = self.proposed_player_list
+        object_dict["proposerName"] = self.proposer_name
+        return object_dict
+
+
+class OnVoteStartResponse(Response):
+    def __init__(self, player_list: List[str] = None):
+        super().__init__(success=True, message_type="on_vote_start")
+        self.player_list = player_list
+
+    def _send_core(self, object_dict):
+        object_dict["playerList"] = self.player_list
+        return object_dict

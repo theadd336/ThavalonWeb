@@ -155,6 +155,8 @@ class GameConsumer(WebsocketConsumer):
         self.player_id = ""
         self.game = None
         self._message_types = {
+            "propose": self.propose,
+            "move_to_vote": self.move_to_vote,
             "vote": self.vote,
             "play_card": self.play_card,
             "use_ability": self.use_ability,
@@ -223,6 +225,7 @@ class GameConsumer(WebsocketConsumer):
             response.error_message = "Error while loading information: " + str(e)
             self.send(json.dumps(response.send()))
             return
+        print(self.game.mission_num)
         response.success = True
         response.role_information = player_info
         response.proposal_order = proposal_info.get("proposal_order")
@@ -235,6 +238,50 @@ class GameConsumer(WebsocketConsumer):
         self.send(json.dumps(response.send()))
         return
 
+    def propose(self, message_data):
+        proposed_player_list = message_data["proposed_player_list"]
+        if len(proposed_player_list) != (self.game.get_proposal_info()).get("proposal_size"):
+            print("wrong proposal size")
+            return
+        response = responses.OnProposeResponse(proposed_player_list=proposed_player_list)
+        response.proposer_name = self.game.get_player(self.game.proposer_id).name
+        async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, response.send())
+
+    def on_propose(self, event):
+        if self.player_id == self.game.proposer_id:
+            return
+        self.send(json.dumps(event))
+        return
+
+    def move_to_vote(self, message):
+        proposed_player_list = message.get("proposed_player_list")
+        if not isinstance(proposed_player_list, list):
+            print("invalid player list received")
+            return
+        if len(proposed_player_list) != self.game.get_proposal_size():
+            print("invalid number of names received")
+            return
+        if self.player_id != self.game.proposer_id:
+            print("You're not proposing!")
+        new_game_state = self.game.set_proposal(proposed_player_list)
+        new_game_phase = new_game_state.get("game_phase").value
+        print(self.game.mission_num)
+        if new_game_phase == 0:
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "_mission_1_repropose"})
+        elif new_game_phase == 1:
+            response = responses.OnVoteStartResponse(proposed_player_list)
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, response.send())
+        else:
+            print("Invalid gamestate at this time")
+            return
+        return
+
+    def _mission_1_repropose(self, event):
+        self.on_connect()
+
+    def _on_vote_start(self, event):
+        self.send(json.dumps(event))
+
     def vote(self):
         pass
 
@@ -242,9 +289,6 @@ class GameConsumer(WebsocketConsumer):
         pass
 
     def use_ability(self):
-        pass
-
-    def on_propose(self):
         pass
 
     def on_vote_result(self):
