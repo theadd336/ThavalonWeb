@@ -68,7 +68,7 @@ class Game:
         self.proposal_order_names: List[str] = []
         self.proposal_order_players: List[Player] = []
         # the index number of the current proposer(s), 0-indexed
-        self.proposer_indices: List[int] = []
+        self.proposer_index = 0
         # the id of the current proposer
         self.proposer_id: str = ""
         # the current proposal number, 1-indexed.
@@ -144,7 +144,7 @@ class Game:
         self.proposal_order_names = [player.name for player in self.proposal_order_players]
 
         # first two proposers are last 2 in proposal order
-        self.proposer_indices = [num_players - 3, num_players - 2]  # next to last and last player
+        self.proposer_index = num_players - 3  # next to last player proposes first
         self.proposer_id = self.proposal_order_players[-2].session_id
 
         # get number good/evil in game
@@ -224,15 +224,38 @@ class Game:
             "game_phase": self.game_phase
         }
 
-    def get_mission_info(self) -> Dict[str, Any]:
+    def get_round_info(self) -> Dict[str, Any]:
+        def get_special_mission_info():
+            if self.mission_num == 0:
+                return "The first mission has only two proposals. No voting will happen until both proposals are " \
+                       "made. Upvote for the first proposal, downvote for the second proposal."
+            elif self.mission_num == 3 and self.get_num_players() >= 7:
+                return "There are two fails required for this mission to fail."
+            return ""
+
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
             raise ValueError("Can only get mission info when game in progress")
-        return {}
+        return {
+            "mission_num": self.mission_num,
+            "mission_info": get_special_mission_info()
+        }
 
     # def set_proposal(self, player_names: List[str]) -> Dict[str, Any]:
     #     if self.lobby_status != LobbyStatus.IN_PROGRESS:
     #         raise ValueError("Can only set proposal when game in progress")
-    #     if self.proposal
+    #
+    #     def _advance_proposal():
+    #         self.proposer_index = (self.proposer_index + 1) % self.get_num_players()
+    #         self.proposer_id = self.proposal_order_players[self.proposer_index].session_id
+    #
+    #     self.current_proposals.append(player_names)
+    #     if len(self.current_proposals) == 1 and self.mission_num == 0:
+    #         # first mission should have two proposals
+    #         return {
+    #             "game_phase": self.game_phase,
+    #             "proposal": self.current_proposals[0],
+    #             "proposal_info": self.get_proposal_info()
+    #         }
 
     #
     # # TODO: Test
