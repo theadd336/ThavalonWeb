@@ -248,9 +248,10 @@ class Game:
         }
 
     def get_mission_info(self, proposal_idx: int) -> Dict[str, Any]:
-        # proposal index is the porposal going. Should always be 0 unless round 1 with downvotes
+        # proposal index is the prpoosal going. Should always be 0 unless round 1 with downvotes
         return {
             "mission_players": self.current_proposals[proposal_idx],
+            "mission_session_ids": [self.player_name_to_session_id[name] for name in self.current_proposals[proposal_idx]],  # noqa
             "game_phase": self.game_phase
         }
 
@@ -334,7 +335,10 @@ class Game:
             return self.send_mission(1)
 
         # else return next proposal info, which was updated by set_proposal
+        self.game_phase = GamePhase.PROPOSAL
         return self.get_proposal_info()
+
+    # def play_mission_card(self, session_id: str, ):
     #
     # # TODO: Test
     # def get_gamestate(self, session_id: str) -> Dict[str, Any]:
