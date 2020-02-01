@@ -461,12 +461,150 @@ def test_set_vote_invalid_lobby(lobby_status):
         game.set_vote("session_id", False)
 
 
-def test_voting():
+@pytest.mark.parametrize("player_to_vote, mission_num, expected_results, current_proposals", [
+    (
+        {
+            "p1": True,
+            "p2": True,
+            "p3": True,
+            "p4": False,
+            "p5": False
+        },
+        1,
+        [
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": False
+            },
+            {
+                "game_phase": GamePhase.MISSION,
+                "mission_players": ["p1", "p2"]
+            }
+        ],
+        [["p1", "p2"]]
+    ),
+    (
+            {
+                "p1": True,
+                "p2": False,
+                "p3": False,
+                "p4": False,
+                "p5": True
+            },
+            1,
+            [
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": True
+                },
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": False
+                },
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": False
+                },
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": False
+                },
+                {
+                    "proposal_order": ["p1", "p2", "p3", "p4", "p5"],
+                    "proposer_id": "1",
+                    "proposer_index": 0,
+                    "proposal_size": 3,
+                    "max_num_proposers": 3,
+                    "game_phase": GamePhase.PROPOSAL,
+                }
+            ],
+        [["p1", "p2"]]
+    ),
+    (
+       {
+            "p1": True,
+            "p2": True,
+            "p3": True,
+            "p4": False,
+            "p5": False
+        },
+        0,
+        [
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": False
+            },
+            {
+                "game_phase": GamePhase.MISSION,
+                "mission_players": ["p1", "p3"]
+            }
+        ],
+        [["p1", "p3"], ["p2", "p4"]]
+    ),
+    (
+            {
+                "p1": True,
+                "p2": False,
+                "p3": True,
+                "p4": False,
+                "p5": False
+            },
+            0,
+            [
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": True
+                },
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": False
+                },
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": True
+                },
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": False
+                },
+                {
+                    "game_phase": GamePhase.MISSION,
+                    "mission_players": ["p2", "p4"]
+                }
+            ],
+            [["p1", "p3"], ["p2", "p4"]]
+    ),
+])
+def test_voting(player_to_vote, mission_num, expected_results, current_proposals):
     game = Game()
     mock_get_num_players = Mock()
     mock_get_num_players.return_value = 5
     game.get_num_players = mock_get_num_players
-    game.mission_num = 0
+    game.mission_num = mission_num
     game.proposal_order_names = ["p1", "p2", "p3", "p4", "p5"]
     game.proposal_order_players = [
         Player("1", "p1"),
@@ -475,4 +613,20 @@ def test_voting():
         Player("4", "p4"),
         Player("5", "p5")
     ]
+    game.proposer_index = 0
+    game.proposer_id = "1"
+    game.current_proposal_num = 1
+    game.max_num_proposers = 3
+    game.session_id_to_player = {
+        "1": game.proposal_order_players[0],
+        "2": game.proposal_order_players[1],
+        "3": game.proposal_order_players[2],
+        "4": game.proposal_order_players[3],
+        "5": game.proposal_order_players[4]
+    }
     game.lobby_status = LobbyStatus.IN_PROGRESS
+    game.game_phase = GamePhase.VOTE
+    game.current_proposals = current_proposals
+
+    for index, player in enumerate(game.proposal_order_players):
+        assert game.set_vote(player.session_id, player_to_vote[player.name]) == expected_results[index]
