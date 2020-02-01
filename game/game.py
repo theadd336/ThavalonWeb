@@ -144,7 +144,7 @@ class Game:
         self.proposal_order_names = [player.name for player in self.proposal_order_players]
 
         # first two proposers are last 2 in proposal order
-        self.proposer_index = num_players - 3  # next to last player proposes first
+        self.proposer_index = num_players - 2  # next to last player proposes first, subtract to because 0-indexed
         self.proposer_id = self.proposal_order_players[-2].session_id
 
         # get number good/evil in game

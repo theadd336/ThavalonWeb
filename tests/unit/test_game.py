@@ -128,6 +128,7 @@ def test_remove_player_not_in_lobby_ends(lobby_status):
         game.remove_player("session_id")
     assert str(exc.value) == "Can only remove player while in lobby."
 
+
 # TODO: Add back in this test
 """
 @pytest.mark.parametrize("number_of_players", [4, 11])
@@ -160,32 +161,33 @@ def test_start_game_verify_proposal_order() -> None:
     assert game.proposal_order_names == ["name3", "name1", "name2", "name5", "name4"]
     assert game.proposal_order_players == [p3, p1, p2, p5, p4]
 
+
 @pytest.mark.repeat(10)
 @pytest.mark.parametrize("num_players, session_id_to_player", [
     (
-        2,
-        {
-            "id1": Player("id1", "Tyler"),
-            "id2": Player("id2", "Jesse")
-        }
+            2,
+            {
+                "id1": Player("id1", "Tyler"),
+                "id2": Player("id2", "Jesse")
+            }
     ),
     (
-        3,
-        {
-            "id1": Player("id1", "Galen"),
-            "id2": Player("id2", "Colin"),
-            "id3": Player("id3", "Darcy")
-        }
+            3,
+            {
+                "id1": Player("id1", "Galen"),
+                "id2": Player("id2", "Colin"),
+                "id3": Player("id3", "Darcy")
+            }
     ),
     (
-        5,
-        {
-            "id1": Player("id1", "Andrew"),
-            "id2": Player("id2", "Arya"),
-            "id3": Player("id3", "Jared"),
-            "id4": Player("id4", "Meg"),
-            "id5": Player("id5", "Paul")
-        }
+            5,
+            {
+                "id1": Player("id1", "Andrew"),
+                "id2": Player("id2", "Arya"),
+                "id3": Player("id3", "Jared"),
+                "id4": Player("id4", "Meg"),
+                "id5": Player("id5", "Paul")
+            }
     )
 ])
 def test_start_game_players_assigned(num_players, session_id_to_player) -> None:
@@ -270,3 +272,33 @@ def test_get_proposal_info():
     assert result["proposal_size"] == 2
     assert result["max_num_proposers"] == 2
     assert result["game_phase"] == GamePhase.PROPOSAL
+
+
+@pytest.mark.parametrize("lobby_status", [LobbyStatus.JOINING, LobbyStatus.DONE])
+def test_get_proposal_info_invalid_lobby(lobby_status):
+    game = Game()
+    game.lobby_status = lobby_status
+    with pytest.raises(ValueError):
+        game.get_round_info()
+
+
+@pytest.mark.parametrize("mission_num, num_players, expected_info", [
+    (0, 5, "The first mission has only two proposals. No voting will happen until both proposals are " \
+           "made. Upvote for the first proposal, downvote for the second proposal."),
+    (1, 5, ""),
+    (2, 5, ""),
+    (3, 5, ""),
+    (3, 7, "There are two fails required for this mission to fail."),
+    (4, 7, "")
+])
+def test_get_round_info(mission_num, num_players, expected_info) -> None:
+    game = Game()
+    game.lobby_status = LobbyStatus.IN_PROGRESS
+    mock_get_num_players = Mock()
+    mock_get_num_players.return_value = num_players
+    game.get_num_players = mock_get_num_players
+    game.mission_num = mission_num
+
+    result = game.get_round_info()
+    assert result["mission_num"] == mission_num
+    assert result["mission_info"] == expected_info
