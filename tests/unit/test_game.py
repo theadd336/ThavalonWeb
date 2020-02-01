@@ -374,6 +374,7 @@ def test_set_proposal_all_other_rounds(mission_num, proposal, expected_result):
     game.mission_num = mission_num
     game.proposer_index = 0
     game.proposal_order_names = ["p1", "p2", "p3", "p4", "p5"]
+    game.player_name_to_session_id = {"p1": "1", "p2": "2", "p3": "3", "p4": "4", "p5": "5"}
     game.proposal_order_players = [
         Player("1", "p1"),
         Player("2", "p2"),
@@ -403,11 +404,13 @@ def test_set_proposal_with_force_starts_mission():
         Player("4", "p4"),
         Player("5", "p5")
     ]
+    game.player_name_to_session_id = {"p1": "1", "p2": "2", "p3": "3", "p4": "4", "p5": "5"}
     game.max_num_proposers = 3
     game.current_proposal_num = 3
     result = game.set_proposal(["p1", "p2", "p3"])
     assert result["game_phase"] == GamePhase.MISSION
     assert result["mission_players"] == ["p1", "p2", "p3"]
+    assert result["mission_session_ids"] == ["1", "2", "3"]
     assert game.current_proposal_num == 1
 
 
@@ -490,7 +493,8 @@ def test_set_vote_invalid_lobby(lobby_status):
             },
             {
                 "game_phase": GamePhase.MISSION,
-                "mission_players": ["p1", "p2"]
+                "mission_players": ["p1", "p2"],
+                "mission_session_ids": ["1", "2"]
             }
         ],
         [["p1", "p2"]]
@@ -560,7 +564,8 @@ def test_set_vote_invalid_lobby(lobby_status):
             },
             {
                 "game_phase": GamePhase.MISSION,
-                "mission_players": ["p1", "p3"]
+                "mission_players": ["p1", "p3"],
+                "mission_session_ids": ["1", "3"]
             }
         ],
         [["p1", "p3"], ["p2", "p4"]]
@@ -593,7 +598,8 @@ def test_set_vote_invalid_lobby(lobby_status):
                 },
                 {
                     "game_phase": GamePhase.MISSION,
-                    "mission_players": ["p2", "p4"]
+                    "mission_players": ["p2", "p4"],
+                    "mission_session_ids": ["2", "4"]
                 }
             ],
             [["p1", "p3"], ["p2", "p4"]]
@@ -623,6 +629,13 @@ def test_voting(player_to_vote, mission_num, expected_results, current_proposals
         "3": game.proposal_order_players[2],
         "4": game.proposal_order_players[3],
         "5": game.proposal_order_players[4]
+    }
+    game.player_name_to_session_id = {
+        "p1": "1",
+        "p2": "2",
+        "p3": "3",
+        "p4": "4",
+        "p5": "5"
     }
     game.lobby_status = LobbyStatus.IN_PROGRESS
     game.game_phase = GamePhase.VOTE
