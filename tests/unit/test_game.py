@@ -381,8 +381,34 @@ def test_set_proposal_all_other_rounds(mission_num, proposal, expected_result):
         Player("4", "p4"),
         Player("5", "p5")
     ]
+    game.number_votes = 3
     game.lobby_status = LobbyStatus.IN_PROGRESS
     assert game.set_proposal(proposal) == expected_result
+    assert game.number_votes == 0
+
+
+def test_set_proposal_with_force_starts_mission():
+    game = Game()
+    game.lobby_status = LobbyStatus.IN_PROGRESS
+    mock_get_num_players = Mock()
+    mock_get_num_players.return_value = 5
+    game.get_num_players = mock_get_num_players
+    game.mission_num = 1
+    game.proposer_index = 0
+    game.proposal_order_names = ["p1", "p2", "p3", "p4", "p5"]
+    game.proposal_order_players = [
+        Player("1", "p1"),
+        Player("2", "p2"),
+        Player("3", "p3"),
+        Player("4", "p4"),
+        Player("5", "p5")
+    ]
+    game.max_num_proposers = 3
+    game.current_proposal_num = 3
+    result = game.set_proposal(["p1", "p2", "p3"])
+    assert result["game_phase"] == GamePhase.MISSION
+    assert result["mission_players"] == ["p1", "p2", "p3"]
+    assert game.current_proposal_num == 1
 
 
 def test_set_invalid_proposal_size_errors():
