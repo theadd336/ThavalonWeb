@@ -1,3 +1,4 @@
+from game.game_constants import MissionCard
 from typing import Optional
 
 class Player:
@@ -5,6 +6,7 @@ class Player:
         self.session_id = session_id
         self.name = name
         self.proposal_vote: Optional[bool] = None
+        self.mission_card: Optional[MissionCard] = None
         self.role: 'Role' = None  # noqa
 
     def __eq__(self, other) -> bool:

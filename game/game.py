@@ -84,6 +84,10 @@ class Game:
 
         # the current mission number, 0-indexed.
         self.mission_num: int = 0
+        # players on current mission
+        self.current_mission: List[str] = 0
+        # count of cards played so far
+        self.current_mission_count: int = 0
 
     # methods for adding players
     def get_num_players(self) -> int:
@@ -247,20 +251,22 @@ class Game:
             "mission_info": _get_special_mission_info()
         }
 
-    def get_mission_info(self, proposal_idx: int) -> Dict[str, Any]:
+    def get_mission_info(self) -> Dict[str, Any]:
         # proposal index is the prpoosal going. Should always be 0 unless round 1 with downvotes
         return {
-            "mission_players": self.current_proposals[proposal_idx],
-            "mission_session_ids": [self.player_name_to_session_id[name] for name in self.current_proposals[proposal_idx]],  # noqa
+            "mission_players": self.current_mission,
+            "mission_session_ids": [self.player_name_to_session_id[name] for name in self.current_mission],
             "game_phase": self.game_phase
         }
 
     def send_mission(self, proposal_idx: int) -> Dict[str, Any]:
         # handle updating mission info, then return call to get mission info
         self.current_proposal_num = 1 # reset for next round
-        self.mission_num += 1 # increment 1 for next round
         self.game_phase = GamePhase.MISSION
-        return self.get_mission_info(proposal_idx)
+        self.current_mission = self.current_proposals[proposal_idx]
+        for player in self.session_id_to_player.values():
+            player.proposal_vote = None
+        return self.get_mission_info()
 
     def set_proposal(self, player_names: List[str]) -> Dict[str, Any]:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
@@ -338,33 +344,71 @@ class Game:
         self.game_phase = GamePhase.PROPOSAL
         return self.get_proposal_info()
 
-    # def play_mission_card(self, session_id: str, ):
-    #
-    # # TODO: Test
-    # def get_gamestate(self, session_id: str) -> Dict[str, Any]:
-    #     if self.lobby_status != LobbyStatus.IN_PROGRESS:
-    #         raise ValueError("Can only get gamestate if game in progress")
-    #     result_dict = {}
-    #     # load info relevant to player
-    #     player = self.get_player(session_id)
-    #     result_dict["role_information"] = {
-    #         "role": player.role.role_name,
-    #         "team": player.role.team.value,
-    #         "information": player.role.get_description()
-    #     }
-    #     # load info relevant to state of game
-    #     result_dict["proposal_order"] = self.proposal_order_names
-    #     result_dict["mission_sizes"] = _GAME_SIZE_TO_GOOD_COUNT[self.get_num_players()]
-    #     result_dict["mission_results"] = self.mission_num_to_result
-    #     result_dict["current_phase"] = self.game_phase
-    #     result_dict["mission_players"] = self.mission_players
-    #     result_dict["proposer_index"] = self.proposers
-    #     result_dict["proposer_id"] = self.proposer_id
-    #     result_dict["max_num_proposal"] = self.max_num_proposers
-    #     if self.mission_num == 1:
-    #         result_dict["max_num_proposal"] = 2  # max 2 proposers mission 1 always
-    #     result_dict["mission_num"] = self.mission_num
-    #     result_dict["current_proposal_num"] = self.current_proposal_num
-    #     result_dict["declarations"] = self.declarations
-    #     result_dict["last_vote_information"] = self.last_vote_info
-    #     return result_dict
+    def play_mission_card(self, session_id: str, mission_card: MissionCard) -> Dict[str, Any]:
+        if self.lobby_status != LobbyStatus.IN_PROGRESS:
+            raise ValueError("Can only set vote when game in progress")
+        player = self.session_id_to_player[session_id]
+        if player.name not in self.current_mission:
+            raise ValueError(f"{player.name} not on current mission, only {self.current_mission} are on the mission.")
+        if player.mission_card is not None:
+            raise ValueError(f"{player.name} has already played a mission card this round.")
+        if not player.role.validate_mission_card(mission_card):
+            raise ValueError(f"{player.name} is not allowed to play the card {mission_card}.")
+        player.mission_card = mission_card
+        self.current_mission_count += 1
+
+        # if still waiting on mission cards
+        if self.current_mission_count != len(self.current_mission):
+            return {
+                "game_phase": self.game_phase,
+                "mission_card": mission_card
+            }
+
+        # get played cards by looking at what each player on mission has played
+        played_cards = [self.session_id_to_player[self.player_name_to_session_id[player_name]].mission_card
+                        for player_name in self.current_mission]
+        mission_result = MissionResult.PASS
+        num_fails = played_cards.count(MissionCard.FAIL)
+        num_reverse = played_cards.count(MissionCard.REVERSE)
+
+        if num_reverse == 2:
+            num_reverse = 0
+        # handle two fails separately
+        if self.get_num_players() >= 7 and self.mission_num == 3:
+            if (num_reverse == 1 and num_fails == 1) or (num_reverse == 0 and num_fails >= 2):
+                mission_result = MissionResult.FAIL
+        elif num_fails > 0:
+            if num_reverse == 1:
+                mission_result = MissionResult.PASS
+            else:
+                mission_result = MissionResult.FAIL
+        elif num_reverse == 1:
+            # at this point, no fails
+            mission_result = MissionResult.FAIL
+
+        self.mission_players[self.mission_num] = self.current_mission
+        self.mission_num_to_result[self.mission_num] = mission_result
+        num_failed_missions = list(self.mission_num_to_result.values()).count(MissionResult.FAIL)
+        num_passed_missions = len(self.mission_num_to_result) - num_failed_missions
+        self.mission_num += 1  # increment for next round
+        if num_passed_missions == 3:
+            self.game_phase = GamePhase.ASSASSINATION
+            return {
+                "mission_result": mission_result,
+                "game_phase": self.game_phase
+            }
+        if num_failed_missions == 3:
+            self.lobby_status = LobbyStatus.DONE
+            self.game_phase = GamePhase.DONE
+            return {
+                "mission_result": mission_result,
+                "lobby_status": self.lobby_status,
+                "game_phase": self.game_phase
+            }
+
+        self.game_phase = GamePhase.PROPOSAL
+        return {
+            "mission_result": mission_result,
+            "game_phase": self.game_phase,
+            "proposal_info": self.get_proposal_info()
+        }

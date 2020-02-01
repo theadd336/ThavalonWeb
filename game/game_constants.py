@@ -6,6 +6,7 @@ class GamePhase(Enum):
     VOTE = 1
     MISSION = 2
     ASSASSINATION = 3
+    DONE = 4
 
 
 class LobbyStatus(Enum):

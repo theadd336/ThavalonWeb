@@ -1,8 +1,10 @@
 import random
 import pytest
-from game.game import Game, GamePhase, LobbyStatus
+from game.game import Game, GamePhase, LobbyStatus, MissionCard, MissionResult
 from game.player import Player
 from game.role import Team
+from game.roles.merlin import Merlin
+from game.roles.mordred import Mordred
 from typing import List
 from unittest.mock import Mock, PropertyMock
 
@@ -643,3 +645,54 @@ def test_voting(player_to_vote, mission_num, expected_results, current_proposals
 
     for index, player in enumerate(game.proposal_order_players):
         assert game.set_vote(player.session_id, player_to_vote[player.name]) == expected_results[index]
+
+
+@pytest.mark.parametrize("lobby_status", [LobbyStatus.JOINING, LobbyStatus.DONE])
+def test_play_mission_card_invalid_lobby(lobby_status):
+    game = Game()
+    game.lobby_status = lobby_status
+    with pytest.raises(ValueError):
+        game.play_mission_card("session_id", MissionCard.FAIL)
+
+
+def test_play_mission_card_not_on_mission():
+    game = Game()
+    game.lobby_status = LobbyStatus.IN_PROGRESS
+    game.session_id_to_player = {"1": Player("1", "p1"), "2": Player("2", "p2")}
+    game.current_mission = ["p1"]
+    with pytest.raises(ValueError) as excinfo:
+        game.play_mission_card("2", MissionCard.FAIL)
+    assert str(excinfo.value) == "p2 not on current mission, only ['p1'] are on the mission."
+
+
+def test_play_mission_card_twice():
+    game = Game()
+    game.game_phase = GamePhase.MISSION
+    game.lobby_status = LobbyStatus.IN_PROGRESS
+    p1 = Player("1", "p1")
+    p1.role = Mordred()
+
+    game.session_id_to_player = {"1": p1}
+    game.current_mission = ["p1", "p2"]
+    first_result = game.play_mission_card("1", MissionCard.FAIL)
+    assert first_result == {
+        "game_phase": GamePhase.MISSION,
+        "mission_card": MissionCard.FAIL
+    }
+    with pytest.raises(ValueError) as excinfo:
+        game.play_mission_card("1", MissionCard.SUCCESS)
+    assert str(excinfo.value) == "p1 has already played a mission card this round."
+
+
+def test_play_invalid_card():
+    game = Game()
+    game.game_phase = GamePhase.MISSION
+    game.lobby_status = LobbyStatus.IN_PROGRESS
+    p1 = Player("1", "p1")
+    p1.role = Merlin()
+
+    game.session_id_to_player = {"1": p1}
+    game.current_mission = ["p1", "p2"]
+    with pytest.raises(ValueError) as excinfo:
+        game.play_mission_card("1", MissionCard.FAIL)
+    assert str(excinfo.value) == "p1 is not allowed to play the card MissionCard.FAIL."
