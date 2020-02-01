@@ -244,6 +244,13 @@ class Game:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
             raise ValueError("Can only set proposal when game in progress")
 
+        expected_proposal_size = _MISSION_NUM_TO_PROPOSAL_SIZE[self.get_num_players()][self.mission_num]
+        if len(player_names) != expected_proposal_size:
+            raise ValueError(f"Expected proposal of size {expected_proposal_size}, but instead got {player_names}.")
+        for player_name in player_names:
+            if player_name not in self.proposal_order_names:
+                raise ValueError(f"{player_name} is not in the game.")
+
         def _advance_proposal():
             self.proposer_index = (self.proposer_index + 1) % self.get_num_players()
             self.proposer_id = self.proposal_order_players[self.proposer_index].session_id
@@ -253,14 +260,15 @@ class Game:
             _advance_proposal()
             return {
                 "game_phase": self.game_phase,
-                "proposal": self.current_proposals[0],
+                "proposals": self.current_proposals,
                 "proposal_info": self.get_proposal_info()
             }
 
-        if (self.mission_num == 0 and len(self.current_proposals) != 2) or len(self.current_proposals) != 1:
+        if (self.mission_num == 0 and len(self.current_proposals) != 2) or \
+                (self.mission_num != 0 and len(self.current_proposals) != 1):
             raise ValueError("To enter voting phase, must be first mission with 2 proposals, or only have 1 proposal.")
 
-        self._advance_proposal() # advance proposal for next round
+        _advance_proposal() # advance proposal for next round
         self.game_phase = GamePhase.VOTE
         return {
             "game_phase": self.game_phase,
