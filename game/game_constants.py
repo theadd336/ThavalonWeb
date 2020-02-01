@@ -2,8 +2,8 @@ from enum import Enum
 
 
 class GamePhase(Enum):
-    VOTE = 0
-    PROPOSAL = 1
+    PROPOSAL = 0
+    VOTE = 1
     MISSION = 2
     ASSASSINATION = 3
 

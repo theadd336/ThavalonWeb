@@ -10,10 +10,10 @@ from game.roles.tristan import Tristan
 from game.game_constants import GamePhase, LobbyStatus, MissionResult, MissionCard
 from typing import Any, Dict, List
 
-_MIN_NUM_PLAYERS = 1
+_MIN_NUM_PLAYERS = 2
 _MAX_NUM_PLAYERS = 10
 
-_MISSION_SIZE_TO_PROPOSAL_SIZE = {
+_MISSION_NUM_TO_PROPOSAL_SIZE = {
     1: [1, 1, 1, 1, 1],
     2: [1, 1, 2, 2, 2],
     3: [1, 2, 3, 3, 3],
@@ -64,15 +64,22 @@ class Game:
         self.last_vote_info: Dict[str, str] = {}
 
         # Information about proposals
-        # the proposal, or seating, order of players
-        self.proposal_order: List[str] = []
+        # the proposal, or seating, order of players, one for names and one for players
+        self.proposal_order_names: List[str] = []
+        self.proposal_order_players: List[Player] = []
         # the index number of the current proposer(s), 0-indexed
-        self.proposers: List[int] = []
+        self.proposer_indices: List[int] = []
+        # the id of the current proposer
+        self.proposer_id: str = ""
         # the current proposal number, 1-indexed.
         self.current_proposal_num: int = 1
+        # number of proposals in round 2-5. Round 1 is always 2 proposers
+        self.max_num_proposers: int = 0
+        # the current proposals. A list because in round 1, there can be 2 simultaneous proposals
+        self.current_proposals: List[List[str]] = []
 
         # the current mission number, 0-indexed.
-        self.mission_num: int = 0
+        self.mission_num: int = 1
 
     # methods for adding players
     def get_num_players(self) -> int:
@@ -118,17 +125,6 @@ class Game:
         del self.session_id_to_player[session_id]
         return [player.name for player in self.session_id_to_player.values()]
 
-    def get_starting_info(self, session_id: str) -> Dict[str, Any]:
-        if session_id not in self.session_id_to_player:
-            raise ValueError(f"Player with session id {session_id} does not exist")
-        return {
-            "player_role": self.session_id_to_player[session_id].role,
-            "proposal_order": self.proposal_order,
-            "first_proposer": self.proposal_order[-2],
-            "second_proposer": self.proposal_order[-1],
-            "num_on_mission": _MISSION_SIZE_TO_PROPOSAL_SIZE[self.get_num_players()][self.mission_num]
-        }
-
     # method for starting the game
     def start_game(self) -> None:
         # validate players
@@ -143,15 +139,20 @@ class Game:
         random.shuffle(players)
 
         # proposal order is player names shuffled
-        self.proposal_order = [player.name for player in players]
-        random.shuffle(self.proposal_order)
+        self.proposal_order_players = [player for player in players]
+        random.shuffle(self.proposal_order_players)
+        self.proposal_order_names = [player.name for player in self.proposal_order_players]
 
         # first two proposers are last 2 in proposal order
-        self.proposers = self.proposal_order[-2:]
+        self.proposer_indices = [num_players - 3, num_players - 2]  # next to last and last player
+        self.proposer_id = self.proposal_order_players[-2].session_id
 
         # get number good/evil in game
         num_good = _GAME_SIZE_TO_GOOD_COUNT[num_players]
         num_evil = num_players - num_good
+
+        # num proposers is number evil + 1 round for all rounds except round 1
+        self.max_num_proposers = num_evil + 1
 
         # generate which good/evil roles are in game
         good_role_indices = random.sample(range(0, len(_GOOD_ROLES)), num_good)
@@ -194,33 +195,71 @@ class Game:
             player.role = _EVIL_ROLES[evil_role_index]()
 
         for index, player in enumerate(players):
-            for other_player in players[index+1:]:
+            for other_player in players[index + 1:]:
                 if player != other_player:
                     player.role.add_seen_player(other_player)
                     other_player.role.add_seen_player(player)
 
         self.lobby_status = LobbyStatus.IN_PROGRESS
 
-    # TODO: Test
-    def get_gamestate(self, session_id: str) -> Dict[str, Any]:
+    def get_player_info(self, session_id: str) -> Dict[str, Any]:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
-            raise ValueError("Can only get gamestate if game in progress")
-        result_dict = {}
-        # load info relevant to player
+            raise ValueError("Can only get player info when game in progress")
         player = self.get_player(session_id)
-        result_dict["role_information"] = {
+        return {
             "role": player.role.role_name,
             "team": player.role.team.value,
             "information": player.role.get_description()
         }
-        # load info relevant to state of game
-        result_dict["proposal_order"] = self.proposal_order
-        result_dict["mission_sizes"] = _GAME_SIZE_TO_GOOD_COUNT[self.get_num_players()]
-        result_dict["mission_results"] = self.mission_num_to_result
-        result_dict["current_phase"] = self.game_phase
-        result_dict["mission_players"] = self.mission_players
-        result_dict["proposer"] = self.proposers
-        result_dict["current_proposal_num"] = self.current_proposal_num
-        result_dict["declarations"] = self.declarations
-        result_dict["last_vote_information"] = self.last_vote_info
-        return result_dict
+
+    def get_proposal_info(self) -> Dict[str, Any]:
+        if self.lobby_status != LobbyStatus.IN_PROGRESS:
+            raise ValueError("Can only get proposal info when game in progress")
+        return {
+            "proposal_order": self.proposal_order_names,
+            "proposer_id": self.proposer_id,
+            "proposer_index": self.proposer_index,
+            "proposal_size": _MISSION_NUM_TO_PROPOSAL_SIZE[self.get_num_players()][self.mission_num],
+            "max_num_proposers": self.max_num_proposers,
+            "game_phase": self.game_phase
+        }
+
+    def get_mission_info(self) -> Dict[str, Any]:
+        if self.lobby_status != LobbyStatus.IN_PROGRESS:
+            raise ValueError("Can only get mission info when game in progress")
+        return {}
+
+    # def set_proposal(self, player_names: List[str]) -> Dict[str, Any]:
+    #     if self.lobby_status != LobbyStatus.IN_PROGRESS:
+    #         raise ValueError("Can only set proposal when game in progress")
+    #     if self.proposal
+
+    #
+    # # TODO: Test
+    # def get_gamestate(self, session_id: str) -> Dict[str, Any]:
+    #     if self.lobby_status != LobbyStatus.IN_PROGRESS:
+    #         raise ValueError("Can only get gamestate if game in progress")
+    #     result_dict = {}
+    #     # load info relevant to player
+    #     player = self.get_player(session_id)
+    #     result_dict["role_information"] = {
+    #         "role": player.role.role_name,
+    #         "team": player.role.team.value,
+    #         "information": player.role.get_description()
+    #     }
+    #     # load info relevant to state of game
+    #     result_dict["proposal_order"] = self.proposal_order_names
+    #     result_dict["mission_sizes"] = _GAME_SIZE_TO_GOOD_COUNT[self.get_num_players()]
+    #     result_dict["mission_results"] = self.mission_num_to_result
+    #     result_dict["current_phase"] = self.game_phase
+    #     result_dict["mission_players"] = self.mission_players
+    #     result_dict["proposer_index"] = self.proposers
+    #     result_dict["proposer_id"] = self.proposer_id
+    #     result_dict["max_num_proposal"] = self.max_num_proposers
+    #     if self.mission_num == 1:
+    #         result_dict["max_num_proposal"] = 2  # max 2 proposers mission 1 always
+    #     result_dict["mission_num"] = self.mission_num
+    #     result_dict["current_proposal_num"] = self.current_proposal_num
+    #     result_dict["declarations"] = self.declarations
+    #     result_dict["last_vote_information"] = self.last_vote_info
+    #     return result_dict
