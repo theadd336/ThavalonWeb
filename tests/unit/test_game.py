@@ -451,3 +451,28 @@ def test_set_invalid_proposal_size_errors():
         game.set_proposal(["p1", "FAKE"])
 
     assert str(excinfo.value) == "FAKE is not in the game."
+
+
+@pytest.mark.parametrize("lobby_status", [LobbyStatus.JOINING, LobbyStatus.DONE])
+def test_set_vote_invalid_lobby(lobby_status):
+    game = Game()
+    game.lobby_status = lobby_status
+    with pytest.raises(ValueError):
+        game.set_vote("session_id", False)
+
+
+def test_voting():
+    game = Game()
+    mock_get_num_players = Mock()
+    mock_get_num_players.return_value = 5
+    game.get_num_players = mock_get_num_players
+    game.mission_num = 0
+    game.proposal_order_names = ["p1", "p2", "p3", "p4", "p5"]
+    game.proposal_order_players = [
+        Player("1", "p1"),
+        Player("2", "p2"),
+        Player("3", "p3"),
+        Player("4", "p4"),
+        Player("5", "p5")
+    ]
+    game.lobby_status = LobbyStatus.IN_PROGRESS

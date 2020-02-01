@@ -83,7 +83,7 @@ class Game:
         self.number_votes: int = 0
 
         # the current mission number, 0-indexed.
-        self.mission_num: int = 1
+        self.mission_num: int = 0
 
     # methods for adding players
     def get_num_players(self) -> int:
@@ -293,7 +293,7 @@ class Game:
 
         # if not mission 1, and current proposal num equals max num proposals, then this mission must go
         if self.mission_num != 0 and self.current_proposal_num == self.max_num_proposers:
-            return self.send_mission(0) # 0 beecause when not in round 1, there's only 1 proposal to send
+            return self.send_mission(0)  # 0 because when not in round 1, there's only 1 proposal to send
 
         _advance_proposal() # advance proposal for next round
         self.game_phase = GamePhase.VOTE
@@ -302,7 +302,6 @@ class Game:
             "proposals": self.current_proposals
         }
 
-    # TODO: Test
     def set_vote(self, session_id: str, vote: bool) -> Dict[str, Any]:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
             raise ValueError("Can only set vote when game in progress")
