@@ -73,6 +73,28 @@ class GameStateResponse(Response):
         return object_dict
 
 
+class NewProposalResponse(Response):
+    def __init__(self):
+        super().__init__(success=True, message_type="new_proposal")
+        self.is_proposing = False
+        self.proposer_index = 0
+        self.proposal_order = None
+        self.proposal_num = 1
+        self.max_num_proposals = 0
+        self.proposal_size = 1
+        self.current_proposal = None
+
+    def _send_core(self, object_dict):
+        object_dict["isProposing"] = self.is_proposing
+        object_dict["proposerIndex"] = self.proposer_index
+        object_dict["proposalOrder"] = self.proposal_order
+        object_dict["proposalNum"] = self.proposal_num
+        object_dict["maxNumProposals"] = self.max_num_proposals
+        object_dict["proposalSize"] = self.proposal_size
+        object_dict["currentProposal"] = self.current_proposal
+        return object_dict
+
+
 class OnProposeResponse(Response):
     def __init__(self, proposed_player_list: List[str] = None):
         super().__init__(message_type="on_propose", success=True)
@@ -92,4 +114,18 @@ class OnVoteStartResponse(Response):
 
     def _send_core(self, object_dict):
         object_dict["playerList"] = self.player_list
+        return object_dict
+
+
+class OnVoteResultsResponse(Response):
+    def __init__(self, message_type: str = "", player_list: List[str] = None):
+        super().__init__(success=True, message_type=message_type)
+        self.player_list = player_list
+        self.is_on_mission = False
+        self.submitted_vote = False
+
+    def _send_core(self, object_dict):
+        object_dict["playerList"] = self.player_list
+        object_dict["submittedVote"] = self.submitted_vote
+        object_dict["isOnMission"] = self.is_on_mission
         return object_dict

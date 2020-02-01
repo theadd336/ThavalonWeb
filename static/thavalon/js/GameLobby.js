@@ -14,6 +14,13 @@ function populateGameState(gamestate) {
                 gamestate.proposalSize,
                 gamestate.currentProposal);
             break;
+        case 1:
+
+            onMoveToVote(
+                {"playerList": gamestate.currentProposal}
+                );
+            break;
+
     }
 }
 
@@ -127,7 +134,6 @@ function writeProposalBodyProposing(playerOrder, numOnMission) {
     const selectNode = proposerSelectionList.querySelector("select");
     selectNode.setAttribute("data-max-options", numOnMission + 1);
     selectNode.id = "proposedPlayerList";
-    console.log(proposerSelectionList);
     for (const playerName of playerOrder) {
         const optionNode = document.createElement("OPTION");
         optionNode.setAttribute("value", playerName);
@@ -164,4 +170,19 @@ function writeVoteBody(playerList) {
         listNode.appendChild(listEntry);
     }
     voteBodySection.appendChild(listNode);
+
+    const votingButtonsTemplate = document.getElementById("voteButtonsTemplate");
+    const votingButtons = votingButtonsTemplate.content.cloneNode(true);
+    voteBodySection.appendChild(votingButtons)
+}
+
+function newProposal(message) {
+    populateProposalTab(
+        message.isProposing,
+        message.proposerIndex,
+        message.proposalOrder,
+        message.proposalNum,
+        message.maxNumProposals,
+        message.proposalSize,
+        message.currentProposal);
 }

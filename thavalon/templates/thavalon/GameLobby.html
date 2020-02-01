@@ -132,6 +132,16 @@
       </div>
     </div>
   </template>
+  <template id="voteButtonsTemplate">
+    <ul class="list-group ul-borderless">
+      <li class="list-group-item">
+        <button type="button" onclick="vote(true)" href="#">Upvote</button>
+      </li>
+      <li class="list-group-item">
+        <button type="button" onclick="vote(false)" href="#">Downvote</button>
+      </li>
+    </ul>
+  </template>
   <script>
     var gameWebSocket = new WebSocket('ws://' + window.location.host +
 	    '/ws/thavalon/{{ game_id|escapejs }}/game/');
@@ -154,6 +164,9 @@
         case "on_vote_start":
           onMoveToVote(data);
           break;
+        case "new_proposal":
+          newProposal(data);
+          break;
         }
       }
     function toggleTentativeProposal() {
@@ -170,6 +183,12 @@
         return;
       }
       message["proposed_player_list"] = proposedPlayerList;
+      gameWebSocket.send(JSON.stringify(message));
+    }
+
+    function vote(howVoting) {
+      console.log(typeof howVoting)
+      const message = {"type": "vote", "how_voting": howVoting};
       gameWebSocket.send(JSON.stringify(message));
     }
   </script>

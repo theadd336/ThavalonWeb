@@ -109,7 +109,6 @@ class LobbyConsumer(WebsocketConsumer):
 
     def on_player_join_leave(self, event):
         # Pass new player information to the listening clients
-        print(event)
         self.send(text_data=json.dumps(event))
 
     def leave_game(self, _):
@@ -225,7 +224,6 @@ class GameConsumer(WebsocketConsumer):
             response.error_message = "Error while loading information: " + str(e)
             self.send(json.dumps(response.send()))
             return
-        print(self.game.mission_num)
         response.success = True
         response.role_information = player_info
         response.proposal_order = proposal_info.get("proposal_order")
@@ -265,9 +263,8 @@ class GameConsumer(WebsocketConsumer):
             print("You're not proposing!")
         new_game_state = self.game.set_proposal(proposed_player_list)
         new_game_phase = new_game_state.get("game_phase").value
-        print(self.game.mission_num)
         if new_game_phase == 0:
-            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "_mission_1_repropose"})
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "new_proposal"})
         elif new_game_phase == 1:
             response = responses.OnVoteStartResponse(proposed_player_list)
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, response.send())
@@ -276,14 +273,51 @@ class GameConsumer(WebsocketConsumer):
             return
         return
 
-    def _mission_1_repropose(self, event):
-        self.on_connect()
+    def new_proposal(self, _):
+        proposal_info = self.game.get_proposal_info()
+        response = responses.NewProposalResponse()
+        response.is_proposing = self.player_id == proposal_info.get("proposer_id")
+        response.proposal_order = proposal_info.get("proposal_order")
+        response.proposer_index = proposal_info.get("proposer_index")
+        response.proposal_size = proposal_info.get("proposal_size")
+        response.max_num_proposals = proposal_info.get("max_num_proposers")
+        self.send(json.dumps(response.send()))
 
-    def _on_vote_start(self, event):
+    def on_vote_start(self, event):
         self.send(json.dumps(event))
 
-    def vote(self):
-        pass
+    def vote(self, message):
+        how_voting = message.get("how_voting")
+        if not isinstance(how_voting, bool):
+            print("Non-valid boolean received for voting.")
+            return
+        try:
+            vote_results = self.game.set_vote(self.player_id, how_voting)
+        except ValueError:
+            print("already voted")
+            return
+        game_phase = vote_results.get("game_phase").value
+        if game_phase == 1:
+            self._votes_still_in_progress(vote_results.get("vote"))
+        elif game_phase == 2:
+            vote_results["type"] = "on_mission_start"
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_results)
+        elif game_phase == 0:
+            self.on_next_proposal()
+        else:
+            print("invalid gamestate for voting phase")
+        return
+
+    def _votes_still_in_progress(self, submitted_vote):
+        response = responses.OnVoteResultsResponse(message_type="vote_still_in_progress")
+        response.submitted_vote = submitted_vote
+        self.send(json.dumps(response.send()))
+
+    def on_mission_start(self, event):
+        response = responses.OnVoteResultsResponse(message_type="on_mission_start")
+        response.is_on_mission = self.player_id in event.get("mission_session_ids")
+        response.player_list = event.get("mission_players")
+        self.send(response)
 
     def play_card(self):
         pass
