@@ -216,6 +216,9 @@ class Game:
             "information": player.role.get_description()
         }
 
+    def get_proposal_size(self) -> int:
+        return _MISSION_NUM_TO_PROPOSAL_SIZE[self.get_num_players()][self.mission_num]
+
     def get_proposal_info(self) -> Dict[str, Any]:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
             raise ValueError("Can only get proposal info when game in progress")
@@ -223,7 +226,7 @@ class Game:
             "proposal_order": self.proposal_order_names,
             "proposer_id": self.proposer_id,
             "proposer_index": self.proposer_index,
-            "proposal_size": _MISSION_NUM_TO_PROPOSAL_SIZE[self.get_num_players()][self.mission_num],
+            "proposal_size": self.get_proposal_size(),
             "max_num_proposers": 2 if self.mission_num == 0 else self.max_num_proposers,
             "game_phase": self.game_phase
         }
@@ -254,6 +257,7 @@ class Game:
     def send_mission(self, proposal_idx: int) -> Dict[str, Any]:
         # handle updating mission info, then return call to get mission info
         self.current_proposal_num = 1 # reset for next round
+        self.mission_num += 1 # increment 1 for next round
         self.game_phase = GamePhase.MISSION
         return self.get_mission_info(proposal_idx)
 
@@ -261,7 +265,7 @@ class Game:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
             raise ValueError("Can only set proposal when game in progress")
 
-        expected_proposal_size = _MISSION_NUM_TO_PROPOSAL_SIZE[self.get_num_players()][self.mission_num]
+        expected_proposal_size = self.get_proposal_size()
         if len(player_names) != expected_proposal_size:
             raise ValueError(f"Expected proposal of size {expected_proposal_size}, but instead got {player_names}.")
         for player_name in player_names:
@@ -298,6 +302,7 @@ class Game:
             "proposals": self.current_proposals
         }
 
+    # TODO: Test
     def set_vote(self, session_id: str, vote: bool) -> Dict[str, Any]:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
             raise ValueError("Can only set vote when game in progress")
@@ -307,6 +312,30 @@ class Game:
         player.proposal_vote = vote
         self.number_votes += 1
 
+        # if still waiting on other to vote, then just send back game phase and vote
+        if self.number_votes != self.get_num_players():
+            return {
+                "game_phase": self.game_phase,
+                "vote": vote
+            }
+
+        # everyone has voted, so process votes
+        # First determine number of upvotes
+        upvotes = 0
+        for player in self.session_id_to_player.values():
+            if player.proposal_vote:
+                upvotes += 1
+
+        # if upvote, send mission. Will always be index 0, even in round 1
+        if upvotes > (self.get_num_players() / 2):
+            return self.send_mission(0)
+
+        # downvotes on mission 1 indicate send second proposal
+        if self.mission_num == 0:
+            return self.send_mission(1)
+
+        # else return next proposal info, which was updated by set_proposal
+        return self.get_proposal_info()
     #
     # # TODO: Test
     # def get_gamestate(self, session_id: str) -> Dict[str, Any]:
