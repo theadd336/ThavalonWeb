@@ -3,6 +3,7 @@ from asgiref.sync import async_to_sync
 import json
 from game.gamemanager import GameManager
 from .CommObjects import responses
+from game.game_constants import MissionCard
 from enum import Enum
 
 _GAME_MANAGER = GameManager()
@@ -300,6 +301,7 @@ class GameConsumer(WebsocketConsumer):
         if game_phase == 1:
             self._votes_still_in_progress(vote_results.get("vote"))
         elif game_phase == 2:
+            del vote_results["game_phase"]
             vote_results["type"] = "on_mission_start"
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_results)
         elif game_phase == 0:
@@ -317,9 +319,22 @@ class GameConsumer(WebsocketConsumer):
         response = responses.OnVoteResultsResponse(message_type="on_mission_start")
         response.is_on_mission = self.player_id in event.get("mission_session_ids")
         response.player_list = event.get("mission_players")
-        self.send(response)
+        self.send(json.dumps(response.send()))
 
-    def play_card(self):
+    def play_card(self, message):
+        card = message.get("card")
+        if card not in range(0, 3):
+            print("Card integer not valid. Played %d." % card)
+            return
+        if card == MissionCard.SUCCESS.value:
+            pass
+        elif card == MissionCard.FAIL.value:
+            pass
+        elif card == MissionCard.REVERSE.value:
+            pass
+        else:
+            print("Non-valid card to enum conversion")
+            return
         pass
 
     def use_ability(self):

@@ -84,6 +84,8 @@ function writeProposalHeader(isProposing, proposerName, proposalNumber, maxNumPr
 
     // Write the header section. This includes proposal number, whether it's force, and who is proposing.
     const proposalHeaderSection = document.getElementById("proposalVoteHeader");
+    // Clear out all old content before writing new information.
+    proposalHeaderSection.innerHTML = "";
     proposalHeaderSection.textContent = `Proposal ${proposalNumber}/${maxNumProposals}`;
     if (proposalNumber === maxNumProposals) {
         const forceIndicatorNode = document.createElement("SPAN");
@@ -140,6 +142,8 @@ function writeProposalBodyProposing(playerOrder, numOnMission) {
         optionNode.textContent = playerName;
         selectNode.appendChild(optionNode);
     }
+    // Clear old values from the proposal tab.
+    proposerSelectionListLocation.innerHTML = ""
     proposerSelectionListLocation.appendChild(proposerSelectionList);
     $('#proposedPlayerList').selectpicker('render');
     return;
@@ -162,6 +166,8 @@ function writeVoteHeader() {
 
 function writeVoteBody(playerList) {
     const voteBodySection = document.getElementById("proposalVoteContent");
+    // Clear the old values before writing voting information.
+    voteBodySection.innerHTML = "";
     voteBodySection.textContent = "Voting on:"
     const listNode = document.createElement("UL");
     for (const playerName of playerList) {
@@ -185,4 +191,34 @@ function newProposal(message) {
         message.maxNumProposals,
         message.proposalSize,
         message.currentProposal);
+}
+
+function onMissionStart(message) {
+    if (message.isOnMission) {
+        populateMissionTabOnMission();
+    } else {
+        populateMissionTabNotOnMission(message.playerList);
+    }
+}
+
+function populateMissionTabOnMission() {
+    const missionBodyLocation = document.getElementById("nav-about");
+    const missionBodyTemplate = document.getElementById("onMissionTemplate");
+    const missionBodyOnMission = missionBodyTemplate.content.cloneNode(true);
+    missionBodyLocation.innerHTML = "";
+    missionBodyLocation.appendChild(missionBodyOnMission);
+}
+
+function populateMissionTabNotOnMission(playersOnMission) {
+    const missionBodyLocation = document.getElementById("nav-about");
+    const missionBodyTemplate = document.getElementById("notOnMissionTemplate");
+    const missionBodyNotOnMission = missionBodyTemplate.content.cloneNode(true);
+    missionBodyLocation.innerHTML = "";
+    const preNode = missionBodyNotOnMission.querySelector("pre");
+    let missionSentence = "Please wait while " + playersOnMission.join(",") + " go on a mission.";
+    if (playersOnMission.includes("Meg")) {
+        missionSentence += " Don't fail it Meg!";
+    }
+    preNode.textContent = missionSentence;
+    missionBodyLocation.appendChild(missionBodyNotOnMission);
 }

@@ -95,21 +95,7 @@
              </pre>
            </div>
            <div class="tab-pane fade" id="nav-about" role="tabpanel" aria-labelledby="nav-about-tab">
-             <h3>You have been sent on a mission, please select a card:</h3>
-             <div class="row">
-               <div class="col-2">
-                 <img src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
-                 Success
-               </div>
-               <div class="col-2">
-                 <img src="{% static 'thavalon/images/red-coin.png' %}" height="175px" width="175px"/>
-                 Fail
-               </div>
-               <div class="col-2">
-                 <img src="{% static 'thavalon/images/circle-png.png' %}"height="175px" width="175px"/>
-                 Reverse
-               </div>
-             </div>
+             <!-- mission information here -->
            </div>
            <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
              <ol class="rounded-list" id="playerOrderLocation">
@@ -142,6 +128,33 @@
       </li>
     </ul>
   </template>
+  <template id="onMissionTemplate">
+    <h3>You have been sent on a mission, please select a card:</h3>
+      <div class="row">
+        <div class="col-2">
+          <a href="#" onclick="playMissionCard(0)">
+            <img src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
+          </a>
+          Success
+        </div>
+        <div class="col-2">
+          <a href="#" onclick="playMissionCard(1)">
+            <img src="{% static 'thavalon/images/red-coin.png' %}" height="175px" width="175px" />
+          </a>
+          Fail
+        </div>
+        <div class="col-2">
+          <a href="#" onclick="playMissionCard(2)">
+            <img src="{% static 'thavalon/images/circle-png.png' %}"height="175px" width="175px"/>
+          </a>
+            Reverse
+        </div>
+      </div>
+  </template>
+  <template id="notOnMissionTemplate">
+    <h3>Mission in progress</h3>
+    <pre></pre>
+  </template>
   <script>
     var gameWebSocket = new WebSocket('ws://' + window.location.host +
 	    '/ws/thavalon/{{ game_id|escapejs }}/game/');
@@ -167,6 +180,10 @@
         case "new_proposal":
           newProposal(data);
           break;
+        case "on_mission_start":
+          onMissionStart(data);
+          
+          break;
         }
       }
     function toggleTentativeProposal() {
@@ -191,6 +208,12 @@
       const message = {"type": "vote", "how_voting": howVoting};
       gameWebSocket.send(JSON.stringify(message));
     }
+
+    function playMissionCard(card) {
+      const message = {"type": "play_card", "card": card};
+      gameWebSocket.send(JSON.stringify(message));
+    }
+
   </script>
 </body>
 </html>
