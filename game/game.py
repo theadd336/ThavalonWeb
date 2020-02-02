@@ -62,7 +62,7 @@ class Game:
         # for declarations, index in proposer (0-indexed) to declared role name
         self.declarations: Dict[int, str] = {}
         # last vote info in game, mapping player to vote
-        self.last_vote_info: Dict[str, str] = {}
+        self.last_vote_info: Dict[str, bool] = {}
 
         # Information about proposals
         # the proposal, or seating, order of players, one for names and one for players
@@ -265,8 +265,6 @@ class Game:
         self.current_proposal_num = 1 # reset for next round
         self.game_phase = GamePhase.MISSION
         self.current_mission = self.current_proposals[proposal_idx]
-        for player in self.session_id_to_player.values():
-            player.proposal_vote = None
         return self.get_mission_info()
 
     def set_proposal(self, player_names: List[str]) -> Dict[str, Any]:
@@ -333,17 +331,31 @@ class Game:
             if player.proposal_vote:
                 upvotes += 1
 
+        # build up vote dictionary and clear votes for the future
+        for player in self.session_id_to_player.values():
+            self.last_vote_info[player.name] = player.proposal_vote
+            player.proposal_vote = None
+
         # if upvote, send mission. Will always be index 0, even in round 1
         if upvotes > (self.get_num_players() / 2):
-            return self.send_mission(0)
+            return {
+                "proposal_vote_info": self.last_vote_info,
+                "mission_info": self.send_mission(0)
+            }
 
         # downvotes on mission 1 indicate send second proposal
         if self.mission_num == 0:
-            return self.send_mission(1)
+            return {
+                "proposal_vote_info": self.last_vote_info,
+                "mission_info": self.send_mission(1)
+            }
 
         # else return next proposal info, which was updated by set_proposal
         self.game_phase = GamePhase.PROPOSAL
-        return self.get_proposal_info()
+        return {
+            "proposal_vote_info": self.last_vote_info,
+            "proposal_info": self.get_proposal_info()
+        }
 
     def play_mission_card(self, session_id: str, mission_card: MissionCard) -> Dict[str, Any]:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
@@ -366,8 +378,10 @@ class Game:
             }
 
         # get played cards by looking at what each player on mission has played
-        played_cards = [self.session_id_to_player[self.player_name_to_session_id[player_name]].mission_card
-                        for player_name in self.current_mission]
+        players_on_mission = [self.session_id_to_player[self.player_name_to_session_id[player_name]]
+                              for player_name in self.current_mission]
+        played_cards = [player.mission_card for player in players_on_mission]
+
         mission_result = MissionResult.PASS
         num_fails = played_cards.count(MissionCard.FAIL)
         num_reverse = played_cards.count(MissionCard.REVERSE)
@@ -391,7 +405,13 @@ class Game:
         self.mission_num_to_result[self.mission_num] = mission_result
         num_failed_missions = list(self.mission_num_to_result.values()).count(MissionResult.FAIL)
         num_passed_missions = len(self.mission_num_to_result) - num_failed_missions
-        self.mission_num += 1  # increment for next round
+
+        # increment and clear mission cards for next round
+        self.mission_num += 1
+        for player in players_on_mission:
+            player.mission_card = None
+
+
         if num_passed_missions == 3:
             self.game_phase = GamePhase.ASSASSINATION
             return {
