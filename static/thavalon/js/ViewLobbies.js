@@ -91,6 +91,7 @@ function createNameForm(lobbyId) {
 	inputNode.id = lobbyId + "txtUserName";
 	inputNode.setAttribute("style", "display:none;");
 	inputNode.setAttribute("placeholder", "Enter display name");
+	inputNode.setAttribute("onkeypress", "formEnter(e, this)");
 	return inputNode;
 
 }
@@ -120,6 +121,13 @@ $(function() {
         $(this).hide();
     })
 });
+
+function formEnter(e, form) {
+    if (e.keyCode === 13) {  // enter, return
+        const lobbyId = form.id.substring(0, form.length - "txtUserName".length);
+        joinGame(lobbyId);
+    }
+}
 
 function csrfSafeMethod(method) {
     // these HTTP methods do not require CSRF protection

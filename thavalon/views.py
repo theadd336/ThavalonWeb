@@ -10,6 +10,7 @@ import json
 _GAME_MANAGER = GameManager()
 _LOBBY_MANAGER = LobbyManager()
 
+
 class HomeView(View):
     @staticmethod
     def load(request):

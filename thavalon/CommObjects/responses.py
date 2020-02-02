@@ -137,9 +137,11 @@ class OnMissionResultsResponse(Response):
         self.card_played = ""
         self.mission_result = 0
         self.prior_mission_num = 0
+        self.played_cards = None
 
     def _send_core(self, object_dict):
         object_dict["cardPlayed"] = self.card_played
         object_dict["missionResult"] = self.mission_result
         object_dict["priorMissionNum"] = self.prior_mission_num
+        object_dict["playedCards"] = self.played_cards
         return object_dict

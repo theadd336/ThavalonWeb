@@ -243,5 +243,5 @@ function onMissionResults(message) {
     missionIndicatorLocation.appendChild(missionResultNode);
     const missionBodyLocation = document.getElementById("nav-about");
     missionBodyLocation.innerHTML = "";
-    missionBodyLocation.textContent = "Waiting for the next mission.";
+    missionBodyLocation.textContent = message.playedCards;
 }
