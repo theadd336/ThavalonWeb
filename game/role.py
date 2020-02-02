@@ -31,7 +31,7 @@ class Role(ABC):
 
     # TODO: Test
     # TODO: Override for Agravaine to always return Fail
-    def _validate_mission_card(self, card: MissionCard) -> bool:
+    def validate_mission_card(self, card: MissionCard) -> bool:
         # only reversers can reverse
         if card == MissionCard.REVERSE:
             return self.is_reverser
