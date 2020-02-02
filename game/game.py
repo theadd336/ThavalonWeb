@@ -262,6 +262,7 @@ class Game:
         # handle updating mission info, then return call to get mission info
         self.current_proposal_num = 1 # reset for next round
         self.current_mission = self.current_proposals[proposal_idx]
+        self.current_proposals = []
         return self.get_mission_info()
 
     def set_proposal(self, player_names: List[str]) -> Dict[str, Any]:
@@ -336,8 +337,6 @@ class Game:
         for player in self.session_id_to_player.values():
             self.last_vote_info[player.name] = player.proposal_vote
             player.proposal_vote = None
-        # reset current proposals for next proposal
-        self.current_proposals = []
 
         # if upvote, send mission. Will always be index 0, even in round 1
         if upvotes > (self.get_num_players() / 2):
@@ -356,6 +355,9 @@ class Game:
                 "proposal_vote_info": self.last_vote_info,
                 "mission_info": self.send_mission(1)
             }
+
+        # reset current proposals for next proposal
+        self.current_proposals = []
 
         # else return next proposal info, which was updated by set_proposal
         self.game_phase = GamePhase.PROPOSAL
