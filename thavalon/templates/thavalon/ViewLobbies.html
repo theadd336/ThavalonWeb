@@ -11,17 +11,16 @@
     <script src="{% static 'thavalon/js/ViewLobbies.js' %}"></script>
     <script>
       window.onload = function() {
-          onPageLoad({{ lobbyIds|safe }});
+          onPageLoad({{ lobbyIds|safe }}, {{ playerNames|safe}});
       }
     </script>
     <!--
-    <script src="js/jquery.js"></script>
     <script src="js/bootstrap.bundle.min.js"></script>
     -->
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="index.html">Home</a>
+    <a class="navbar-brand" href="/thavalon">Home</a>
 
 
     <div class="collapse navbar-collapse" id="navbarSupportedContent">

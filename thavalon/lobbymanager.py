@@ -1,5 +1,9 @@
 from game.singleton import Singleton
+import threading
+from game.gamemanager import GameManager
 from typing import Dict, List
+
+_GAME_MANAGER = GameManager()
 
 
 class LobbyManager(metaclass=Singleton):
@@ -7,6 +11,7 @@ class LobbyManager(metaclass=Singleton):
         self._count = 0
         self._lobby_to_game: Dict[str, str] = dict()
         self._game_to_lobby: Dict[str, str] = dict()
+        # self._clear_empty_lobbies(threading.Event())
 
     def create_new_lobby(self, game_id: str):
         if self._game_to_lobby.get(game_id) is not None:
@@ -33,3 +38,14 @@ class LobbyManager(metaclass=Singleton):
 
     def list_all_lobbies(self) -> List[str]:
         return [lobby_id for lobby_id in self._lobby_to_game.keys()]
+
+    def _clear_empty_lobbies(self, stop_event):
+        if not stop_event.is_set():
+            threading.Timer(60, self._clear_empty_lobbies, [stop_event]).start()
+
+        game_ids = [game_id for game_id in self._game_to_lobby.keys() if
+                    _GAME_MANAGER.get_game(game_id).get_num_players() == 0]
+
+        for game_id in game_ids:
+            self.remove_lobby(game_id)
+            _GAME_MANAGER.delete_game(game_id)

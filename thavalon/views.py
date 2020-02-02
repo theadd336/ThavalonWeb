@@ -10,6 +10,7 @@ import json
 _GAME_MANAGER = GameManager()
 _LOBBY_MANAGER = LobbyManager()
 
+
 class HomeView(View):
     @staticmethod
     def load(request):
@@ -35,7 +36,9 @@ class GameLobbiesView:
         for lobby_id in lobby_ids:
             game_id = _LOBBY_MANAGER.get_game_from_lobby(lobby_id)
             game = _GAME_MANAGER.get_game(game_id)
-        return render(request, GameLobbiesView.template_name, {"lobbyIds": json.dumps(lobby_ids)})
+            player_names.append(game.get_player_names_in_game())
+        context = {"lobbyIds": json.dumps(lobby_ids), "playerNames": json.dumps(player_names)}
+        return render(request, GameLobbiesView.template_name, context)
 
     @staticmethod
     def create_new_game(request):

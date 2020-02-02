@@ -1,7 +1,23 @@
-function onPageLoad(lobbyIds) {
+function onPageLoad(lobbyIds, playerNames) {
+	let count = 0;
 	for (let lobbyId of lobbyIds) {
 		addNewLobby(lobbyId);
+		addPlayers(playerNames[count], lobbyId);
+		count++;
 	}
+}
+
+function addPlayers(playerNames, lobbyId) {
+	if (playerNames == null || lobbyId == null) { return; }
+	const playerList = document.getElementById(lobbyId + "playerList");
+
+	for (const playerName of playerNames) {
+		let listForPlayerName = document.createElement("LI");
+		listForPlayerName.classList.add("list-group-item");
+		listForPlayerName.innerHTML = playerName;
+		playerList.insertBefore(listForPlayerName, playerList.childNodes[0]);
+	}
+	return;
 }
 
 function addNewLobby(lobbyId) {
@@ -75,6 +91,7 @@ function createNameForm(lobbyId) {
 	inputNode.id = lobbyId + "txtUserName";
 	inputNode.setAttribute("style", "display:none;");
 	inputNode.setAttribute("placeholder", "Enter display name");
+	inputNode.setAttribute("onkeypress", "formEnter(e, this)");
 	return inputNode;
 
 }
@@ -104,6 +121,13 @@ $(function() {
         $(this).hide();
     })
 });
+
+function formEnter(e, form) {
+    if (e.keyCode === 13) {  // enter, return
+        const lobbyId = form.id.substring(0, form.length - "txtUserName".length);
+        joinGame(lobbyId);
+    }
+}
 
 function csrfSafeMethod(method) {
     // these HTTP methods do not require CSRF protection
