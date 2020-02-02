@@ -4,7 +4,7 @@ from ..role import Role, Team
 
 class Lancelot(Role):
     def __init__(self):
-        super().__init__("Lancelot", Team.GOOD)
+        super().__init__("Lancelot", Team.GOOD, is_reverser=True)
 
     def get_description(self) -> str:
         return "\n".join([

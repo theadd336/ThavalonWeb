@@ -3,7 +3,7 @@ import pytest
 from game.game import Game, GamePhase, LobbyStatus, MissionCard, MissionResult
 from game.player import Player
 from game.role import Team
-from game.roles.merlin import Merlin
+from game.roles.maelegant import Maelegant
 from game.roles.mordred import Mordred
 from typing import List
 from unittest.mock import Mock, PropertyMock
@@ -689,10 +689,110 @@ def test_play_invalid_card():
     game.game_phase = GamePhase.MISSION
     game.lobby_status = LobbyStatus.IN_PROGRESS
     p1 = Player("1", "p1")
-    p1.role = Merlin()
+    p1.role = Mordred()
 
     game.session_id_to_player = {"1": p1}
     game.current_mission = ["p1", "p2"]
     with pytest.raises(ValueError) as excinfo:
-        game.play_mission_card("1", MissionCard.FAIL)
-    assert str(excinfo.value) == "p1 is not allowed to play the card MissionCard.FAIL."
+        game.play_mission_card("1", MissionCard.REVERSE)
+    assert str(excinfo.value) == "p1 is not allowed to play the card MissionCard.REVERSE."
+
+
+@pytest.mark.parametrize("mission_num, mission_num_to_results, session_id_to_card, expected_results", [
+    (
+        2,
+        {
+            0: MissionResult.FAIL,
+            1: MissionResult.FAIL
+        },
+        {
+            "1": MissionCard.SUCCESS,
+            "2": MissionCard.FAIL
+        },
+        [
+            {
+                "game_phase": GamePhase.MISSION,
+                "mission_card": MissionCard.SUCCESS
+            },
+            {
+                "mission_result": MissionResult.FAIL,
+                "game_phase": GamePhase.DONE,
+                "lobby_status": LobbyStatus.DONE
+            }
+        ]
+    ),
+    (
+            2,
+            {
+                0: MissionResult.PASS,
+                1: MissionResult.PASS
+            },
+            {
+                "1": MissionCard.SUCCESS,
+                "2": MissionCard.SUCCESS
+            },
+            [
+                {
+                    "game_phase": GamePhase.MISSION,
+                    "mission_card": MissionCard.SUCCESS
+                },
+                {
+                    "mission_result": MissionResult.PASS,
+                    "game_phase": GamePhase.ASSASSINATION
+                }
+            ]
+    ),
+    (
+            2,
+            {
+                0: MissionResult.PASS,
+                1: MissionResult.PASS
+            },
+            {
+                "1": MissionCard.FAIL,
+                "2": MissionCard.SUCCESS
+            },
+            [
+                {
+                    "game_phase": GamePhase.MISSION,
+                    "mission_card": MissionCard.FAIL
+                },
+                {
+                    "mission_result": MissionResult.FAIL,
+                    "game_phase": GamePhase.PROPOSAL,
+                    "proposal_info": {
+                        "proposal_order": ["p1", "p2"],
+                        "proposer_id": "1",
+                        "proposer_index": 0,
+                        "proposal_size": 2,
+                        "max_num_proposers": 3,
+                        "game_phase": GamePhase.PROPOSAL,
+                    }
+                }
+            ]
+    )
+
+])
+def test_play_mission_card(mission_num, mission_num_to_results, session_id_to_card, expected_results):
+    game = Game()
+    game.game_phase = GamePhase.MISSION
+    game.lobby_status = LobbyStatus.IN_PROGRESS
+    p1 = Player("1", "p1")
+    p1.role = Maelegant()
+    p2 = Player("1", "p2")
+    p2.role = Mordred()
+    game.session_id_to_player = {"1": p1, "2": p2}
+    game.current_mission = ["p1", "p2"]
+    game.player_name_to_session_id = {"p1": "1", "p2": "2"}
+    game.mission_num = mission_num
+    game.mission_num_to_result = mission_num_to_results
+    game.proposal_order_names = ["p1", "p2"]
+    game.proposal_order_players = [p1, p2]
+    game.proposer_index = 0
+    game.proposer_id = "1"
+    game.current_proposal_num = 1
+    game.max_num_proposers = 3
+
+    for index, (session_id, card) in enumerate(session_id_to_card.items()):
+        assert game.play_mission_card(session_id, card) == expected_results[index]
+
