@@ -273,7 +273,6 @@ def test_get_proposal_info():
     assert result["proposer_index"] == 0
     assert result["proposal_size"] == 2
     assert result["max_num_proposers"] == 2
-    assert result["game_phase"] == GamePhase.PROPOSAL
 
 
 @pytest.mark.parametrize("lobby_status", [LobbyStatus.JOINING, LobbyStatus.DONE])
@@ -340,7 +339,6 @@ def test_set_proposal_round_1():
         "proposer_index": 4,
         "proposal_size": 2,
         "max_num_proposers": 2,
-        "game_phase": GamePhase.PROPOSAL
     }
 
     result2 = game.set_proposal(["player3", "player1"])
@@ -411,8 +409,10 @@ def test_set_proposal_with_force_starts_mission():
     game.current_proposal_num = 3
     result = game.set_proposal(["p1", "p2", "p3"])
     assert result["game_phase"] == GamePhase.MISSION
-    assert result["mission_players"] == ["p1", "p2", "p3"]
-    assert result["mission_session_ids"] == ["1", "2", "3"]
+    assert result["mission_info"] == {
+        "mission_players": ["p1", "p2", "p3"],
+        "mission_session_ids": ["1", "2", "3"]
+    }
     assert game.current_proposal_num == 1
 
 
@@ -495,8 +495,11 @@ def test_set_vote_invalid_lobby(lobby_status):
             },
             {
                 "game_phase": GamePhase.MISSION,
-                "mission_players": ["p1", "p2"],
-                "mission_session_ids": ["1", "2"]
+                "proposal_vote_info": {"p1": True, "p2": True, "p3": True, "p4": False, "p5": False},
+                "mission_info": {
+                    "mission_players": ["p1", "p2"],
+                    "mission_session_ids": ["1", "2"],
+                }
             }
         ],
         [["p1", "p2"]]
@@ -528,12 +531,15 @@ def test_set_vote_invalid_lobby(lobby_status):
                     "vote": False
                 },
                 {
-                    "proposal_order": ["p1", "p2", "p3", "p4", "p5"],
-                    "proposer_id": "1",
-                    "proposer_index": 0,
-                    "proposal_size": 3,
-                    "max_num_proposers": 3,
                     "game_phase": GamePhase.PROPOSAL,
+                    "proposal_vote_info": {"p1": True, "p2": False, "p3": False, "p4": False, "p5": True},
+                    "proposal_info": {
+                        "proposal_order": ["p1", "p2", "p3", "p4", "p5"],
+                        "proposer_id": "1",
+                        "proposer_index": 0,
+                        "proposal_size": 3,
+                        "max_num_proposers": 3,
+                    }
                 }
             ],
         [["p1", "p2"]]
@@ -566,8 +572,11 @@ def test_set_vote_invalid_lobby(lobby_status):
             },
             {
                 "game_phase": GamePhase.MISSION,
-                "mission_players": ["p1", "p3"],
-                "mission_session_ids": ["1", "3"]
+                "proposal_vote_info": {"p1": True, "p2": True, "p3": True, "p4": False, "p5": False},
+                "mission_info": {
+                    "mission_players": ["p1", "p3"],
+                    "mission_session_ids": ["1", "3"],
+                }
             }
         ],
         [["p1", "p3"], ["p2", "p4"]]
@@ -600,8 +609,11 @@ def test_set_vote_invalid_lobby(lobby_status):
                 },
                 {
                     "game_phase": GamePhase.MISSION,
-                    "mission_players": ["p2", "p4"],
-                    "mission_session_ids": ["2", "4"]
+                    "proposal_vote_info": {"p1": True, "p2": False, "p3": True, "p4": False, "p5": False},
+                    "mission_info": {
+                        "mission_players": ["p2", "p4"],
+                        "mission_session_ids": ["2", "4"],
+                    }
                 }
             ],
             [["p1", "p3"], ["p2", "p4"]]
@@ -642,9 +654,10 @@ def test_voting(player_to_vote, mission_num, expected_results, current_proposals
     game.lobby_status = LobbyStatus.IN_PROGRESS
     game.game_phase = GamePhase.VOTE
     game.current_proposals = current_proposals
-
     for index, player in enumerate(game.proposal_order_players):
         assert game.set_vote(player.session_id, player_to_vote[player.name]) == expected_results[index]
+    for player in game.proposal_order_players:
+        assert player.proposal_vote is None
 
 
 @pytest.mark.parametrize("lobby_status", [LobbyStatus.JOINING, LobbyStatus.DONE])
@@ -766,7 +779,6 @@ def test_play_invalid_card():
                         "proposer_index": 0,
                         "proposal_size": 2,
                         "max_num_proposers": 3,
-                        "game_phase": GamePhase.PROPOSAL,
                     }
                 }
             ]
@@ -795,4 +807,7 @@ def test_play_mission_card(mission_num, mission_num_to_results, session_id_to_ca
 
     for index, (session_id, card) in enumerate(session_id_to_card.items()):
         assert game.play_mission_card(session_id, card) == expected_results[index]
+
+    assert p1.mission_card is None
+    assert p2.mission_card is None
 
