@@ -264,8 +264,10 @@ class GameConsumer(WebsocketConsumer):
             print("You're not proposing!")
         new_game_state = self.game.set_proposal(proposed_player_list)
         new_game_phase = new_game_state.get("game_phase").value
+        del new_game_state["game_phase"]
         if new_game_phase == 0:
-            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "new_proposal"})
+            new_game_state["type"] = "new_proposal"
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, new_game_state)
         elif new_game_phase == 1:
             response = responses.OnVoteStartResponse(proposed_player_list)
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, response.send())
@@ -274,8 +276,8 @@ class GameConsumer(WebsocketConsumer):
             return
         return
 
-    def new_proposal(self, _):
-        proposal_info = self.game.get_proposal_info()
+    def new_proposal(self, event):
+        proposal_info = event.get("proposal_info")
         response = responses.NewProposalResponse()
         response.is_proposing = self.player_id == proposal_info.get("proposer_id")
         response.proposal_order = proposal_info.get("proposal_order")
@@ -298,14 +300,15 @@ class GameConsumer(WebsocketConsumer):
             print("already voted")
             return
         game_phase = vote_results.get("game_phase").value
+        del vote_results["game_phase"]
         if game_phase == 1:
             self._votes_still_in_progress(vote_results.get("vote"))
         elif game_phase == 2:
-            del vote_results["game_phase"]
             vote_results["type"] = "on_mission_start"
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_results)
         elif game_phase == 0:
-            self.on_next_proposal()
+            vote_results["type"] = "new_proposal"
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_results)
         else:
             print("invalid gamestate for voting phase")
         return
@@ -336,12 +339,39 @@ class GameConsumer(WebsocketConsumer):
             print("Non-valid card to enum conversion")
             return
         mission_results = self.game.play_mission_card(self.player_id, mission_card)
+        game_phase = mission_results.get("game_phase")
 
-        if mission_results.get("game_phase").value == 2:
+        event = {
+            "type": "on_mission_results",
+            "game_phase": game_phase,
+            "mission_result": mission_results.get("mission_result").value,
+            "card_played": mission_results.get("card_played"),
+            "proposal_info": mission_results.get("proposal_info")
+            }
+
+        if game_phase == 0:
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, event)
+        elif mission_results.get("game_phase").value == 2:
             self._mission_still_in_progress(mission_card.name)
+        else:
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, event)
+        return
 
     def _mission_still_in_progress(self, card_played):
         response = responses.OnMissionResultsResponse("mission_still_in_progress")
+        response.card_played = card_played
+        self.send(json.dumps(response.send()))
+
+    def on_mission_results(self, event):
+        game_phase = event.get("game_phase")
+        response = responses.OnMissionResultsResponse()
+        response.mission_result = event.get("mission_result")
+        self.send(json.dumps(response.send()))
+
+        if game_phase == 0:
+            self.new_proposal(event)
+        else:
+            print("Game Over")
 
     def use_ability(self):
         pass

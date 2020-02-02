@@ -130,9 +130,14 @@ class OnVoteResultsResponse(Response):
         object_dict["isOnMission"] = self.is_on_mission
         return object_dict
 
+
 class OnMissionResultsResponse(Response):
     def __init__(self, message_type: str = ""):
         super().__init__(message_type=message_type, success=True)
+        self.card_played = ""
+        self.mission_result = 0
 
     def _send_core(self, object_dict):
+        object_dict["cardPlayed"] = self.card_played
+        object_dict["missionResult"] = self.mission_result
         return object_dict
