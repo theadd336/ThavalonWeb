@@ -222,3 +222,19 @@ function populateMissionTabNotOnMission(playersOnMission) {
     preNode.textContent = missionSentence;
     missionBodyLocation.appendChild(missionBodyNotOnMission);
 }
+
+function onMissionResults(message) {
+    const missionResult = message.missionResult;
+    const priorMissionNum = message.priorMissionNum;
+    let missionResultTemplate = null
+    if (missionResult === 0) {
+        missionResultTemplate = document.getElementById("missionPassedTemplate");
+    } else {
+        missionResultTemplate = document.getElementById("missionFailedTemplate");
+    }
+
+    const missionIndicatorLocation = document.getElementById("m" + priorMissionNum + "Indicator");
+    missionIndicatorLocation.innerHTML = "";
+    const missionResultNode = missionResultTemplate.content.cloneNode(true);
+    missionIndicatorLocation.appendChild(missionResultNode);
+}

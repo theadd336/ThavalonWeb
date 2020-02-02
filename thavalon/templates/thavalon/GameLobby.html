@@ -45,20 +45,20 @@
     </div>
     <div class="row">
       <div class="col-1"></div>
-      <div class="col-2">
-        <img  id="m1Indicator" src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
+      <div class="col-2" id="m1Indicator">
+        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px" />
       </div>
-      <div class="col-2">
-        <img id="m2Indicator" src="{% static 'thavalon/images/red-coin.png' %}" height="175px" width="175px"/>
+      <div class="col-2" id="m2Indicator">
+        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px"/>
       </div>
-      <div class="col-2">
-        <img id="m3Indicator" src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px"/>
+      <div class="col-2" id="m3Indicator">
+        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px"/>
       </div>
-      <div class="col-2">
-        <img id="m4Indicator" src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
+      <div class="col-2" id="m4Indicator">
+        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
       </div>
-      <div class="col-2">
-        <img id="m5Indicator" src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
+      <div class="col-2" id="m5Indicator">
+        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
       </div>
       <div class="col-1"></div>
     </div>
@@ -155,6 +155,12 @@
     <h3>Mission in progress</h3>
     <pre></pre>
   </template>
+  <template id="missionFailedTemplate">
+    <img src="{% static 'thavalon/images/red-coin.png' %}" height="175px" width="175px"/>
+  </template>
+  <template id="missionPassedTemplate">
+    <img src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
+  </template>
   <script>
     var gameWebSocket = new WebSocket('ws://' + window.location.host +
 	    '/ws/thavalon/{{ game_id|escapejs }}/game/');
@@ -206,7 +212,6 @@
     }
 
     function vote(howVoting) {
-      console.log(typeof howVoting)
       const message = {"type": "vote", "how_voting": howVoting};
       gameWebSocket.send(JSON.stringify(message));
     }

@@ -231,7 +231,7 @@ class GameConsumer(WebsocketConsumer):
         response.proposer_index = proposal_info.get("proposer_index")
         response.proposal_size = proposal_info.get("proposal_size")
         response.max_num_proposals = proposal_info.get("max_num_proposers")
-        response.current_phase = proposal_info.get("game_phase").value
+        response.current_phase = 0
         if self.player_id == proposal_info.get("proposer_id"):
             response.is_proposing = True
         self.send(json.dumps(response.send()))
@@ -319,9 +319,10 @@ class GameConsumer(WebsocketConsumer):
         self.send(json.dumps(response.send()))
 
     def on_mission_start(self, event):
+        mission_info = event.get("mission_info")
         response = responses.OnVoteResultsResponse(message_type="on_mission_start")
-        response.is_on_mission = self.player_id in event.get("mission_session_ids")
-        response.player_list = event.get("mission_players")
+        response.is_on_mission = self.player_id in mission_info.get("mission_session_ids")
+        response.player_list = mission_info.get("mission_players")
         self.send(json.dumps(response.send()))
 
     def play_card(self, message):
@@ -339,7 +340,7 @@ class GameConsumer(WebsocketConsumer):
             print("Non-valid card to enum conversion")
             return
         mission_results = self.game.play_mission_card(self.player_id, mission_card)
-        game_phase = mission_results.get("game_phase")
+        game_phase = mission_results.get("game_phase").value
 
         event = {
             "type": "on_mission_results",
@@ -364,10 +365,10 @@ class GameConsumer(WebsocketConsumer):
 
     def on_mission_results(self, event):
         game_phase = event.get("game_phase")
-        response = responses.OnMissionResultsResponse()
+        response = responses.OnMissionResultsResponse(message_type="on_mission_results")
         response.mission_result = event.get("mission_result")
+        response.prior_mission_num = self.game.mission_num
         self.send(json.dumps(response.send()))
-
         if game_phase == 0:
             self.new_proposal(event)
         else:
