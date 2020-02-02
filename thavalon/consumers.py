@@ -262,8 +262,13 @@ class GameConsumer(WebsocketConsumer):
             return
         if self.player_id != self.game.proposer_id:
             print("You're not proposing!")
-        new_game_state = self.game.set_proposal(proposed_player_list)
+        try:
+            new_game_state = self.game.set_proposal(proposed_player_list)
+        except ValueError as e:
+            print(str(e))
+            return
         new_game_phase = new_game_state.get("game_phase").value
+        print(new_game_phase)
         del new_game_state["game_phase"]
         if new_game_phase == 0:
             new_game_state["type"] = "new_proposal"
@@ -271,6 +276,9 @@ class GameConsumer(WebsocketConsumer):
         elif new_game_phase == 1:
             response = responses.OnVoteStartResponse(proposed_player_list)
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, response.send())
+        elif new_game_phase == 2:
+            new_game_state["type"] = "on_mission_start"
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, new_game_state)
         else:
             print("Invalid gamestate at this time")
             return
@@ -339,7 +347,11 @@ class GameConsumer(WebsocketConsumer):
         else:
             print("Non-valid card to enum conversion")
             return
-        mission_results = self.game.play_mission_card(self.player_id, mission_card)
+        try:
+            mission_results = self.game.play_mission_card(self.player_id, mission_card)
+        except ValueError as e:
+            print(str(e))
+            return
         game_phase = mission_results.get("game_phase").value
 
         event = {
