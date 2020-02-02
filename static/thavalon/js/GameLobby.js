@@ -135,7 +135,7 @@ function writeProposalBodyProposing(playerOrder, numOnMission) {
     // Clone the template and add the options.
     const proposerSelectionList = proposerSelectionListTemplate.content.cloneNode(true);
     const selectNode = proposerSelectionList.querySelector("select");
-    selectNode.setAttribute("data-max-options", numOnMission + 1);
+    selectNode.setAttribute("data-max-options", numOnMission);
     selectNode.id = "proposedPlayerList";
     for (const playerName of playerOrder) {
         const optionNode = document.createElement("OPTION");
@@ -200,6 +200,9 @@ function onMissionStart(message) {
     } else {
         populateMissionTabNotOnMission(message.playerList);
     }
+    const voteBodySection = document.getElementById("proposalVoteContent");
+    voteBodySection.innerHTML = "";
+    voteBodySection.textContent = "Mission is going.";
 }
 
 function populateMissionTabOnMission() {
@@ -238,4 +241,7 @@ function onMissionResults(message) {
     missionIndicatorLocation.innerHTML = "";
     const missionResultNode = missionResultTemplate.content.cloneNode(true);
     missionIndicatorLocation.appendChild(missionResultNode);
+    const missionBodyLocation = document.getElementById("nav-about");
+    missionBodyLocation.innerHTML = "";
+    missionBodyLocation.textContent = "Waiting for the next mission.";
 }

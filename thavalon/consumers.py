@@ -293,6 +293,7 @@ class GameConsumer(WebsocketConsumer):
         response.proposer_index = proposal_info.get("proposer_index")
         response.proposal_size = proposal_info.get("proposal_size")
         response.max_num_proposals = proposal_info.get("max_num_proposers")
+        response.proposal_num = proposal_info.get("current_proposal_num")
         self.send(json.dumps(response.send()))
 
     def on_vote_start(self, event):
