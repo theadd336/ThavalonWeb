@@ -46,19 +46,19 @@
     <div class="row">
       <div class="col-1"></div>
       <div class="col-2">
-        <img src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
+        <img  id="m1Indicator" src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
       </div>
       <div class="col-2">
-        <img src="{% static 'thavalon/images/red-coin.png' %}" height="175px" width="175px"/>
+        <img id="m2Indicator" src="{% static 'thavalon/images/red-coin.png' %}" height="175px" width="175px"/>
       </div>
       <div class="col-2">
-        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px"/>
+        <img id="m3Indicator" src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px"/>
       </div>
       <div class="col-2">
-        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
+        <img id="m4Indicator" src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
       </div>
       <div class="col-2">
-        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
+        <img id="m5Indicator" src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
       </div>
       <div class="col-1"></div>
     </div>
@@ -182,7 +182,9 @@
           break;
         case "on_mission_start":
           onMissionStart(data);
-          
+          break;
+        case "on_mission_results":
+          onMissionResults(data);
           break;
         }
       }
