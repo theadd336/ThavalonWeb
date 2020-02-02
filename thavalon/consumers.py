@@ -231,6 +231,7 @@ class GameConsumer(WebsocketConsumer):
         response.proposer_index = proposal_info.get("proposer_index")
         response.proposal_size = proposal_info.get("proposal_size")
         response.max_num_proposals = proposal_info.get("max_num_proposers")
+        response.proposal_num = proposal_info.get("current_proposal_num")
         response.current_phase = 0
         if self.player_id == proposal_info.get("proposer_id"):
             response.is_proposing = True
@@ -353,11 +354,14 @@ class GameConsumer(WebsocketConsumer):
             print(str(e))
             return
         game_phase = mission_results.get("game_phase").value
+        mission_result = mission_results.get("mission_result")
+        if mission_result is not None:
+            mission_result = mission_result.value
 
         event = {
             "type": "on_mission_results",
             "game_phase": game_phase,
-            "mission_result": mission_results.get("mission_result").value,
+            "mission_result": mission_result,
             "card_played": mission_results.get("card_played"),
             "proposal_info": mission_results.get("proposal_info")
             }

@@ -41,6 +41,7 @@ function populateRoleBlurb(roleInformation) {
         spans[1].classList.add("text-danger")
     } else {
         team = " [GOOD]";
+        spans[1].classList.add("text-success");
     }
     // Add everything to the role location.
     spans[1].textContent = team;
