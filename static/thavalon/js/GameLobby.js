@@ -3,18 +3,24 @@ function populateGameState(gamestate) {
     populateRoleBlurb(gamestate.roleInformation);
     populateRoleInformation(gamestate.roleInformation.information);
     populatePlayerOrder(gamestate.proposalOrder);
-    alert(gamestate.proposalOrder);
-    alert(gamestate.proposerIndex);
     switch (gamestate.currentPhase) {
-        case 1:
-            populateProposalTab(gamestate.isProposing,
-            gamestate.proposerIndex,
-            gamestate.proposalOrder,
-            gamestate.proposalNumber,
-            gamestate.maxNumProposals,
-            gamestate.missionSizes[gamestate.missionNum + 1],
-            gamestate.currentProposal);
+        case 0:
+            populateProposalTab(
+                gamestate.isProposing,
+                gamestate.proposerIndex,
+                gamestate.proposalOrder,
+                gamestate.proposalNum,
+                gamestate.maxNumProposals,
+                gamestate.proposalSize,
+                gamestate.currentProposal);
             break;
+        case 1:
+
+            onMoveToVote(
+                {"playerList": gamestate.currentProposal}
+                );
+            break;
+
     }
 }
 
@@ -63,11 +69,11 @@ function populatePlayerOrder(playerOrder) {
 
 function populateProposalTab(isProposing, proposerIndex, proposalOrder, proposalNumber,
 maxNumProposals, numOnMission, currentProposal) {
-    writeProposalHeader(isProposing, proposalOrder[proposerIndex], proposalNumber, maxNumProposals);
+    writeProposalHeader(isProposing, proposalOrder[proposerIndex], proposalNumber, maxNumProposals, numOnMission);
     if (isProposing) {
         writeProposalBodyProposing(proposalOrder, numOnMission);
     } else {
-        writeProposalBodyOther(proposerName, currentProposal);
+        writeProposalBodyOther(proposalOrder[proposerIndex], currentProposal);
     }
 }
 
@@ -78,6 +84,8 @@ function writeProposalHeader(isProposing, proposerName, proposalNumber, maxNumPr
 
     // Write the header section. This includes proposal number, whether it's force, and who is proposing.
     const proposalHeaderSection = document.getElementById("proposalVoteHeader");
+    // Clear out all old content before writing new information.
+    proposalHeaderSection.innerHTML = "";
     proposalHeaderSection.textContent = `Proposal ${proposalNumber}/${maxNumProposals}`;
     if (proposalNumber === maxNumProposals) {
         const forceIndicatorNode = document.createElement("SPAN");
@@ -104,7 +112,7 @@ function writeProposalHeader(isProposing, proposerName, proposalNumber, maxNumPr
 function writeProposalBodyOther(proposerName, currentProposal) {
     const proposalBodySection = document.getElementById("proposalVoteContent");
     if (currentProposal == null || currentProposal.length === 0) {
-        proposalBodySection.textContent = `Please wait while ${proposerName} proposes a mission`;
+        proposalBodySection.textContent = `Please wait while ${proposerName} proposes a mission.`;
         return;
     }
     proposalBodySection.textContent = `${proposerName} has proposed:`
@@ -117,4 +125,116 @@ function writeProposalBodyOther(proposerName, currentProposal) {
     proposalBodySection.appendChild(listNode);
 }
 
-function writeProposalBodyProposing(playerOrder, test) { return; }
+function writeProposalBodyProposing(playerOrder, numOnMission) {
+    
+    // TODO: handle the current proposal if player disconnects and reconnects during proposal.
+    // Get the template for the proposer selection list and its location.
+    const proposerSelectionListTemplate = document.getElementById("proposerSelectionListTemplate");
+    const proposerSelectionListLocation = document.getElementById("proposalVoteContent");
+    // Clone the template and add the options.
+    const proposerSelectionList = proposerSelectionListTemplate.content.cloneNode(true);
+    const selectNode = proposerSelectionList.querySelector("select");
+    selectNode.setAttribute("data-max-options", numOnMission + 1);
+    selectNode.id = "proposedPlayerList";
+    for (const playerName of playerOrder) {
+        const optionNode = document.createElement("OPTION");
+        optionNode.setAttribute("value", playerName);
+        optionNode.textContent = playerName;
+        selectNode.appendChild(optionNode);
+    }
+    // Clear old values from the proposal tab.
+    proposerSelectionListLocation.innerHTML = ""
+    proposerSelectionListLocation.appendChild(proposerSelectionList);
+    $('#proposedPlayerList').selectpicker('render');
+    return;
+}
+
+function onPropose(proposalInfo) {
+    writeProposalBodyOther(proposalInfo.proposerName, proposalInfo.proposedPlayerList);
+}
+
+function onMoveToVote(proposalInfo) {
+    writeVoteHeader();
+    writeVoteBody(proposalInfo.playerList)
+}
+
+function writeVoteHeader() {
+    // Set the tab name to "Voting"
+    const tabHeader = document.getElementById("nav-profile-tab");
+    tabHeader.textContent = "Voting";
+}
+
+function writeVoteBody(playerList) {
+    const voteBodySection = document.getElementById("proposalVoteContent");
+    // Clear the old values before writing voting information.
+    voteBodySection.innerHTML = "";
+    voteBodySection.textContent = "Voting on:"
+    const listNode = document.createElement("UL");
+    for (const playerName of playerList) {
+        const listEntry = document.createElement("LI");
+        listEntry.textContent = playerName;
+        listNode.appendChild(listEntry);
+    }
+    voteBodySection.appendChild(listNode);
+
+    const votingButtonsTemplate = document.getElementById("voteButtonsTemplate");
+    const votingButtons = votingButtonsTemplate.content.cloneNode(true);
+    voteBodySection.appendChild(votingButtons)
+}
+
+function newProposal(message) {
+    populateProposalTab(
+        message.isProposing,
+        message.proposerIndex,
+        message.proposalOrder,
+        message.proposalNum,
+        message.maxNumProposals,
+        message.proposalSize,
+        message.currentProposal);
+}
+
+function onMissionStart(message) {
+    if (message.isOnMission) {
+        populateMissionTabOnMission();
+    } else {
+        populateMissionTabNotOnMission(message.playerList);
+    }
+}
+
+function populateMissionTabOnMission() {
+    const missionBodyLocation = document.getElementById("nav-about");
+    const missionBodyTemplate = document.getElementById("onMissionTemplate");
+    const missionBodyOnMission = missionBodyTemplate.content.cloneNode(true);
+    missionBodyLocation.innerHTML = "";
+    missionBodyLocation.appendChild(missionBodyOnMission);
+}
+
+function populateMissionTabNotOnMission(playersOnMission) {
+    const missionBodyLocation = document.getElementById("nav-about");
+    const missionBodyTemplate = document.getElementById("notOnMissionTemplate");
+    const missionBodyNotOnMission = missionBodyTemplate.content.cloneNode(true);
+    missionBodyLocation.innerHTML = "";
+    const preNode = missionBodyNotOnMission.querySelector("pre");
+    let missionSentence = "Please wait while " + playersOnMission.join(",") + " go on a mission.";
+    if (playersOnMission.includes("Meg")) {
+        missionSentence += " Don't fail it Meg!";
+    }
+    preNode.textContent = missionSentence;
+    missionBodyLocation.appendChild(missionBodyNotOnMission);
+}
+
+function onMissionResults(message) {
+    const missionResult = message.missionResult;
+    const priorMissionNum = message.priorMissionNum;
+    let missionResultTemplate = null
+    if (missionResult === 0) {
+        missionResultTemplate = document.getElementById("missionPassedTemplate");
+    } else {
+        missionResultTemplate = document.getElementById("missionFailedTemplate");
+    }
+
+    const missionIndicatorLocation = document.getElementById("m" + priorMissionNum + "Indicator");
+    missionIndicatorLocation.innerHTML = "";
+    const missionResultNode = missionResultTemplate.content.cloneNode(true);
+    missionIndicatorLocation.appendChild(missionResultNode);
+}

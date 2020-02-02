@@ -7,8 +7,11 @@
     <title>Thavalon Home</title>
     <link rel="stylesheet" href="{% static 'thavalon/css/master.css' %}">
     <link rel="stylesheet" href="{% static 'thavalon/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css" />
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="{% static 'thavalon/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
+    <script>$('select').selectpicker();</script>
     <script src="{% static 'thavalon/js/GameLobby.js' %}"></script>
 </head>
 <body>
@@ -42,19 +45,19 @@
     </div>
     <div class="row">
       <div class="col-1"></div>
-      <div class="col-2">
-        <img src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
+      <div class="col-2" id="m1Indicator">
+        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px" />
       </div>
-      <div class="col-2">
-        <img src="{% static 'thavalon/images/red-coin.png' %}" height="175px" width="175px"/>
-      </div>
-      <div class="col-2">
+      <div class="col-2" id="m2Indicator">
         <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px"/>
       </div>
-      <div class="col-2">
+      <div class="col-2" id="m3Indicator">
+        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px"/>
+      </div>
+      <div class="col-2" id="m4Indicator">
         <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
       </div>
-      <div class="col-2">
+      <div class="col-2" id="m5Indicator">
         <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
       </div>
       <div class="col-1"></div>
@@ -92,21 +95,7 @@
              </pre>
            </div>
            <div class="tab-pane fade" id="nav-about" role="tabpanel" aria-labelledby="nav-about-tab">
-             <h3>You have been sent on a mission, please select a card:</h3>
-             <div class="row">
-               <div class="col-2">
-                 <img src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
-                 Success
-               </div>
-               <div class="col-2">
-                 <img src="{% static 'thavalon/images/red-coin.png' %}" height="175px" width="175px"/>
-                 Fail
-               </div>
-               <div class="col-2">
-                 <img src="{% static 'thavalon/images/circle-png.png' %}"height="175px" width="175px"/>
-                 Reverse
-               </div>
-             </div>
+             <!-- mission information here -->
            </div>
            <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
              <ol class="rounded-list" id="playerOrderLocation">
@@ -120,24 +109,118 @@
   <template id="roleBlurbTemplate">
     <span><span></span></span>
   </template>
+  <template id="proposerSelectionListTemplate">
+    <div class="row">
+      <div class="col-md-12">
+        <select class="selectpicker" multiple data-live-search="true"></select>
+        <button type="button" onclick="toggleTentativeProposal()" href="#">Propose</button>
+        <button type="button" onclick="moveToVote()" href="#">Move to Vote</button>
+      </div>
+    </div>
+  </template>
+  <template id="voteButtonsTemplate">
+    <ul class="list-group ul-borderless">
+      <li class="list-group-item">
+        <button type="button" onclick="vote(true)" href="#">Upvote</button>
+      </li>
+      <li class="list-group-item">
+        <button type="button" onclick="vote(false)" href="#">Downvote</button>
+      </li>
+    </ul>
+  </template>
+  <template id="onMissionTemplate">
+    <h3>You have been sent on a mission, please select a card:</h3>
+      <div class="row">
+        <div class="col-2">
+          <a href="#" onclick="playMissionCard(0)">
+            <img src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
+          </a>
+          Success
+        </div>
+        <div class="col-2">
+          <a href="#" onclick="playMissionCard(1)">
+            <img src="{% static 'thavalon/images/red-coin.png' %}" height="175px" width="175px" />
+          </a>
+          Fail
+        </div>
+        <div class="col-2">
+          <a href="#" onclick="playMissionCard(2)">
+            <img src="{% static 'thavalon/images/circle-png.png' %}"height="175px" width="175px"/>
+          </a>
+            Reverse
+        </div>
+      </div>
+  </template>
+  <template id="notOnMissionTemplate">
+    <h3>Mission in progress</h3>
+    <pre></pre>
+  </template>
+  <template id="missionFailedTemplate">
+    <img src="{% static 'thavalon/images/red-coin.png' %}" height="175px" width="175px"/>
+  </template>
+  <template id="missionPassedTemplate">
+    <img src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
+  </template>
   <script>
     var gameWebSocket = new WebSocket('ws://' + window.location.host +
 	    '/ws/thavalon/{{ game_id|escapejs }}/game/');
 	gameWebSocket.onmessage = function(e) {
-	    let data = JSON.parse(e.data);
-	    if (!data.success) {
-	      alert(data.error_message);
-	      return;
-	    }
-	    switch(data.type) {
-		    case "gamestate":
-			    populateGameState(data);
-			    break;
-		    case "on_start_game":
-			    onStartGame(data);
-			    break;
-	        }
+      const data = JSON.parse(e.data);
+      if (!data.success) {
+        alert(data.errorMessage);
+        return;
+      }
+      switch(data.type) {
+        case "gamestate":
+            populateGameState(data);
+            break;
+        case "on_start_game":
+            onStartGame(data);
+            break;
+        case "on_propose":
+          onPropose(data);
+          break;
+        case "on_vote_start":
+          onMoveToVote(data);
+          break;
+        case "new_proposal":
+          newProposal(data);
+          break;
+        case "on_mission_start":
+          onMissionStart(data);
+          break;
+        case "on_mission_results":
+          onMissionResults(data);
+          break;
         }
+      }
+    function toggleTentativeProposal() {
+      const message = {"type": "propose"};
+      message["proposed_player_list"] = $("#proposedPlayerList").val();
+      gameWebSocket.send(JSON.stringify(message));
+    }
+
+    function moveToVote() {
+      const message = {"type": "move_to_vote"}
+      const proposedPlayerList = $("#proposedPlayerList").val();
+      if (proposedPlayerList == null || proposedPlayerList.length === 0) {
+        alert("You must have proposed to select players");
+        return;
+      }
+      message["proposed_player_list"] = proposedPlayerList;
+      gameWebSocket.send(JSON.stringify(message));
+    }
+
+    function vote(howVoting) {
+      const message = {"type": "vote", "how_voting": howVoting};
+      gameWebSocket.send(JSON.stringify(message));
+    }
+
+    function playMissionCard(card) {
+      const message = {"type": "play_card", "card": card};
+      gameWebSocket.send(JSON.stringify(message));
+    }
+
   </script>
 </body>
 </html>
