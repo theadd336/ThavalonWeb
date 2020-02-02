@@ -661,6 +661,7 @@ def test_voting(player_to_vote, mission_num, expected_results, current_proposals
         assert game.set_vote(player.session_id, player_to_vote[player.name]) == expected_results[index]
     for player in game.proposal_order_players:
         assert player.proposal_vote is None
+    assert game.current_proposals == []
 
 
 @pytest.mark.parametrize("lobby_status", [LobbyStatus.JOINING, LobbyStatus.DONE])
