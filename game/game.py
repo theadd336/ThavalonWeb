@@ -268,6 +268,8 @@ class Game:
     def set_proposal(self, player_names: List[str]) -> Dict[str, Any]:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
             raise ValueError("Can only set proposal when game in progress")
+        if self.game_phase != GamePhase.PROPOSAL:
+            raise ValueError("Can only set proposals when game state is proposal")
 
         expected_proposal_size = self.get_proposal_size()
         if len(player_names) != expected_proposal_size:
@@ -299,7 +301,7 @@ class Game:
         if self.mission_num != 0 and self.current_proposal_num == self.max_num_proposers:
             self.game_phase = GamePhase.MISSION
             return {
-                "game_phase": GamePhase.MISSION,
+                "game_phase": self.game_phase,
                 "mission_info": self.send_mission(0)
             }
 
@@ -313,6 +315,9 @@ class Game:
     def set_vote(self, session_id: str, vote: bool) -> Dict[str, Any]:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
             raise ValueError("Can only set vote when game in progress")
+        if self.game_phase != GamePhase.VOTE:
+            raise ValueError("Can only set vote when game state is vote")
+
         player = self.session_id_to_player[session_id]
         if player.proposal_vote is not None:
             raise ValueError(f"{player.name} has already voted this round.")
@@ -370,6 +375,9 @@ class Game:
     def play_mission_card(self, session_id: str, mission_card: MissionCard) -> Dict[str, Any]:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
             raise ValueError("Can only set vote when game in progress")
+        if self.game_phase != GamePhase.MISSION:
+            raise ValueError("Can only play mission cards when game state is mission")
+
         player = self.session_id_to_player[session_id]
         if player.name not in self.current_mission:
             raise ValueError(f"{player.name} not on current mission, only {self.current_mission} are on the mission.")
