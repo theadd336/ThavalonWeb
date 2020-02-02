@@ -299,6 +299,7 @@ class Game:
 
         # if not mission 1, and current proposal num equals max num proposals, then this mission must go
         if self.mission_num != 0 and self.current_proposal_num == self.max_num_proposers:
+            _advance_proposal()
             self.game_phase = GamePhase.MISSION
             return {
                 "game_phase": self.game_phase,
