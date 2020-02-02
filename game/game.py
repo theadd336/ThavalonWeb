@@ -2,6 +2,7 @@ import random
 from .player import Player
 from game.roles.iseult import Iseult
 from game.roles.lancelot import Lancelot
+from game.roles.maelegant import Maelegant
 from game.roles.merlin import Merlin
 from game.roles.mordred import Mordred
 from game.roles.morgana import Morgana
@@ -40,7 +41,7 @@ _GAME_SIZE_TO_GOOD_COUNT = {
 }
 
 _GOOD_ROLES = [Iseult, Lancelot, Merlin, Percival, Tristan]
-_EVIL_ROLES = [Mordred, Morgana]
+_EVIL_ROLES = [Maelegant, Mordred, Morgana]
 
 
 class Game:
