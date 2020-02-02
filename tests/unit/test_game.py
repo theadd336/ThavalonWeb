@@ -330,6 +330,7 @@ def test_set_proposal_round_1():
     ]
     game.lobby_status = LobbyStatus.IN_PROGRESS
 
+    assert game.current_proposal_num == 1
     result1 = game.set_proposal(["player1", "player2"])
     assert result1["game_phase"] == GamePhase.PROPOSAL
     assert result1["proposals"] == [["player1", "player2"]]
@@ -340,6 +341,7 @@ def test_set_proposal_round_1():
         "proposal_size": 2,
         "max_num_proposers": 2,
     }
+    # assert game.current_proposal_num == 2
 
     result2 = game.set_proposal(["player3", "player1"])
     assert result2["game_phase"] == GamePhase.VOTE
@@ -654,10 +656,12 @@ def test_voting(player_to_vote, mission_num, expected_results, current_proposals
     game.lobby_status = LobbyStatus.IN_PROGRESS
     game.game_phase = GamePhase.VOTE
     game.current_proposals = current_proposals
+
     for index, player in enumerate(game.proposal_order_players):
         assert game.set_vote(player.session_id, player_to_vote[player.name]) == expected_results[index]
     for player in game.proposal_order_players:
         assert player.proposal_vote is None
+    assert game.current_proposals == []
 
 
 @pytest.mark.parametrize("lobby_status", [LobbyStatus.JOINING, LobbyStatus.DONE])
