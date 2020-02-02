@@ -233,7 +233,6 @@ class Game:
             "proposer_index": self.proposer_index,
             "proposal_size": self.get_proposal_size(),
             "max_num_proposers": 2 if self.mission_num == 0 else self.max_num_proposers,
-            "game_phase": self.game_phase
         }
 
     def get_round_info(self) -> Dict[str, Any]:
@@ -257,13 +256,11 @@ class Game:
         return {
             "mission_players": self.current_mission,
             "mission_session_ids": [self.player_name_to_session_id[name] for name in self.current_mission],
-            "game_phase": self.game_phase
         }
 
     def send_mission(self, proposal_idx: int) -> Dict[str, Any]:
         # handle updating mission info, then return call to get mission info
         self.current_proposal_num = 1 # reset for next round
-        self.game_phase = GamePhase.MISSION
         self.current_mission = self.current_proposals[proposal_idx]
         return self.get_mission_info()
 
@@ -299,7 +296,11 @@ class Game:
 
         # if not mission 1, and current proposal num equals max num proposals, then this mission must go
         if self.mission_num != 0 and self.current_proposal_num == self.max_num_proposers:
-            return self.send_mission(0)  # 0 because when not in round 1, there's only 1 proposal to send
+            self.game_phase = GamePhase.MISSION
+            return {
+                "game_phase": GamePhase.MISSION,
+                "mission_info": self.send_mission(0)
+            }
 
         _advance_proposal() # advance proposal for next round
         self.game_phase = GamePhase.VOTE
@@ -338,14 +339,18 @@ class Game:
 
         # if upvote, send mission. Will always be index 0, even in round 1
         if upvotes > (self.get_num_players() / 2):
+            self.game_phase = GamePhase.MISSION
             return {
+                "game_phase": self.game_phase,
                 "proposal_vote_info": self.last_vote_info,
                 "mission_info": self.send_mission(0)
             }
 
         # downvotes on mission 1 indicate send second proposal
         if self.mission_num == 0:
+            self.game_phase = GamePhase.MISSION
             return {
+                "game_phase": self.game_phase,
                 "proposal_vote_info": self.last_vote_info,
                 "mission_info": self.send_mission(1)
             }
@@ -353,6 +358,7 @@ class Game:
         # else return next proposal info, which was updated by set_proposal
         self.game_phase = GamePhase.PROPOSAL
         return {
+            "game_phase": self.game_phase,
             "proposal_vote_info": self.last_vote_info,
             "proposal_info": self.get_proposal_info()
         }
@@ -410,7 +416,6 @@ class Game:
         self.mission_num += 1
         for player in players_on_mission:
             player.mission_card = None
-
 
         if num_passed_missions == 3:
             self.game_phase = GamePhase.ASSASSINATION
