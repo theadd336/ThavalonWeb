@@ -428,6 +428,7 @@ class Game:
         self.mission_num += 1
         for player in players_on_mission:
             player.mission_card = None
+        self.current_mission_count = 0
 
         if num_passed_missions == 3:
             self.game_phase = GamePhase.ASSASSINATION

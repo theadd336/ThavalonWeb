@@ -677,6 +677,7 @@ def test_play_mission_card_not_on_mission():
     game.lobby_status = LobbyStatus.IN_PROGRESS
     game.session_id_to_player = {"1": Player("1", "p1"), "2": Player("2", "p2")}
     game.current_mission = ["p1"]
+    game.game_phase = GamePhase.MISSION
     with pytest.raises(ValueError) as excinfo:
         game.play_mission_card("2", MissionCard.FAIL)
     assert str(excinfo.value) == "p2 not on current mission, only ['p1'] are on the mission."
@@ -814,4 +815,5 @@ def test_play_mission_card(mission_num, mission_num_to_results, session_id_to_ca
 
     assert p1.mission_card is None
     assert p2.mission_card is None
+    assert game.current_mission_count == 0
 
