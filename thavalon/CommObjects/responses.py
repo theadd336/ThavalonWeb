@@ -129,3 +129,10 @@ class OnVoteResultsResponse(Response):
         object_dict["submittedVote"] = self.submitted_vote
         object_dict["isOnMission"] = self.is_on_mission
         return object_dict
+
+class OnMissionResultsResponse(Response):
+    def __init__(self, message_type: str = ""):
+        super().__init__(message_type=message_type, success=True)
+
+    def _send_core(self, object_dict):
+        return object_dict

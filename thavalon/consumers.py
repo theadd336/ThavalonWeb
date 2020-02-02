@@ -327,21 +327,21 @@ class GameConsumer(WebsocketConsumer):
             print("Card integer not valid. Played %d." % card)
             return
         if card == MissionCard.SUCCESS.value:
-            pass
+            mission_card = MissionCard.SUCCESS
         elif card == MissionCard.FAIL.value:
-            pass
+            mission_card = MissionCard.FAIL
         elif card == MissionCard.REVERSE.value:
-            pass
+            mission_card = MissionCard.REVERSE
         else:
             print("Non-valid card to enum conversion")
             return
-        pass
+        mission_results = self.game.play_mission_card(self.player_id, mission_card)
+
+        if mission_results.get("game_phase").value == 2:
+            self._mission_still_in_progress(mission_card.name)
+
+    def _mission_still_in_progress(self, card_played):
+        response = responses.OnMissionResultsResponse("mission_still_in_progress")
 
     def use_ability(self):
-        pass
-
-    def on_vote_result(self):
-        pass
-
-    def on_mission_result(self):
         pass
