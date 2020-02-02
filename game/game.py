@@ -233,6 +233,7 @@ class Game:
             "proposer_index": self.proposer_index,
             "proposal_size": self.get_proposal_size(),
             "max_num_proposers": 2 if self.mission_num == 0 else self.max_num_proposers,
+            "current_proposal_num": self.current_proposal_num
         }
 
     def get_round_info(self) -> Dict[str, Any]:
@@ -400,6 +401,8 @@ class Game:
         players_on_mission = [self.session_id_to_player[self.player_name_to_session_id[player_name]]
                               for player_name in self.current_mission]
         played_cards = [player.mission_card for player in players_on_mission]
+        random.shuffle(played_cards)
+        played_cards_names = [card.name for card in played_cards]
 
         mission_result = MissionResult.PASS
         num_fails = played_cards.count(MissionCard.FAIL)
@@ -435,6 +438,7 @@ class Game:
             self.game_phase = GamePhase.ASSASSINATION
             return {
                 "mission_result": mission_result,
+                "played_cards": played_cards_names,
                 "game_phase": self.game_phase
             }
         if num_failed_missions == 3:
@@ -442,6 +446,7 @@ class Game:
             self.game_phase = GamePhase.DONE
             return {
                 "mission_result": mission_result,
+                "played_cards": played_cards_names,
                 "lobby_status": self.lobby_status,
                 "game_phase": self.game_phase
             }
@@ -449,6 +454,7 @@ class Game:
         self.game_phase = GamePhase.PROPOSAL
         return {
             "mission_result": mission_result,
+            "played_cards": played_cards_names,
             "game_phase": self.game_phase,
             "proposal_info": self.get_proposal_info()
         }

@@ -273,6 +273,7 @@ def test_get_proposal_info():
     assert result["proposer_index"] == 0
     assert result["proposal_size"] == 2
     assert result["max_num_proposers"] == 2
+    assert result["current_proposal_num"] == 1
 
 
 @pytest.mark.parametrize("lobby_status", [LobbyStatus.JOINING, LobbyStatus.DONE])
@@ -340,6 +341,7 @@ def test_set_proposal_round_1():
         "proposer_index": 4,
         "proposal_size": 2,
         "max_num_proposers": 2,
+        "current_proposal_num": 2
     }
     # assert game.current_proposal_num == 2
 
@@ -541,6 +543,7 @@ def test_set_vote_invalid_lobby(lobby_status):
                         "proposer_index": 0,
                         "proposal_size": 3,
                         "max_num_proposers": 3,
+                        "current_proposal_num": 1
                     }
                 }
             ],
@@ -734,6 +737,7 @@ def test_play_invalid_card():
             },
             {
                 "mission_result": MissionResult.FAIL,
+                "played_cards": ["SUCCESS", "FAIL"],
                 "game_phase": GamePhase.DONE,
                 "lobby_status": LobbyStatus.DONE
             }
@@ -756,6 +760,7 @@ def test_play_invalid_card():
                 },
                 {
                     "mission_result": MissionResult.PASS,
+                    "played_cards": ["SUCCESS", "SUCCESS"],
                     "game_phase": GamePhase.ASSASSINATION
                 }
             ]
@@ -777,6 +782,7 @@ def test_play_invalid_card():
                 },
                 {
                     "mission_result": MissionResult.FAIL,
+                    "played_cards": ["FAIL", "SUCCESS"],
                     "game_phase": GamePhase.PROPOSAL,
                     "proposal_info": {
                         "proposal_order": ["p1", "p2"],
@@ -784,6 +790,7 @@ def test_play_invalid_card():
                         "proposer_index": 0,
                         "proposal_size": 2,
                         "max_num_proposers": 3,
+                        "current_proposal_num": 1
                     }
                 }
             ]
@@ -810,8 +817,9 @@ def test_play_mission_card(mission_num, mission_num_to_results, session_id_to_ca
     game.current_proposal_num = 1
     game.max_num_proposers = 3
 
+    random.seed(0)
     for index, (session_id, card) in enumerate(session_id_to_card.items()):
-        assert game.play_mission_card(session_id, card) == expected_results[index]
+        assert game.play_mission_card(session_id, card)  == expected_results[index]
 
     assert p1.mission_card is None
     assert p2.mission_card is None
