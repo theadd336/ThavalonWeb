@@ -336,6 +336,8 @@ class Game:
         for player in self.session_id_to_player.values():
             self.last_vote_info[player.name] = player.proposal_vote
             player.proposal_vote = None
+        # reset current proposals for next proposal
+        self.current_proposals = []
 
         # if upvote, send mission. Will always be index 0, even in round 1
         if upvotes > (self.get_num_players() / 2):
