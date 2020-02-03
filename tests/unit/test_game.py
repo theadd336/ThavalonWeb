@@ -824,4 +824,3 @@ def test_play_mission_card(mission_num, mission_num_to_results, session_id_to_ca
     assert p1.mission_card is None
     assert p2.mission_card is None
     assert game.current_mission_count == 0
-
