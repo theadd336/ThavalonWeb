@@ -59,7 +59,6 @@ class ChatConsumer(WebsocketConsumer):
 
 
 class LobbyConsumer(WebsocketConsumer):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.lobby_group_name = ""
@@ -74,6 +73,7 @@ class LobbyConsumer(WebsocketConsumer):
 
     def connect(self):
         self.game_id = self.lobby_group_name = self.scope["url_route"]["kwargs"]["game_id"]
+
         try:
             self.game = _GAME_MANAGER.get_game(self.game_id)
             self.player_id = self.scope["session"]["player_id"]
@@ -294,6 +294,7 @@ class GameConsumer(WebsocketConsumer):
         response.proposal_size = proposal_info.get("proposal_size")
         response.max_num_proposals = proposal_info.get("max_num_proposers")
         response.proposal_num = proposal_info.get("current_proposal_num")
+        response.proposal_vote_info = event.get("proposal_vote_info")
         self.send(json.dumps(response.send()))
 
     def on_vote_start(self, event):
@@ -333,6 +334,8 @@ class GameConsumer(WebsocketConsumer):
         response = responses.OnVoteResultsResponse(message_type="on_mission_start")
         response.is_on_mission = self.player_id in mission_info.get("mission_session_ids")
         response.player_list = mission_info.get("mission_players")
+        response.proposal_vote_info = event.get("proposal_vote_info")
+        print(response.proposal_vote_info)
         self.send(json.dumps(response.send()))
 
     def play_card(self, message):
@@ -395,4 +398,3 @@ class GameConsumer(WebsocketConsumer):
 
     def use_ability(self):
         pass
- 

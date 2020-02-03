@@ -283,12 +283,13 @@ function writePriorProposalVoteResults(priorVoteInfo) {
     for (const playerName in priorVoteInfo) {
         const voteListEntry = document.createElement("LI");
         voteListEntry.textContent = playerName + ": "
-        if (priorVoteInfo.playerName === True) {
+
+        if (priorVoteInfo[playerName] === true) {
             vote = "Upvoted";
-        } else if (priorVoteInfo.playerName === False) {
+        } else if (priorVoteInfo[playerName] === false) {
             vote = "Downvoted";
         } else {
-            vote = priorVoteInfo.playerName;
+            vote = priorVoteInfo[playerName];
         }
         voteListEntry.textContent += vote;
         voteListNode.appendChild(voteListEntry);
