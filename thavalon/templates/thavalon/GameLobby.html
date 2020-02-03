@@ -44,7 +44,6 @@
       </div>
     </div>
     <div class="row">
-      <div class="col-1"></div>
       <div class="col-2" id="m1Indicator">
         <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px" />
       </div>
@@ -81,10 +80,11 @@
          <div class="tab-content py-3 px-3 px-sm-0" id="nav-tabContent">
            <div class="tab-pane fade show active" id="nav-info" role="tabpanel" aria-labelledby="nav-info-tab">
              <pre id="roleInformationLocation">
+               <!-- role information goes here -->
              </pre>
            </div>
            <div class="tab-pane fade" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
-
+              <!-- Prior vote info goes here for now -->
            </div>
            <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">
              <pre id="proposalVoteHeader">
@@ -191,6 +191,12 @@
           break;
         case "on_mission_results":
           onMissionResults(data);
+          break;
+        case "vote_still_in_progress":
+          voteStillInProgress(data);
+          break;
+        case "mission_still_in_progress":
+          missionStillInProgress(data);
           break;
         }
       }

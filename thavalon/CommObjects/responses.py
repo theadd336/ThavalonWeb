@@ -83,6 +83,7 @@ class NewProposalResponse(Response):
         self.max_num_proposals = 0
         self.proposal_size = 1
         self.current_proposal = None
+        self.proposal_vote_info = None
 
     def _send_core(self, object_dict):
         object_dict["isProposing"] = self.is_proposing
@@ -92,6 +93,7 @@ class NewProposalResponse(Response):
         object_dict["maxNumProposals"] = self.max_num_proposals
         object_dict["proposalSize"] = self.proposal_size
         object_dict["currentProposal"] = self.current_proposal
+        object_dict["proposalVoteInfo"] = self.proposal_vote_info
         return object_dict
 
 
@@ -123,11 +125,13 @@ class OnVoteResultsResponse(Response):
         self.player_list = player_list
         self.is_on_mission = False
         self.submitted_vote = False
+        self.proposal_vote_info = None
 
     def _send_core(self, object_dict):
         object_dict["playerList"] = self.player_list
         object_dict["submittedVote"] = self.submitted_vote
         object_dict["isOnMission"] = self.is_on_mission
+        object_dict["priorVoteInfo"] = self.proposal_vote_info
         return object_dict
 
 

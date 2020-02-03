@@ -1,0 +1,20 @@
+branch-defaults:
+  dev:
+    environment: ThavalonWeb-env
+environment-defaults:
+  ThavalonWeb-env:
+    branch: null
+    repository: null
+global:
+  application_name: Thavalon Web
+  default_ec2_keyname: null
+  default_platform: arn:aws:elasticbeanstalk:us-east-2::platform/Python 3.6 running
+    on 64bit Amazon Linux/2.9.5
+  default_region: us-east-2
+  include_git_submodules: true
+  instance_profile: null
+  platform_name: null
+  platform_version: null
+  profile: eb-cli
+  sc: git
+  workspace_type: Application

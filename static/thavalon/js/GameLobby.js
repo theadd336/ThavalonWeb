@@ -192,6 +192,9 @@ function newProposal(message) {
         message.maxNumProposals,
         message.proposalSize,
         message.currentProposal);
+    if (message.priorVoteInfo != null) {
+        writePriorProposalVoteResults(message.priorVoteInfo);
+    }
 }
 
 function onMissionStart(message) {
@@ -203,6 +206,10 @@ function onMissionStart(message) {
     const voteBodySection = document.getElementById("proposalVoteContent");
     voteBodySection.innerHTML = "";
     voteBodySection.textContent = "Mission is going.";
+    console.log(message.priorVoteInfo)
+    if (message.priorVoteInfo != null) {
+        writePriorProposalVoteResults(message.priorVoteInfo);
+    }
 }
 
 function populateMissionTabOnMission() {
@@ -244,4 +251,62 @@ function onMissionResults(message) {
     const missionBodyLocation = document.getElementById("nav-about");
     missionBodyLocation.innerHTML = "";
     missionBodyLocation.textContent = message.playedCards;
+}
+
+function voteStillInProgress(message) {
+    // Get the location of the vote information and the position of the last element (the buttons).
+    const voteBodySection = document.getElementById("proposalVoteContent");
+    // Remove the buttons and put a message in their place to inform the user voting is complete.
+    voteBodySection.innerHTML = "";
+    // Format the sentence based on the vote boolean.
+    let alreadyVotedSentence = "You have ";
+    if (message.submittedVote) {
+        alreadyVotedSentence += "upvoted. ";
+    } else {
+        alreadyVotedSentence += "downvoted. ";
+    }
+    alreadyVotedSentence += "Please wait while others finish voting."
+    // Create the text node and add it to the voting section.
+    const alreadyVotedTextNode = document.createTextNode(alreadyVotedSentence);
+    voteBodySection.appendChild(alreadyVotedTextNode);
+}
+
+function writePriorProposalVoteResults(priorVoteInfo) {
+    const priorVoteInfoLocation = document.getElementById("nav-home");
+    priorVoteInfoLocation.innerHTML = "";
+    priorVoteInfoLocation.textContent = "Prior proposal votes:";
+    if (priorVoteInfo.wasObscured) {
+        priorVoteInfoLocation.appendChild(document.createTextNode("Someone has obscured the votes."));
+    }
+    const voteListNode = document.createElement("UL");
+    let vote = "";
+    for (const playerName in priorVoteInfo) {
+        const voteListEntry = document.createElement("LI");
+        voteListEntry.textContent = playerName + ": "
+        if (priorVoteInfo.playerName === True) {
+            vote = "Upvoted";
+        } else if (priorVoteInfo.playerName === False) {
+            vote = "Downvoted";
+        } else {
+            vote = priorVoteInfo.playerName;
+        }
+        voteListEntry.textContent += vote;
+        voteListNode.appendChild(voteListEntry);
+    }
+    priorVoteInfoLocation.appendChild(voteListNode);
+}
+
+function missionStillInProgress(message) {
+    const missionBodyLocation = document.getElementById("nav-about");
+    missionBodyLocation.innerHTML = "";
+    const cardPlayed = message.cardPlayed;
+    let missionInProgressSentence = "You have played a " + cardPlayed + ". ";
+    if (cardPlayed === "SUCCESS") {
+        missionInProgressSentence += "Good job!";
+    } else if (cardPlayed === "FAIL") {
+        missionInProgressSentence += "Why did you have to fail :(.";
+    } else {
+        "I see a bus in your future.";
+    }
+    missionBodyLocation.textContent = missionInProgressSentence;
 }
