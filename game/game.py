@@ -3,13 +3,14 @@ from .player import Player
 from game.roles.iseult import Iseult
 from game.roles.lancelot import Lancelot
 from game.roles.maelegant import Maelegant
+from game.roles.maeve import Maeve
 from game.roles.merlin import Merlin
 from game.roles.mordred import Mordred
 from game.roles.morgana import Morgana
 from game.roles.percival import Percival
 from game.roles.tristan import Tristan
 from game.game_constants import GamePhase, LobbyStatus, MissionResult, MissionCard
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 _MIN_NUM_PLAYERS = 2
 _MAX_NUM_PLAYERS = 10
@@ -41,7 +42,7 @@ _GAME_SIZE_TO_GOOD_COUNT = {
 }
 
 _GOOD_ROLES = [Iseult, Lancelot, Merlin, Percival, Tristan]
-_EVIL_ROLES = [Maelegant, Mordred, Morgana]
+_EVIL_ROLES = [Maeve, Maelegant, Mordred, Morgana]
 
 
 class Game:
@@ -89,6 +90,9 @@ class Game:
         self.current_mission: List[str] = 0
         # count of cards played so far
         self.current_mission_count: int = 0
+
+        # the player that is maeve, for ability purposes
+        self.maeve_player: Optional[Player] = None
 
     # methods for adding players
     def get_num_players(self) -> int:
