@@ -83,6 +83,7 @@ class NewProposalResponse(Response):
         self.max_num_proposals = 0
         self.proposal_size = 1
         self.current_proposal = None
+        self.proposal_vote_info = None
 
     def _send_core(self, object_dict):
         object_dict["isProposing"] = self.is_proposing
@@ -92,6 +93,7 @@ class NewProposalResponse(Response):
         object_dict["maxNumProposals"] = self.max_num_proposals
         object_dict["proposalSize"] = self.proposal_size
         object_dict["currentProposal"] = self.current_proposal
+        object_dict["proposalVoteInfo"] = self.proposal_vote_info
         return object_dict
 
 
@@ -100,10 +102,12 @@ class OnProposeResponse(Response):
         super().__init__(message_type="on_propose", success=True)
         self.proposed_player_list = proposed_player_list
         self.proposer_name = ""
+        self.is_proposing = False
 
     def _send_core(self, object_dict):
         object_dict["proposedPlayerList"] = self.proposed_player_list
         object_dict["proposerName"] = self.proposer_name
+        object_dict["isProposing"] = self.is_proposing
         return object_dict
 
 
@@ -123,11 +127,13 @@ class OnVoteResultsResponse(Response):
         self.player_list = player_list
         self.is_on_mission = False
         self.submitted_vote = False
+        self.proposal_vote_info = None
 
     def _send_core(self, object_dict):
         object_dict["playerList"] = self.player_list
         object_dict["submittedVote"] = self.submitted_vote
         object_dict["isOnMission"] = self.is_on_mission
+        object_dict["priorVoteInfo"] = self.proposal_vote_info
         return object_dict
 
 
@@ -137,9 +143,11 @@ class OnMissionResultsResponse(Response):
         self.card_played = ""
         self.mission_result = 0
         self.prior_mission_num = 0
+        self.played_cards = None
 
     def _send_core(self, object_dict):
         object_dict["cardPlayed"] = self.card_played
         object_dict["missionResult"] = self.mission_result
         object_dict["priorMissionNum"] = self.prior_mission_num
+        object_dict["playedCards"] = self.played_cards
         return object_dict
