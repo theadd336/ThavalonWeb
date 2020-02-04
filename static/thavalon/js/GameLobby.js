@@ -110,8 +110,13 @@ function writeProposalHeader(isProposing, proposerName, proposalNumber, maxNumPr
     proposalHeaderSection.appendChild(sentenceTextNode);
 }
 
-function writeProposalBodyOther(proposerName, currentProposal) {
+function writeProposalBodyOther(proposerName, currentProposal, isProposing) {
     const proposalBodySection = document.getElementById("proposalVoteContent");
+    // Clear out any proposal lists for mission 1 if not proposing.
+    if (!isProposing) {
+        const proposalListLocation = document.getElementById("proposalListLocation");
+        proposalListLocation.innerHTML = "";
+    }
     if (currentProposal == null || currentProposal.length === 0) {
         proposalBodySection.textContent = `Please wait while ${proposerName} proposes a mission.`;
         return;
@@ -131,7 +136,7 @@ function writeProposalBodyProposing(playerOrder, numOnMission) {
     // TODO: handle the current proposal if player disconnects and reconnects during proposal.
     // Get the template for the proposer selection list and its location.
     const proposerSelectionListTemplate = document.getElementById("proposerSelectionListTemplate");
-    const proposerSelectionListLocation = document.getElementById("proposalVoteContent");
+    const proposerSelectionListLocation = document.getElementById("proposalListLocation");
     // Clone the template and add the options.
     const proposerSelectionList = proposerSelectionListTemplate.content.cloneNode(true);
     const selectNode = proposerSelectionList.querySelector("select");
@@ -151,7 +156,7 @@ function writeProposalBodyProposing(playerOrder, numOnMission) {
 }
 
 function onPropose(proposalInfo) {
-    writeProposalBodyOther(proposalInfo.proposerName, proposalInfo.proposedPlayerList);
+    writeProposalBodyOther(proposalInfo.proposerName, proposalInfo.proposedPlayerList, proposalInfo.isProposing);
 }
 
 function onMoveToVote(proposalInfo) {
@@ -167,8 +172,10 @@ function writeVoteHeader() {
 
 function writeVoteBody(playerList) {
     const voteBodySection = document.getElementById("proposalVoteContent");
+    const proposalListLocation = document.getElementById("proposalListLocation");
     // Clear the old values before writing voting information.
     voteBodySection.innerHTML = "";
+    proposalListLocation.innerHTML = "";
     voteBodySection.textContent = "Voting on:"
     const listNode = document.createElement("UL");
     for (const playerName of playerList) {

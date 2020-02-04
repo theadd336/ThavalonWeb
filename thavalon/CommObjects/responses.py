@@ -102,10 +102,12 @@ class OnProposeResponse(Response):
         super().__init__(message_type="on_propose", success=True)
         self.proposed_player_list = proposed_player_list
         self.proposer_name = ""
+        self.is_proposing = False
 
     def _send_core(self, object_dict):
         object_dict["proposedPlayerList"] = self.proposed_player_list
         object_dict["proposerName"] = self.proposer_name
+        object_dict["isProposing"] = self.is_proposing
         return object_dict
 
 

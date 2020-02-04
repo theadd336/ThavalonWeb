@@ -245,11 +245,12 @@ class GameConsumer(WebsocketConsumer):
             return
         response = responses.OnProposeResponse(proposed_player_list=proposed_player_list)
         response.proposer_name = self.game.get_player(self.game.proposer_id).name
+        response.is_proposing = self.game.proposer_id == self.player_id
         async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, response.send())
 
     def on_propose(self, event):
-        if self.player_id == self.game.proposer_id:
-            return
+        # if self.player_id == self.game.proposer_id:
+        #     return
         self.send(json.dumps(event))
         return
 
@@ -269,7 +270,6 @@ class GameConsumer(WebsocketConsumer):
             print(str(e))
             return
         new_game_phase = new_game_state.get("game_phase").value
-        print(new_game_phase)
         del new_game_state["game_phase"]
         if new_game_phase == 0:
             new_game_state["type"] = "new_proposal"
@@ -335,7 +335,6 @@ class GameConsumer(WebsocketConsumer):
         response.is_on_mission = self.player_id in mission_info.get("mission_session_ids")
         response.player_list = mission_info.get("mission_players")
         response.proposal_vote_info = event.get("proposal_vote_info")
-        print(response.proposal_vote_info)
         self.send(json.dumps(response.send()))
 
     def play_card(self, message):
