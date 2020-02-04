@@ -7,6 +7,7 @@ from game.roles.maeve import Maeve
 from game.roles.merlin import Merlin
 from game.roles.mordred import Mordred
 from game.roles.morgana import Morgana
+from game.roles.nimue import Nimue
 from game.roles.percival import Percival
 from game.roles.tristan import Tristan
 from game.game_constants import GamePhase, LobbyStatus, MissionResult, MissionCard
@@ -41,8 +42,33 @@ _GAME_SIZE_TO_GOOD_COUNT = {
     10: 6
 }
 
-_GOOD_ROLES = [Iseult, Lancelot, Merlin, Percival, Tristan]
-_EVIL_ROLES = [Maeve, Maelegant, Mordred, Morgana]
+
+_BASE_GOOD_ROLES = [Iseult, Merlin, Percival, Tristan]
+_BASE_EVIL_ROLES = [Maeve, Mordred, Morgana]
+
+_GAME_SIZE_TO_GOOD_ROLES = {
+    2: [Nimue],
+    3: [Nimue],
+    4: [Nimue],
+    5: [Nimue],
+    6: [Nimue],
+    7: [Lancelot, Nimue],
+    8: [Lancelot],
+    9: [Lancelot],
+    10: [Lancelot]
+}
+
+_GAME_SIZE_TO_EVIL_ROLES = {
+    2: [],
+    3: [],
+    4: [],
+    5: [],
+    6: [],
+    7: [Maelegant],
+    8: [Maelegant],
+    9: [Maelegant],
+    10: [Maelegant]
+}
 
 
 class Game:
@@ -168,11 +194,14 @@ class Game:
         self.max_num_proposers = num_evil + 1
 
         # generate which good/evil roles are in game
-        good_role_indices = random.sample(range(0, len(_GOOD_ROLES)), num_good)
-        evil_role_indices = random.sample(range(0, len(_EVIL_ROLES)), num_evil)
+        good_roles = _BASE_GOOD_ROLES + _GAME_SIZE_TO_GOOD_ROLES[num_players]
+        evil_roles = _BASE_EVIL_ROLES + _GAME_SIZE_TO_EVIL_ROLES[num_players]
+
+        good_role_indices = random.sample(range(0, len(good_roles)), num_good)
+        evil_role_indices = random.sample(range(0, len(evil_roles)), num_evil)
 
         # get lover indices
-        good_roles_in_game = [_GOOD_ROLES[idx] for idx in good_role_indices]
+        good_roles_in_game = [good_roles[idx] for idx in good_role_indices]
         iseult_idx = -1
         tristan_idx = -1
         try:
@@ -190,7 +219,7 @@ class Game:
             lone_lover_idx = iseult_idx if iseult_idx != -1 else tristan_idx
             if random.choice([True, False]):
                 # True - replace lone lover with new role
-                lover_roles_not_in_game = list(set(_GOOD_ROLES) - set(good_roles_in_game) - {Iseult, Tristan})
+                lover_roles_not_in_game = list(set(good_roles) - set(good_roles_in_game) - {Iseult, Tristan})
                 good_roles_in_game[lone_lover_idx] = random.choice(lover_roles_not_in_game)
             else:
                 # False - replace another role with other lover
@@ -205,7 +234,7 @@ class Game:
 
         # assign rest of players an evil role
         for player, evil_role_index in zip(players[num_good:], evil_role_indices):
-            player.role = _EVIL_ROLES[evil_role_index]()
+            player.role = evil_roles[evil_role_index]()
 
         for index, player in enumerate(players):
             for other_player in players[index + 1:]:
