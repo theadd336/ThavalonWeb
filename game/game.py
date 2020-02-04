@@ -265,7 +265,7 @@ class Game:
 
     def send_mission(self, proposal_idx: int) -> Dict[str, Any]:
         # handle updating mission info, then return call to get mission info
-        self.current_proposal_num = 1 # reset for next round
+        self.current_proposal_num = 1  # reset for next round
         self.current_mission = self.current_proposals[proposal_idx]
         self.current_proposals = []
         return self.get_mission_info()
@@ -311,7 +311,7 @@ class Game:
                 "mission_info": self.send_mission(0)
             }
 
-        _advance_proposal() # advance proposal for next round
+        _advance_proposal()  # advance proposal for next round
         self.game_phase = GamePhase.VOTE
         return {
             "game_phase": self.game_phase,

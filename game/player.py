@@ -1,6 +1,7 @@
 from game.game_constants import MissionCard
 from typing import Optional
 
+
 class Player:
     def __init__(self, session_id: str, name: str) -> None:
         self.session_id = session_id
