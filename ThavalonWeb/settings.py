@@ -28,6 +28,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "vleerinc.com",
     "127.0.0.1",
+    "76.235.97.38",
 ]
 
 

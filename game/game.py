@@ -439,6 +439,7 @@ class Game:
             return {
                 "mission_result": mission_result,
                 "played_cards": played_cards_names,
+                "mission_players": self.current_mission,
                 "game_phase": self.game_phase
             }
         if num_failed_missions == 3:
@@ -448,6 +449,7 @@ class Game:
                 "mission_result": mission_result,
                 "played_cards": played_cards_names,
                 "lobby_status": self.lobby_status,
+                "mission_players": self.current_mission,
                 "game_phase": self.game_phase
             }
 
@@ -456,5 +458,6 @@ class Game:
             "mission_result": mission_result,
             "played_cards": played_cards_names,
             "game_phase": self.game_phase,
+            "mission_players": self.current_mission,
             "proposal_info": self.get_proposal_info()
         }

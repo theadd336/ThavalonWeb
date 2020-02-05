@@ -213,7 +213,6 @@ function onMissionStart(message) {
     const voteBodySection = document.getElementById("proposalVoteContent");
     voteBodySection.innerHTML = "";
     voteBodySection.textContent = "Mission is going.";
-    console.log(message.priorVoteInfo)
     if (message.priorVoteInfo != null) {
         writePriorProposalVoteResults(message.priorVoteInfo);
     }
@@ -242,8 +241,10 @@ function populateMissionTabNotOnMission(playersOnMission) {
 }
 
 function onMissionResults(message) {
-    const missionResult = message.missionResult;
-    const priorMissionNum = message.priorMissionNum;
+    writeMissionResults(message.priorMissionNum, message.missionResult, message.playersOnMission, message.playedCards);
+}
+
+function writeMissionResults(priorMissionNum, missionResult, playersOnMission, playedCards) {
     let missionResultTemplate = null
     if (missionResult === 0) {
         missionResultTemplate = document.getElementById("missionPassedTemplate");
@@ -257,8 +258,34 @@ function onMissionResults(message) {
     missionIndicatorLocation.appendChild(missionResultNode);
     const missionBodyLocation = document.getElementById("nav-about");
     missionBodyLocation.innerHTML = "";
-    missionBodyLocation.textContent = message.playedCards;
+    missionBodyLocation.textContent = "Waiting for the next mission.";
+    updateMissionPopovers(playersOnMission, playedCards, missionIndicatorLocation)
 }
+
+function updateMissionPopovers(playersOnMission, playedCards, missionIndicatorLocation) {
+    // First, add the players on the mission.
+    let popoverText = "Players: ";
+    const numPlayers = playersOnMission.length;
+    for (let i = 0; i < numPlayers; i++) {
+        // Handle cases of the last player (and), a two player mission (no comma) or other cases.
+        if (i + 1 === numPlayers) {
+            popoverText += "and " + playersOnMission[i] + "(" + numPlayers + ")";
+        } else if (numPlayers === 2) {
+            popoverText += playersOnMission[i] + " ";
+        } else {
+            popoverText += playersOnMission[i] + ", ";
+        }
+    }
+    // Add a linebreak for formatting;
+    popoverText += "<br />";
+    // Next, handle cards played.
+    popoverText += "Cards Played: " + playedCards.join(", ");
+    // Finally, add it to the popover and initialize it.
+    missionIndicatorLocation.setAttribute("data-content", popoverText);
+    const popover = $(missionIndicatorLocation);
+    popover.popover();
+}
+
 
 function voteStillInProgress(message) {
     // Get the location of the vote information and the position of the last element (the buttons).
