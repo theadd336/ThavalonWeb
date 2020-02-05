@@ -285,7 +285,7 @@ def test_get_round_info_invalid_lobby(lobby_status):
 
 
 @pytest.mark.parametrize("mission_num, num_players, expected_info", [
-    (0, 5, "The first mission has only two proposals. No voting will happen until both proposals are " \
+    (0, 5, "The first mission has only two proposals. No voting will happen until both proposals are "
            "made. Upvote for the first proposal, downvote for the second proposal."),
     (1, 5, ""),
     (2, 5, ""),
@@ -441,7 +441,7 @@ def test_set_invalid_proposal_size_errors():
     assert str(excinfo.value) == "Expected proposal of size 2, but instead got ['p1']."
 
 
-def test_set_invalid_proposal_size_errors():
+def test_set_invalid_proposal_player_errors():
     game = Game()
     mock_get_num_players = Mock()
     mock_get_num_players.return_value = 5
@@ -472,41 +472,41 @@ def test_set_vote_invalid_lobby(lobby_status):
 
 @pytest.mark.parametrize("player_to_vote, mission_num, expected_results, current_proposals", [
     (
-        {
-            "p1": True,
-            "p2": True,
-            "p3": True,
-            "p4": False,
-            "p5": False
-        },
-        1,
-        [
             {
-                "game_phase": GamePhase.VOTE,
-                "vote": True
+                "p1": True,
+                "p2": True,
+                "p3": True,
+                "p4": False,
+                "p5": False
             },
-            {
-                "game_phase": GamePhase.VOTE,
-                "vote": True
-            },
-            {
-                "game_phase": GamePhase.VOTE,
-                "vote": True
-            },
-            {
-                "game_phase": GamePhase.VOTE,
-                "vote": False
-            },
-            {
-                "game_phase": GamePhase.MISSION,
-                "proposal_vote_info": {"p1": True, "p2": True, "p3": True, "p4": False, "p5": False},
-                "mission_info": {
-                    "mission_players": ["p1", "p2"],
-                    "mission_session_ids": ["1", "2"],
+            1,
+            [
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": True
+                },
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": True
+                },
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": True
+                },
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": False
+                },
+                {
+                    "game_phase": GamePhase.MISSION,
+                    "proposal_vote_info": {"p1": True, "p2": True, "p3": True, "p4": False, "p5": False},
+                    "mission_info": {
+                        "mission_players": ["p1", "p2"],
+                        "mission_session_ids": ["1", "2"],
+                    }
                 }
-            }
-        ],
-        [["p1", "p2"]]
+            ],
+            [["p1", "p2"]]
     ),
     (
             {
@@ -547,44 +547,44 @@ def test_set_vote_invalid_lobby(lobby_status):
                     }
                 }
             ],
-        [["p1", "p2"]]
+            [["p1", "p2"]]
     ),
     (
-       {
-            "p1": True,
-            "p2": True,
-            "p3": True,
-            "p4": False,
-            "p5": False
-        },
-        0,
-        [
             {
-                "game_phase": GamePhase.VOTE,
-                "vote": True
+                "p1": True,
+                "p2": True,
+                "p3": True,
+                "p4": False,
+                "p5": False
             },
-            {
-                "game_phase": GamePhase.VOTE,
-                "vote": True
-            },
-            {
-                "game_phase": GamePhase.VOTE,
-                "vote": True
-            },
-            {
-                "game_phase": GamePhase.VOTE,
-                "vote": False
-            },
-            {
-                "game_phase": GamePhase.MISSION,
-                "proposal_vote_info": {"p1": True, "p2": True, "p3": True, "p4": False, "p5": False},
-                "mission_info": {
-                    "mission_players": ["p1", "p3"],
-                    "mission_session_ids": ["1", "3"],
+            0,
+            [
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": True
+                },
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": True
+                },
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": True
+                },
+                {
+                    "game_phase": GamePhase.VOTE,
+                    "vote": False
+                },
+                {
+                    "game_phase": GamePhase.MISSION,
+                    "proposal_vote_info": {"p1": True, "p2": True, "p3": True, "p4": False, "p5": False},
+                    "mission_info": {
+                        "mission_players": ["p1", "p3"],
+                        "mission_session_ids": ["1", "3"],
+                    }
                 }
-            }
-        ],
-        [["p1", "p3"], ["p2", "p4"]]
+            ],
+            [["p1", "p3"], ["p2", "p4"]]
     ),
     (
             {
@@ -721,27 +721,27 @@ def test_play_invalid_card():
 
 @pytest.mark.parametrize("mission_num, mission_num_to_results, session_id_to_card, expected_results", [
     (
-        2,
-        {
-            0: MissionResult.FAIL,
-            1: MissionResult.FAIL
-        },
-        {
-            "1": MissionCard.SUCCESS,
-            "2": MissionCard.FAIL
-        },
-        [
+            2,
             {
-                "game_phase": GamePhase.MISSION,
-                "mission_card": MissionCard.SUCCESS
+                0: MissionResult.FAIL,
+                1: MissionResult.FAIL
             },
             {
-                "mission_result": MissionResult.FAIL,
-                "played_cards": ["SUCCESS", "FAIL"],
-                "game_phase": GamePhase.DONE,
-                "lobby_status": LobbyStatus.DONE
-            }
-        ]
+                "1": MissionCard.SUCCESS,
+                "2": MissionCard.FAIL
+            },
+            [
+                {
+                    "game_phase": GamePhase.MISSION,
+                    "mission_card": MissionCard.SUCCESS
+                },
+                {
+                    "mission_result": MissionResult.FAIL,
+                    "played_cards": ["SUCCESS", "FAIL"],
+                    "game_phase": GamePhase.DONE,
+                    "lobby_status": LobbyStatus.DONE
+                }
+            ]
     ),
     (
             2,
@@ -819,7 +819,7 @@ def test_play_mission_card(mission_num, mission_num_to_results, session_id_to_ca
 
     random.seed(0)
     for index, (session_id, card) in enumerate(session_id_to_card.items()):
-        assert game.play_mission_card(session_id, card)  == expected_results[index]
+        assert game.play_mission_card(session_id, card) == expected_results[index]
 
     assert p1.mission_card is None
     assert p2.mission_card is None
