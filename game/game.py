@@ -86,6 +86,8 @@ class Game:
         self.mission_num_to_result: Dict[int, MissionResult] = {}
         # mission number to players on mission
         self.mission_players: Dict[int, List[str]] = {}
+        # mission number to cards
+        self.mission_cards: Dict[int, List[MissionCard]] = {}
         # for declarations, index in proposer (0-indexed) to declared role name
         self.declarations: Dict[int, str] = {}
         # last vote info in game, mapping player to vote
@@ -234,7 +236,11 @@ class Game:
 
         # assign rest of players an evil role
         for player, evil_role_index in zip(players[num_good:], evil_role_indices):
-            player.role = evil_roles[evil_role_index]()
+            evil_role = evil_roles[evil_role_index]
+            # record certain players for later ability use
+            if evil_role == Maeve:
+                self.maeve_player = player
+            player.role = evil_role()
 
         for index, player in enumerate(players):
             for other_player in players[index + 1:]:
@@ -407,6 +413,13 @@ class Game:
             "proposal_info": self.get_proposal_info()
         }
 
+    def get_all_mission_results(self) -> Dict[str, Dict[int, Any]]:
+        return {
+            "players": self.mission_players,
+            "mission_results": self.mission_num_to_result,
+            "mission_cards": self.mission_cards
+        }
+
     def play_mission_card(self, session_id: str, mission_card: MissionCard) -> Dict[str, Any]:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
             raise ValueError("Can only set vote when game in progress")
@@ -456,8 +469,12 @@ class Game:
             # at this point, no fails
             mission_result = MissionResult.FAIL
 
+        # store mission results for future reference
         self.mission_players[self.mission_num] = self.current_mission
         self.mission_num_to_result[self.mission_num] = mission_result
+        self.mission_cards[self.mission_num] = played_cards
+
+        # determine current game state to see if game over
         num_failed_missions = list(self.mission_num_to_result.values()).count(MissionResult.FAIL)
         num_passed_missions = len(self.mission_num_to_result) - num_failed_missions
 

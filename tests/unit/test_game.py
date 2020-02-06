@@ -190,6 +190,18 @@ def test_start_game_verify_proposal_order() -> None:
                 "id4": Player("id4", "Meg"),
                 "id5": Player("id5", "Paul")
             }
+    ),
+    (
+            7,
+            {
+                "id1": Player("id1", "Andrew"),
+                "id2": Player("id2", "Arya"),
+                "id3": Player("id3", "Jared"),
+                "id4": Player("id4", "Meg"),
+                "id5": Player("id5", "Paul"),
+                "id5": Player("id5", "Raz"),
+                "id5": Player("id5", "Colin")
+            }
     )
 ])
 def test_start_game_players_assigned(num_players, session_id_to_player) -> None:
@@ -719,7 +731,8 @@ def test_play_invalid_card():
     assert str(excinfo.value) == "p1 is not allowed to play the card MissionCard.REVERSE."
 
 
-@pytest.mark.parametrize("mission_num, mission_num_to_results, session_id_to_card, expected_results", [
+@pytest.mark.parametrize("mission_num, mission_num_to_results, session_id_to_card, expected_results, "
+                         "expected_mission_info", [
     (
             2,
             {
@@ -742,7 +755,12 @@ def test_play_invalid_card():
                     "game_phase": GamePhase.DONE,
                     "lobby_status": LobbyStatus.DONE
                 }
-            ]
+            ],
+            {
+                "players": {2: ["p1", "p2"]},
+                "mission_results": {0: MissionResult.FAIL, 1: MissionResult.FAIL, 2: MissionResult.FAIL},
+                "mission_cards": {2: [MissionCard.SUCCESS, MissionCard.FAIL]}
+            }
     ),
     (
             2,
@@ -765,7 +783,12 @@ def test_play_invalid_card():
                     "played_cards": ["SUCCESS", "SUCCESS"],
                     "game_phase": GamePhase.ASSASSINATION
                 }
-            ]
+            ],
+            {
+                "players": {2: ["p1", "p2"]},
+                "mission_results": {0: MissionResult.PASS, 1: MissionResult.PASS, 2: MissionResult.PASS},
+                "mission_cards": {2: [MissionCard.SUCCESS, MissionCard.SUCCESS]}
+            }
     ),
     (
             2,
@@ -796,11 +819,16 @@ def test_play_invalid_card():
                         "current_proposal_num": 1
                     }
                 }
-            ]
+            ],
+            {
+                "players": {2: ["p1", "p2"]},
+                "mission_results": {0: MissionResult.PASS, 1: MissionResult.PASS, 2: MissionResult.FAIL},
+                "mission_cards": {2: [MissionCard.FAIL, MissionCard.SUCCESS]}
+            }
     )
-
 ])
-def test_play_mission_card(mission_num, mission_num_to_results, session_id_to_card, expected_results):
+def test_play_mission_card(mission_num, mission_num_to_results, session_id_to_card, expected_results,
+                           expected_mission_info):
     game = Game()
     game.game_phase = GamePhase.MISSION
     game.lobby_status = LobbyStatus.IN_PROGRESS
@@ -824,6 +852,7 @@ def test_play_mission_card(mission_num, mission_num_to_results, session_id_to_ca
     for index, (session_id, card) in enumerate(session_id_to_card.items()):
         assert game.play_mission_card(session_id, card) == expected_results[index]
 
+    assert game.get_all_mission_results() == expected_mission_info
     assert p1.mission_card is None
     assert p2.mission_card is None
     assert game.current_mission_count == 0
