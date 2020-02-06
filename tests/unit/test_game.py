@@ -737,6 +737,7 @@ def test_play_invalid_card():
                 },
                 {
                     "mission_result": MissionResult.FAIL,
+                    "mission_players": ["p1", "p2"],
                     "played_cards": ["SUCCESS", "FAIL"],
                     "game_phase": GamePhase.DONE,
                     "lobby_status": LobbyStatus.DONE
@@ -760,6 +761,7 @@ def test_play_invalid_card():
                 },
                 {
                     "mission_result": MissionResult.PASS,
+                    "mission_players": ["p1", "p2"],
                     "played_cards": ["SUCCESS", "SUCCESS"],
                     "game_phase": GamePhase.ASSASSINATION
                 }
@@ -782,6 +784,7 @@ def test_play_invalid_card():
                 },
                 {
                     "mission_result": MissionResult.FAIL,
+                    "mission_players": ["p1", "p2"],
                     "played_cards": ["FAIL", "SUCCESS"],
                     "game_phase": GamePhase.PROPOSAL,
                     "proposal_info": {
