@@ -232,10 +232,20 @@ class GameConsumer(WebsocketConsumer):
         response.proposal_size = proposal_info.get("proposal_size")
         response.max_num_proposals = proposal_info.get("max_num_proposers")
         response.proposal_num = proposal_info.get("current_proposal_num")
-        response.current_phase = 0
+        response.current_phase = self.game.game_phase.value
+        if response.current_phase == 1:
+            response.current_proposal = self.game.current_proposals[0]
         if self.player_id == proposal_info.get("proposer_id"):
             response.is_proposing = True
         self.send(json.dumps(response.send()))
+        if response.current_phase == 1:
+            response = responses.OnVoteStartResponse()
+            response.player_list = self.game.current_proposals[0]
+            self.send(json.dumps(response.send()))
+        if response.current_phase == 2:
+            mission_info = self.game.get_mission_info()
+            event = {"type": "on_mission_start", "mission_info": mission_info}
+            self.on_mission_start(event)
         return
 
     def propose(self, message_data):

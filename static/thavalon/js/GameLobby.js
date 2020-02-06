@@ -1,8 +1,20 @@
 function populateGameState(gamestate) {
     if (gamestate === null || gamestate === undefined) { return; }
+    // Always populate role information and any previous mission on a reconnect.
     populateRoleBlurb(gamestate.roleInformation);
     populateRoleInformation(gamestate.roleInformation.information);
     populatePlayerOrder(gamestate.proposalOrder);
+    const allMissionInfo = gamestate.missionInfo;
+    if (typeof allMissionInfo === "object") {
+        for (missionNum in allMissionInfo) {
+            writeMissionResults(missionNum,
+                allMissionInfo[missionNum].missionResult,
+                allMissionInfo[missionNum].playersOnMission,
+                allMissionInfo[missionNum].playedCards);
+        }
+    }
+    // What happens next depends on the current game phase.
+    console.log(gamestate.currentProposal);
     switch (gamestate.currentPhase) {
         case 0:
             populateProposalTab(
@@ -15,12 +27,8 @@ function populateGameState(gamestate) {
                 gamestate.currentProposal);
             break;
         case 1:
-
-            onMoveToVote(
-                {"playerList": gamestate.currentProposal}
-                );
+            writeVotingInformation(gamestate.currentProposal);
             break;
-
     }
 }
 
@@ -132,7 +140,6 @@ function writeProposalBodyOther(proposerName, currentProposal, isProposing) {
 }
 
 function writeProposalBodyProposing(playerOrder, numOnMission) {
-    
     // TODO: handle the current proposal if player disconnects and reconnects during proposal.
     // Get the template for the proposer selection list and its location.
     const proposerSelectionListTemplate = document.getElementById("proposerSelectionListTemplate");
@@ -159,9 +166,13 @@ function onPropose(proposalInfo) {
     writeProposalBodyOther(proposalInfo.proposerName, proposalInfo.proposedPlayerList, proposalInfo.isProposing);
 }
 
-function onMoveToVote(proposalInfo) {
+function onMoveToVote(message) {
+    writeVotingInformation(message.playerList);
+}
+
+function writeVotingInformation(playerList) {
     writeVoteHeader();
-    writeVoteBody(proposalInfo.playerList)
+    writeVoteBody(playerList);
 }
 
 function writeVoteHeader() {
@@ -205,16 +216,20 @@ function newProposal(message) {
 }
 
 function onMissionStart(message) {
-    if (message.isOnMission) {
+    writeMissionStartInfo(message.isOnMission, message.playerList, message.priorVoteInfo);
+}
+
+function writeMissionStartInfo(isOnMission, playerList, priorVoteInfo) {
+    if (isOnMission) {
         populateMissionTabOnMission();
     } else {
-        populateMissionTabNotOnMission(message.playerList);
+        populateMissionTabNotOnMission(playerList);
     }
     const voteBodySection = document.getElementById("proposalVoteContent");
     voteBodySection.innerHTML = "";
     voteBodySection.textContent = "Mission is going.";
-    if (message.priorVoteInfo != null) {
-        writePriorProposalVoteResults(message.priorVoteInfo);
+    if (priorVoteInfo != null) {
+        writePriorProposalVoteResults(priorVoteInfo);
     }
 }
 
@@ -287,14 +302,14 @@ function updateMissionPopovers(playersOnMission, playedCards, missionIndicatorLo
 }
 
 
-function voteStillInProgress(message) {
+function writeVoteStillInProgress(submittedVote) {
     // Get the location of the vote information and the position of the last element (the buttons).
     const voteBodySection = document.getElementById("proposalVoteContent");
     // Remove the buttons and put a message in their place to inform the user voting is complete.
     voteBodySection.innerHTML = "";
     // Format the sentence based on the vote boolean.
     let alreadyVotedSentence = "You have ";
-    if (message.submittedVote) {
+    if (submittedVote) {
         alreadyVotedSentence += "upvoted. ";
     } else {
         alreadyVotedSentence += "downvoted. ";
@@ -305,6 +320,9 @@ function voteStillInProgress(message) {
     voteBodySection.appendChild(alreadyVotedTextNode);
 }
 
+function onVoteStillInProgress(message) {
+    writeVoteStillInProgress(message.submittedVote);
+}
 function writePriorProposalVoteResults(priorVoteInfo) {
     const priorVoteInfoLocation = document.getElementById("nav-home");
     priorVoteInfoLocation.innerHTML = "";
