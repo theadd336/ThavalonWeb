@@ -239,8 +239,8 @@ class GameConsumer(WebsocketConsumer):
             response.is_proposing = True
         self.send(json.dumps(response.send()))
         if response.current_phase == 1:
-            response = responses.OnVoteStartResponse()
-            response.player_list = self.game.current_proposals[0]
+            vote_response = responses.OnVoteStartResponse()
+            vote_response.player_list = self.game.current_proposals[0]
             self.send(json.dumps(response.send()))
         if response.current_phase == 2:
             mission_info = self.game.get_mission_info()
