@@ -16,6 +16,7 @@ class Role(ABC):
         self.team = team
         self.is_reverser = is_reverser
         self.players_seen: List[Player] = []
+        self.used_ability: bool = True
 
     @abstractmethod
     def get_description(self) -> str:

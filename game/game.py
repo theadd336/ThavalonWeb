@@ -378,10 +378,18 @@ class Game:
         for player in self.session_id_to_player.values():
             if player.proposal_vote:
                 upvotes += 1
+        downvotes = self.get_num_players() - upvotes
+
+        maeve_used = False
+        # determine if there's a maeve that used ability, if so store it in local variable and reset for future rounds
+        if self.maeve_player is not None and self.maeve_player.role.used_ability:
+            maeve_used = True
+            self.maeve_player.role.used_ability = False
 
         # build up vote dictionary and clear votes for the future
         for player in self.session_id_to_player.values():
-            self.last_vote_info[player.name] = player.proposal_vote
+            if not maeve_used:
+                self.last_vote_info[player.name] = player.proposal_vote
             player.proposal_vote = None
 
         # if upvote, send mission. Will always be index 0, even in round 1
@@ -390,7 +398,10 @@ class Game:
             return {
                 "game_phase": self.game_phase,
                 "proposal_vote_info": self.last_vote_info,
-                "mission_info": self.send_mission(0)
+                "mission_info": self.send_mission(0),
+                "num_upvotes": upvotes,
+                "num_downvotes": downvotes,
+                "vote_maeved": maeve_used
             }
 
         # downvotes on mission 1 indicate send second proposal
@@ -399,7 +410,10 @@ class Game:
             return {
                 "game_phase": self.game_phase,
                 "proposal_vote_info": self.last_vote_info,
-                "mission_info": self.send_mission(1)
+                "mission_info": self.send_mission(1),
+                "num_upvotes": upvotes,
+                "num_downvotes": downvotes,
+                "vote_maeved": maeve_used
             }
 
         # reset current proposals for next proposal
@@ -410,7 +424,10 @@ class Game:
         return {
             "game_phase": self.game_phase,
             "proposal_vote_info": self.last_vote_info,
-            "proposal_info": self.get_proposal_info()
+            "proposal_info": self.get_proposal_info(),
+            "num_upvotes": upvotes,
+            "num_downvotes": downvotes,
+            "vote_maeved": maeve_used
         }
 
     def get_all_mission_results(self) -> Dict[str, Dict[int, Any]]:
@@ -511,3 +528,10 @@ class Game:
             "mission_players": self.current_mission,
             "proposal_info": self.get_proposal_info()
         }
+
+    def use_ability(self, session_id: str) -> bool:
+        # check if the given player has an ability to use
+        player = self.session_id_to_player[session_id]
+        # for each player, if use_ability works, update the status
+        if player == self.maeve_player:
+            self.maeve_player.use_ability()

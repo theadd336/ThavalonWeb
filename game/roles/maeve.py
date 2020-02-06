@@ -6,7 +6,6 @@ _NUM_USES = 3
 
 class Maeve(Evil):
     def __init__(self):
-        self.used_ability = False
         self.ability_count = 0
         super().__init__("Maeve", Team.EVIL)
 
@@ -18,7 +17,7 @@ class Maeve(Evil):
             self.get_shared_description()
         ])
 
-    def use_ability(self):
+    def use_ability(self) -> None:
         if self.ability_count >= _NUM_USES:
             raise ValueError(f"You have already used your ability max {_NUM_USES} times.")
         self.used_ability = True

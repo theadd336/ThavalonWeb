@@ -1,5 +1,6 @@
 import random
 import pytest
+from conftest import maeve
 from game.game import Game, GamePhase, LobbyStatus, MissionCard, MissionResult
 from game.player import Player
 from game.role import Team
@@ -482,7 +483,175 @@ def test_set_vote_invalid_lobby(lobby_status):
         game.set_vote("session_id", False)
 
 
-@pytest.mark.parametrize("player_to_vote, mission_num, expected_results, current_proposals", [
+@pytest.mark.parametrize("player_to_vote, mission_num, expected_results, current_proposals, vote_maeved", [
+    (
+        {
+            "p1": True,
+            "p2": True,
+            "p3": True,
+            "p4": False,
+            "p5": False
+        },
+        1,
+        [
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": False
+            },
+            {
+                "game_phase": GamePhase.MISSION,
+                "proposal_vote_info": {"p1": True, "p2": True, "p3": True, "p4": False, "p5": False},
+                "mission_info": {
+                    "mission_players": ["p1", "p2"],
+                    "mission_session_ids": ["1", "2"],
+                },
+                "num_upvotes": 3,
+                "num_downvotes": 2,
+                "vote_maeved": False
+            }
+        ],
+        [["p1", "p2"]],
+        False
+    ),
+    (
+        {
+            "p1": True,
+            "p2": False,
+            "p3": False,
+            "p4": False,
+            "p5": True
+        },
+        1,
+        [
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": False
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": False
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": False
+            },
+            {
+                "game_phase": GamePhase.PROPOSAL,
+                "proposal_vote_info": {"p1": True, "p2": False, "p3": False, "p4": False, "p5": True},
+                "proposal_info": {
+                    "proposal_order": ["p1", "p2", "p3", "p4", "p5"],
+                    "proposer_id": "1",
+                    "proposer_index": 0,
+                    "proposal_size": 3,
+                    "max_num_proposers": 3,
+                    "current_proposal_num": 1
+                },
+                "num_upvotes": 2,
+                "num_downvotes": 3,
+                "vote_maeved": False
+            }
+        ],
+        [["p1", "p2"]],
+        False
+    ),
+    (
+        {
+            "p1": True,
+            "p2": True,
+            "p3": True,
+            "p4": False,
+            "p5": False
+        },
+        0,
+        [
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": False
+            },
+            {
+                "game_phase": GamePhase.MISSION,
+                "proposal_vote_info": {"p1": True, "p2": True, "p3": True, "p4": False, "p5": False},
+                "mission_info": {
+                    "mission_players": ["p1", "p3"],
+                    "mission_session_ids": ["1", "3"],
+                },
+                "num_upvotes": 3,
+                "num_downvotes": 2,
+                "vote_maeved": False
+            }
+        ],
+        [["p1", "p3"], ["p2", "p4"]],
+        False
+    ),
+    (
+        {
+            "p1": True,
+            "p2": False,
+            "p3": True,
+            "p4": False,
+            "p5": False
+        },
+        0,
+        [
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": False
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": True
+            },
+            {
+                "game_phase": GamePhase.VOTE,
+                "vote": False
+            },
+            {
+                "game_phase": GamePhase.MISSION,
+                "proposal_vote_info": {"p1": True, "p2": False, "p3": True, "p4": False, "p5": False},
+                "mission_info": {
+                    "mission_players": ["p2", "p4"],
+                    "mission_session_ids": ["2", "4"],
+                },
+                "num_upvotes": 2,
+                "num_downvotes": 3,
+                "vote_maeved": False
+            },
+        ],
+        [["p1", "p3"], ["p2", "p4"]],
+        False
+    ),
     (
             {
                 "p1": True,
@@ -511,14 +680,18 @@ def test_set_vote_invalid_lobby(lobby_status):
                 },
                 {
                     "game_phase": GamePhase.MISSION,
-                    "proposal_vote_info": {"p1": True, "p2": True, "p3": True, "p4": False, "p5": False},
+                    "proposal_vote_info": {},
                     "mission_info": {
                         "mission_players": ["p1", "p2"],
                         "mission_session_ids": ["1", "2"],
-                    }
+                    },
+                    "num_upvotes": 3,
+                    "num_downvotes": 2,
+                    "vote_maeved": True
                 }
             ],
-            [["p1", "p2"]]
+            [["p1", "p2"]],
+            True
     ),
     (
             {
@@ -548,7 +721,7 @@ def test_set_vote_invalid_lobby(lobby_status):
                 },
                 {
                     "game_phase": GamePhase.PROPOSAL,
-                    "proposal_vote_info": {"p1": True, "p2": False, "p3": False, "p4": False, "p5": True},
+                    "proposal_vote_info": {},
                     "proposal_info": {
                         "proposal_order": ["p1", "p2", "p3", "p4", "p5"],
                         "proposer_id": "1",
@@ -556,10 +729,14 @@ def test_set_vote_invalid_lobby(lobby_status):
                         "proposal_size": 3,
                         "max_num_proposers": 3,
                         "current_proposal_num": 1
-                    }
+                    },
+                    "num_upvotes": 2,
+                    "num_downvotes": 3,
+                    "vote_maeved": True
                 }
             ],
-            [["p1", "p2"]]
+            [["p1", "p2"]],
+            True
     ),
     (
             {
@@ -589,14 +766,18 @@ def test_set_vote_invalid_lobby(lobby_status):
                 },
                 {
                     "game_phase": GamePhase.MISSION,
-                    "proposal_vote_info": {"p1": True, "p2": True, "p3": True, "p4": False, "p5": False},
+                    "proposal_vote_info": {},
                     "mission_info": {
                         "mission_players": ["p1", "p3"],
                         "mission_session_ids": ["1", "3"],
-                    }
+                    },
+                    "num_upvotes": 3,
+                    "num_downvotes": 2,
+                    "vote_maeved": True
                 }
             ],
-            [["p1", "p3"], ["p2", "p4"]]
+            [["p1", "p3"], ["p2", "p4"]],
+            True
     ),
     (
             {
@@ -626,17 +807,21 @@ def test_set_vote_invalid_lobby(lobby_status):
                 },
                 {
                     "game_phase": GamePhase.MISSION,
-                    "proposal_vote_info": {"p1": True, "p2": False, "p3": True, "p4": False, "p5": False},
+                    "proposal_vote_info": {},
                     "mission_info": {
                         "mission_players": ["p2", "p4"],
                         "mission_session_ids": ["2", "4"],
-                    }
-                }
+                    },
+                    "num_upvotes": 2,
+                    "num_downvotes": 3,
+                    "vote_maeved": True
+                },
             ],
-            [["p1", "p3"], ["p2", "p4"]]
+            [["p1", "p3"], ["p2", "p4"]],
+            True
     ),
 ])
-def test_voting(player_to_vote, mission_num, expected_results, current_proposals):
+def test_voting(player_to_vote, mission_num, expected_results, current_proposals, vote_maeved):
     game = Game()
     mock_get_num_players = Mock()
     mock_get_num_players.return_value = 5
@@ -671,6 +856,10 @@ def test_voting(player_to_vote, mission_num, expected_results, current_proposals
     game.lobby_status = LobbyStatus.IN_PROGRESS
     game.game_phase = GamePhase.VOTE
     game.current_proposals = current_proposals
+
+    if vote_maeved:
+        type(maeve.role).used_ability = PropertyMock(return_value=vote_maeved)
+        game.maeve_player = maeve
 
     for index, player in enumerate(game.proposal_order_players):
         assert game.set_vote(player.session_id, player_to_vote[player.name]) == expected_results[index]

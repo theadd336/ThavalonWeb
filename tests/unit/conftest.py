@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from game.player import Player  # noqa
 from game.roles.iseult import Iseult  # noqa
+from game.roles.maeve import Maeve  # noqa
 from game.roles.merlin import Merlin  # noqa
 from game.roles.mordred import Mordred  # noqa
 from game.roles.morgana import Morgana  # noqa
@@ -15,6 +16,9 @@ from game.roles.tristan import Tristan  # noqa
 
 iseult = Player("iseult", "Iseult")
 iseult.role = Iseult()
+maeve = Player("maeve", "Maeve")
+maeve.role = Maeve()
+maeve.role.used_ability = Mock()
 merlin = Player("merlin", "Merlin")
 merlin.role = Merlin()
 mordred = Player("mordred", "Mordred")
