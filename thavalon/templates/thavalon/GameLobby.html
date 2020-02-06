@@ -41,20 +41,35 @@
       </div>
     </div>
     <div class="row">
-      <div class="col-2" id="m1Indicator">
-        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px" />
+      <div class="col-2">
+        <a tabindex="-1" id="m1Indicator" data-toggle="popover" data-trigger="hover focus" title="Mission 1 Summary"
+           data-content="Test" data-html="true" data-placement="top">
+          <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px" />
+        </a>
       </div>
-      <div class="col-2" id="m2Indicator">
-        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px"/>
+      <div class="col-2">
+        <a tabindex="-1" id="m2Indicator" data-toggle="popover" data-trigger="hover focus" title="Mission 2 Results"
+           data-content="" data-html="true" data-placement="top">
+          <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px" />
+        </a>
       </div>
-      <div class="col-2" id="m3Indicator">
-        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px"/>
+      <div class="col-2">
+        <a tabindex="-1" id="m3Indicator" data-toggle="popover" data-trigger="hover focus" title="Mission 3 Results"
+           data-content="" data-html="true" data-placement="top">
+          <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px" />
+        </a>
       </div>
-      <div class="col-2" id="m4Indicator">
-        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
+      <div class="col-2">
+        <a tabindex="-1" id="m4Indicator" data-toggle="popover" data-trigger="hover focus" title="Mission 4 Results"
+           data-content="" data-html="true" data-placement="top">
+          <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px" />
+        </a>
       </div>
-      <div class="col-2" id="m5Indicator">
-        <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale"  height="175px" width="175px"/>
+      <div class="col-2">
+        <a tabindex="-1" id="m5Indicator" data-toggle="popover" data-trigger="hover focus" title="Mission 5 Results"
+           data-content="" data-html="true" data-placement="top">
+          <img src="{% static 'thavalon/images/black-coin.png' %}" class="img-grayscale" height="175px" width="175px" />
+        </a>
       </div>
       <div class="col-1"></div>
     </div>
@@ -220,7 +235,6 @@
       const message = {"type": "play_card", "card": card};
       gameWebSocket.send(JSON.stringify(message));
     }
-
   </script>
 </body>
 </html>

@@ -367,7 +367,8 @@ class GameConsumer(WebsocketConsumer):
             "mission_result": mission_result,
             "card_played": mission_results.get("card_played"),
             "proposal_info": mission_results.get("proposal_info"),
-            "played_cards": mission_results.get("played_cards")
+            "played_cards": mission_results.get("played_cards"),
+            "mission_players": mission_results.get("mission_players")
             }
 
         if game_phase == 0:
@@ -389,6 +390,7 @@ class GameConsumer(WebsocketConsumer):
         response.mission_result = event.get("mission_result")
         response.prior_mission_num = self.game.mission_num
         response.played_cards = event.get("played_cards")
+        response.players_on_mission = event.get("mission_players")
         self.send(json.dumps(response.send()))
         if game_phase == 0:
             self.new_proposal(event)
