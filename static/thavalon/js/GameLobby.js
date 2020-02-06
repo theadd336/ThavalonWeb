@@ -284,7 +284,7 @@ function updateMissionPopovers(playersOnMission, playedCards, missionIndicatorLo
     for (let i = 0; i < numPlayers; i++) {
         // Handle cases of the last player (and), a two player mission (no comma) or other cases.
         if (i + 1 === numPlayers) {
-            popoverText += "and " + playersOnMission[i] + "(" + numPlayers + ")";
+            popoverText += "and " + playersOnMission[i] + " (" + numPlayers + ")";
         } else if (numPlayers === 2) {
             popoverText += playersOnMission[i] + " ";
         } else {
