@@ -5,16 +5,19 @@ function populateGameState(gamestate) {
     populateRoleInformation(gamestate.roleInformation.information);
     populatePlayerOrder(gamestate.proposalOrder);
     const allMissionInfo = gamestate.missionInfo;
+    let count = 0;
+    console.log(allMissionInfo);
     if (typeof allMissionInfo === "object") {
-        for (missionNum in allMissionInfo) {
-            writeMissionResults(missionNum,
-                allMissionInfo[missionNum].missionResult,
-                allMissionInfo[missionNum].playersOnMission,
-                allMissionInfo[missionNum].playedCards);
+        for (const missionNum in allMissionInfo) {
+            const missionResults = allMissionInfo[missionNum];
+            const missionResult = missionResults.missionResult;
+            const playersOnMission = missionResults.playersOnMissions;
+            const playedCards = missionResults.playedCards;
+            console.log(playersOnMission);
+            writeMissionResults(Number(missionNum) + 1, missionResult, playersOnMission, playedCards);
         }
     }
     // What happens next depends on the current game phase.
-    console.log(gamestate.currentProposal);
     switch (gamestate.currentPhase) {
         case 0:
             populateProposalTab(
@@ -260,7 +263,8 @@ function onMissionResults(message) {
 }
 
 function writeMissionResults(priorMissionNum, missionResult, playersOnMission, playedCards) {
-    let missionResultTemplate = null
+    let missionResultTemplate = null;
+    console.log(missionResult);
     if (missionResult === 0) {
         missionResultTemplate = document.getElementById("missionPassedTemplate");
     } else {

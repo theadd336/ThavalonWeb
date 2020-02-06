@@ -53,6 +53,7 @@ class GameStateResponse(Response):
         self.mission_num = 1
         self.current_proposal = None
         self.proposal_size = 0
+        self.mission_info = None
 
     def _send_core(self, object_dict):
         object_dict["proposalOrder"] = self.proposal_order
@@ -70,6 +71,7 @@ class GameStateResponse(Response):
         object_dict["missionNum"] = self.mission_num
         object_dict["currentProposal"] = self.current_proposal
         object_dict["proposalSize"] = self.proposal_size
+        object_dict["missionInfo"] = self.mission_info
         return object_dict
 
 

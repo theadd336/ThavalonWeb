@@ -232,6 +232,7 @@ class GameConsumer(WebsocketConsumer):
         response.proposal_size = proposal_info.get("proposal_size")
         response.max_num_proposals = proposal_info.get("max_num_proposers")
         response.proposal_num = proposal_info.get("current_proposal_num")
+        response.mission_info = self.game.get_all_mission_results()
         response.current_phase = self.game.game_phase.value
         if response.current_phase == 1:
             response.current_proposal = self.game.current_proposals[0]
