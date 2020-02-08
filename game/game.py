@@ -204,31 +204,6 @@ class Game:
 
         # get lover indices
         good_roles_in_game = [good_roles[idx] for idx in good_role_indices]
-        iseult_idx = -1
-        tristan_idx = -1
-        try:
-            iseult_idx = good_roles_in_game.index(Iseult)
-        except ValueError:
-            pass
-
-        try:
-            tristan_idx = good_roles_in_game.index(Tristan)
-        except ValueError:
-            pass
-
-        # only care about cases where one lover is in the game
-        if bool(iseult_idx == -1) != bool(tristan_idx == -1):
-            lone_lover_idx = iseult_idx if iseult_idx != -1 else tristan_idx
-            if random.choice([True, False]):
-                # True - replace lone lover with new role
-                lover_roles_not_in_game = list(set(good_roles) - set(good_roles_in_game) - {Iseult, Tristan})
-                good_roles_in_game[lone_lover_idx] = random.choice(lover_roles_not_in_game)
-            else:
-                # False - replace another role with other lover
-                other_lover = Iseult if iseult_idx == -1 else Tristan
-                other_role_indices = list(range(num_good))
-                other_role_indices.remove(lone_lover_idx)
-                good_roles_in_game[random.choice(other_role_indices)] = other_lover
 
         # assign first N players a good role
         for player, good_role in zip(players[:num_good], good_roles_in_game):

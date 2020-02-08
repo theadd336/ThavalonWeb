@@ -14,7 +14,12 @@ def test_get_description():
     iseult.add_seen_player(tristan)
     expected = "You are Iseult [GOOD].\n\nThe person you see is also Good and is aware that you are Good.\n" \
                "You and Tristan are collectively a valid Assassination target.\n\nTristan is Tristan."
+    assert iseult.get_description() == expected
 
+
+def test_get_description_solo():
+    iseult = Iseult()
+    expected = "You are Iseult [GOOD].\n\nYou do not have a lover in this game."
     assert iseult.get_description() == expected
 
 

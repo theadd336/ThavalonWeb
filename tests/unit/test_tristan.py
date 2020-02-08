@@ -18,6 +18,12 @@ def test_get_description():
     assert tristan.get_description() == expected
 
 
+def test_get_description_solo():
+    tristan = Tristan()
+    expected = "You are Tristan [GOOD].\n\nYou do not have a lover in this game."
+    assert tristan.get_description() == expected
+
+
 @pytest.mark.parametrize("player, expected", [
     (morgana, False),
     (merlin, False),

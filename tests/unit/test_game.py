@@ -220,11 +220,6 @@ def test_start_game_players_assigned(num_players, session_id_to_player) -> None:
         assert player.role.role_name not in seen_role_names
         seen_role_names.append(player.role.role_name)
 
-    if "Tristan" in seen_role_names:
-        assert "Iseult" in seen_role_names
-    if "Iseult" in seen_role_names:
-        assert "Tristan" in seen_role_names
-
     assert game.lobby_status == LobbyStatus.IN_PROGRESS
 
 
