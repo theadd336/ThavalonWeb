@@ -1,0 +1,7 @@
+{
+    "compilerOptions": {
+        "outDir": "../../static/thavalon/js/",
+        "target": "ES6",
+        "sourceMap": true
+    }
+}

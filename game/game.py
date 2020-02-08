@@ -406,11 +406,14 @@ class Game:
         }
 
     def get_all_mission_results(self) -> Dict[str, Dict[int, Any]]:
-        return {
-            "players": self.mission_players,
-            "mission_results": self.mission_num_to_result,
-            "mission_cards": self.mission_cards
-        }
+        return_dict = dict()
+        for mission_num in self.mission_num_to_result.keys():
+            return_dict[mission_num] = {
+                "missionResult": self.mission_num_to_result[mission_num].value,
+                "playersOnMissions": self.mission_players[mission_num],
+                "playedCards": [card.name for card in self.mission_cards[mission_num]]
+            }
+        return return_dict
 
     def play_mission_card(self, session_id: str, mission_card: MissionCard) -> Dict[str, Any]:
         if self.lobby_status != LobbyStatus.IN_PROGRESS:
