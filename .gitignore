@@ -114,3 +114,5 @@ dmypy.json
 .idea
 .vscode
 venv
+node_modules
+package-lock.json
