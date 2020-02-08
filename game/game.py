@@ -494,7 +494,8 @@ class Game:
                 "played_cards": played_cards_names,
                 "lobby_status": self.lobby_status,
                 "mission_players": self.current_mission,
-                "game_phase": self.game_phase
+                "game_phase": self.game_phase,
+                "player_roles": self.get_all_player_role_info()
             }
 
         self.game_phase = GamePhase.PROPOSAL

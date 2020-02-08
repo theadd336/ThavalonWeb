@@ -937,7 +937,14 @@ def test_play_invalid_card():
                     "mission_players": ["p1", "p2"],
                     "played_cards": ["SUCCESS", "FAIL"],
                     "game_phase": GamePhase.DONE,
-                    "lobby_status": LobbyStatus.DONE
+                    "lobby_status": LobbyStatus.DONE,
+                    "player_role_info": {
+                        "GOOD": {},
+                        "EVIL": {
+                            "p1": "Maelegant",
+                            "p2": "Mordred"
+                        }
+                    }
                 }
             ],
             {
