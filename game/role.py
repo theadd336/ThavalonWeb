@@ -1,13 +1,7 @@
-from .game_constants import MissionCard
+from .game_constants import MissionCard, Team
 from .player import Player
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import List
-
-
-class Team(Enum):
-    GOOD = 0
-    EVIL = 1
 
 
 class Role(ABC):

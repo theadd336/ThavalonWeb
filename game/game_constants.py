@@ -24,3 +24,8 @@ class MissionCard(Enum):
 class MissionResult(Enum):
     PASS = 0
     FAIL = 1
+
+
+class Team(Enum):
+    GOOD = 0
+    EVIL = 1

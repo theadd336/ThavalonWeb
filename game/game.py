@@ -10,7 +10,7 @@ from game.roles.morgana import Morgana
 from game.roles.nimue import Nimue
 from game.roles.percival import Percival
 from game.roles.tristan import Tristan
-from game.game_constants import GamePhase, LobbyStatus, MissionResult, MissionCard
+from game.game_constants import GamePhase, LobbyStatus, MissionResult, MissionCard, Team
 from typing import Any, Dict, List, Optional
 
 _MIN_NUM_PLAYERS = 2
@@ -41,7 +41,6 @@ _GAME_SIZE_TO_GOOD_COUNT = {
     9: 6,
     10: 6
 }
-
 
 _BASE_GOOD_ROLES = [Iseult, Merlin, Percival, Tristan]
 _BASE_EVIL_ROLES = [Maeve, Mordred, Morgana]
@@ -513,3 +512,13 @@ class Game:
         # for each player, if use_ability works, update the status
         if player == self.maeve_player:
             self.maeve_player.use_ability()
+
+    def get_all_player_role_info(self) -> Dict[str, Dict[str, str]]:
+        # also known as DoNotOpen, returns team name to dict of player name to role name
+        result = {
+            "GOOD": {},
+            "EVIL": {}
+        }
+        for _, player in self.session_id_to_player.items():
+            result[player.role.team.name][player.name] = player.role.role_name
+        return result
