@@ -9,12 +9,14 @@ def test_use_ability_fails():
         morgana.use_ability()
 
 
-def test_get_description():
-    morgana = Morgana()
+@pytest.mark.parametrize("is_assassin", [True, False])
+def test_get_description(is_assassin):
+    morgana = Morgana(is_assassin=is_assassin)
     morgana.add_seen_player(mordred)
     expected = "You are Morgana [EVIL].\n\nYou appear like Merlin to Percival.\nLike other Evil " \
                "characters, you know who else is Evil (except Colgrevance).\n\nMordred is Evil."
-
+    if is_assassin:
+        expected += "\n\nYou are the assassin!"
     assert morgana.get_description() == expected
 
 

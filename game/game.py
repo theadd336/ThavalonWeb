@@ -31,7 +31,7 @@ _MISSION_NUM_TO_PROPOSAL_SIZE = {
 
 _GAME_SIZE_TO_GOOD_COUNT = {
     1: 0,
-    2: 2,
+    2: 1,
     3: 2,
     4: 2,
     5: 3,
@@ -200,7 +200,9 @@ class Game:
 
         good_role_indices = random.sample(range(0, len(good_roles)), num_good)
         evil_role_indices = random.sample(range(0, len(evil_roles)), num_evil)
+        # choose a random evil role index. The player who gets that role will be the assassin.
 
+        evil_assassin_index = random.choice(evil_role_indices)
         # get lover indices
         good_roles_in_game = [good_roles[idx] for idx in good_role_indices]
 
@@ -214,7 +216,7 @@ class Game:
             # record certain players for later ability use
             if evil_role == Maeve:
                 self.maeve_player = player
-            player.role = evil_role()
+            player.role = evil_role(is_assassin=(evil_role_index == evil_assassin_index))
 
         for index, player in enumerate(players):
             for other_player in players[index + 1:]:
@@ -523,3 +525,59 @@ class Game:
         for _, player in self.session_id_to_player.items():
             result[player.role.team.name][player.name] = player.role.role_name
         return result
+
+    def get_assassination_targets(self):
+        return [role().role_name for role in _BASE_GOOD_ROLES + _GAME_SIZE_TO_GOOD_ROLES[len(self.session_id_to_player)]]
+
+    # def attempt_assassination(self, session_id: str, target_player_names: List[str], target_role_names: List[str])\
+    #         -> Dict[str, Any]:
+    #     # need list of player names and roles in case going for lovers
+    #     if self.lobby_status != LobbyStatus.IN_PROGRESS:
+    #         raise ValueError("Can only assassinate when lobby state is in progress.")
+    #     if session_id not in self.session_id_to_player:
+    #         raise ValueError("Given session id not in game.")
+    #
+    #     for target_player_name in target_player_names:
+    #         if target_player_name not in self.player_name_to_session_id:
+    #             raise ValueError(f"Given target player name {target_player_name} not in game.")
+    #     assassin_player = self.session_id_to_player[session_id]
+    #     if not player.role.is_assassin:
+    #         raise ValueError(f"{player.name} is not the assassin.")
+    #     target_players = [self.session_id_to_player[self.player_name_to_session_id[target_player_name]]
+    #                       for target_player_name in target_player_names]
+    #
+    #     def _handle_correct_assassination():
+    #         # TODO: Implement
+    #         pass
+    #
+    #     def _handle_incorrect_assassination():
+    #         # game ends
+    #         self.lobby_status = LobbyStatus.DONE
+    #         self.game_phase = GamePhase.DONE
+    #         return {
+    #             "game_phase": self.game_phase,
+    #
+    #         }
+    #
+    #         # TODO: Implement
+    #         pass
+    #
+    #     # special logic for lover assassination
+    #     def _check_lover_assassination():
+    #         if "Iseult" not in target_role_names or "Tristan" not in target_role_names:
+    #             raise ValueError("If assassinating two roles, must target both lovers Tristan and Iseult")
+    #         for player in target_players:
+    #             if player.role.role_name == "Iseult" or player.role.role_name == "Tristan":
+    #                 continue
+    #             return False
+    #         return True
+    #
+    #     lover_assassination_result: bool
+    #     if len(target_player_names) == 2 and len(target_role_names) == 2:
+    #         if _check_lover_assassination():
+    #             return _handle_correct_assassination()
+    #         return _handle_incorrect_assassination()
+    #
+    #     # TODO: Check player to role, and return proper result
+    #
+    #     return {}

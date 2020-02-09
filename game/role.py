@@ -5,12 +5,13 @@ from typing import List
 
 
 class Role(ABC):
-    def __init__(self, role_name: str, team: Team, is_reverser: bool = False) -> None:
+    def __init__(self, role_name: str, team: Team, is_reverser: bool = False, is_assassin: bool = False) -> None:
         self.role_name = role_name
         self.team = team
         self.is_reverser = is_reverser
         self.players_seen: List[Player] = []
         self.used_ability: bool = True
+        self.is_assassin = is_assassin
 
     @abstractmethod
     def get_description(self) -> str:

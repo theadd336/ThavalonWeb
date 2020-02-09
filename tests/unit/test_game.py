@@ -200,8 +200,8 @@ def test_start_game_verify_proposal_order() -> None:
                 "id3": Player("id3", "Jared"),
                 "id4": Player("id4", "Meg"),
                 "id5": Player("id5", "Paul"),
-                "id5": Player("id5", "Raz"),
-                "id5": Player("id5", "Colin")
+                "id6": Player("id5", "Raz"),
+                "id7": Player("id5", "Colin")
             }
     )
 ])
@@ -215,11 +215,15 @@ def test_start_game_players_assigned(num_players, session_id_to_player) -> None:
     game.session_id_to_player = session_id_to_player
     game.start_game()
 
+    assassin_count = 0
     seen_role_names = []
     for player in session_id_to_player.values():
         assert player.role.role_name not in seen_role_names
         seen_role_names.append(player.role.role_name)
+        if player.role.is_assassin:
+            assassin_count += 1
 
+    assert assassin_count == 1
     assert game.lobby_status == LobbyStatus.IN_PROGRESS
 
 
@@ -938,7 +942,7 @@ def test_play_invalid_card():
                     "played_cards": ["SUCCESS", "FAIL"],
                     "game_phase": GamePhase.DONE,
                     "lobby_status": LobbyStatus.DONE,
-                    "player_role_info": {
+                    "player_roles": {
                         "GOOD": {},
                         "EVIL": {
                             "p1": "Maelegant",
@@ -1079,7 +1083,7 @@ def test_play_mission_card(mission_num, mission_num_to_results, session_id_to_ca
 
     random.seed(0)
     for index, (session_id, card) in enumerate(session_id_to_card.items()):
-        game.play_mission_card(session_id, card) == expected_results[index]
+        assert game.play_mission_card(session_id, card) == expected_results[index]
 
     assert game.get_all_mission_results() == expected_all_mission_info
     assert p1.mission_card is None
