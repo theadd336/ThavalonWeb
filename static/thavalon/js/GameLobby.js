@@ -2,7 +2,7 @@ function populateGameState(gamestate) {
     if (gamestate === null || gamestate === undefined) { return; }
     // Always populate role information and any previous mission on a reconnect.
     populateRoleBlurb(gamestate.roleInformation);
-    populateRoleInformation(gamestate.roleInformation.information);
+    populateRoleInformation(gamestate.roleInformation.information, gamestate.roleInformation.role);
     populatePlayerOrder(gamestate.proposalOrder);
     const allMissionInfo = gamestate.missionInfo;
     let count = 0;
@@ -60,11 +60,19 @@ function populateRoleBlurb(roleInformation) {
     roleBlurbLocation.appendChild(roleBlurb);
 }
 
-function populateRoleInformation(information) {
+function populateRoleInformation(information, role) {
     const roleInformationLocation = document.getElementById("roleInformationLocation");
     roleInformationLocation.textContent = "-------------------------\r\n";
     roleInformationLocation.textContent += information + "\r\n";
     roleInformationLocation.textContent += "-------------------------";
+
+    if (role !== "Agravaine") { return; }
+
+    const failMissionButton = document.createElement("BUITTON");
+    failMissionButton.textContent = "FAIL THE MISSION";
+    failMissionButton.setAttribute("onclick", "failTheMission()");
+    roleInformationLocation.appendChild(failMissionButton);
+
 }
 
 function populatePlayerOrder(playerOrder) {

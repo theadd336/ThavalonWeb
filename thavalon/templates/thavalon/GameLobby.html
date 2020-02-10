@@ -13,6 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
     <script>$('select').selectpicker();</script>
     <script src="{% static 'thavalon/js/GameLobby.js' %}"></script>
+    <script src="{% static 'thavalon/js/communication.js' %}"></script>
 </head>
 <body>
 
@@ -171,44 +172,47 @@
     <img src="{% static 'thavalon/images/black-coin.png' %}" height="175px" width="175px" />
   </template>
   <script>
-    var gameWebSocket = new WebSocket('ws://' + window.location.host +
-	    '/ws/thavalon/{{ game_id|escapejs }}/game/');
-	gameWebSocket.onmessage = function(e) {
-      const data = JSON.parse(e.data);
-      if (!data.success) {
-        alert(data.errorMessage);
-        return;
-      }
-      switch(data.type) {
-        case "gamestate":
-            populateGameState(data);
-            break;
-        case "on_start_game":
-            onStartGame(data);
-            break;
-        case "on_propose":
-          onPropose(data);
-          break;
-        case "on_vote_start":
-          onMoveToVote(data);
-          break;
-        case "new_proposal":
-          newProposal(data);
-          break;
-        case "on_mission_start":
-          onMissionStart(data);
-          break;
-        case "on_mission_results":
-          onMissionResults(data);
-          break;
-        case "vote_still_in_progress":
-          onVoteStillInProgress(data);
-          break;
-        case "mission_still_in_progress":
-          missionStillInProgress(data);
-          break;
-        }
-      }
+    //var gameWebSocket = new WebSocket('ws://' + window.location.host +
+    //  '/ws/thavalon/{{ game_id|escapejs }}/game/');
+    
+    const url = 'ws://' + window.location.host + '/ws/thavalon/{{ game_id|escapejs }}/game/';
+    const gameWebSocket = new ThavalonWeb.Communication.WebSocketManager(url); 
+	// gameWebSocket.onmessage = function(e) {
+  //     const data = JSON.parse(e.data);
+  //     if (!data.success) {
+  //       alert(data.errorMessage);
+  //       return;
+  //     }
+  //     switch(data.type) {
+  //       case "gamestate":
+  //           populateGameState(data);
+  //           break;
+  //       case "on_start_game":
+  //           onStartGame(data);
+  //           break;
+  //       case "on_propose":
+  //         onPropose(data);
+  //         break;
+  //       case "on_vote_start":
+  //         onMoveToVote(data);
+  //         break;
+  //       case "new_proposal":
+  //         newProposal(data);
+  //         break;
+  //       case "on_mission_start":
+  //         onMissionStart(data);
+  //         break;
+  //       case "on_mission_results":
+  //         onMissionResults(data);
+  //         break;
+  //       case "vote_still_in_progress":
+  //         onVoteStillInProgress(data);
+  //         break;
+  //       case "mission_still_in_progress":
+  //         missionStillInProgress(data);
+  //         break;
+  //       }
+  //     }
     function toggleTentativeProposal() {
       const message = {"type": "propose"};
       message["proposed_player_list"] = $("#proposedPlayerList").val();
@@ -235,6 +239,7 @@
       const message = {"type": "play_card", "card": card};
       gameWebSocket.send(JSON.stringify(message));
     }
+    
   </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
-import constants = ThavalonWeb.Game.Constants;
-import WebSocketManager = ThavalonWeb.Communication.WebSocketManager;
+import * as constants from "./gameConstants";
+import { WebSocketManager } from "./communication";
 
 namespace ThavalonWeb.Game {
     export class GameDirector {

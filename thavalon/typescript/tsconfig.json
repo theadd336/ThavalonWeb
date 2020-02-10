@@ -2,6 +2,8 @@
     "compilerOptions": {
         "outDir": "../../static/thavalon/js/",
         "target": "ES6",
-        "sourceMap": true
+        "sourceMap": true,
+        "alwaysStrict": true,
+        "moduleResolution": "node"
     }
 }
