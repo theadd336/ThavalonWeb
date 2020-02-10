@@ -1,22 +1,30 @@
 import * as constants from "./gameConstants";
 import { WebSocketManager } from "./communication";
+import { GameView } from "./gameView";
 
 namespace ThavalonWeb.Game {
     export class GameDirector {
         //#region private members
         private _gamePhase: constants.GamePhase;
         private _role: string;
-        private  readonly _webSocketManager: WebSocketManager;
+        private readonly _webSocketManager: WebSocketManager;
+        private readonly _gameView: GameView;
         //#endregion
         //#region Public Properties
-        //#endregion 
-        constructor(
-            roleInformation: constants.RoleInformation,
-            allMissionInfo: constants.AllMissionInfo,
-            gamePhase = constants.GamePhase.Proposal) {
-                this._role = roleInformation.role;
-                this._gamePhase = gamePhase;
+        //#endregion
+
+        //#region public methods
+        constructor() {
                 this._webSocketManager = new WebSocketManager();
+                this._gameView = new GameView();
             }
+        
+
+        
+        //#endregion
+        
+        //#region private methods
+        //#endregion
+
     }
 }
