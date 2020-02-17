@@ -1,5 +1,5 @@
-import { EventDispatcher, IEvent } from "strongly-typed-events";
-import * as constants from "./commConstants";
+import { EventDispatcher, IEvent } from "../../node_modules/strongly-typed-events/dist/index";
+import * as constants from "./commConstants.js";
 
 declare function populateGameState(data: constants.WebSocketMessage): void
 declare function onStartGame(data: constants.WebSocketMessage): void
@@ -21,6 +21,9 @@ export class WebSocketManager {
     private _missionResultsEvent: EventDispatcher<WebSocketManager, constants.MissionResultsMessage>;
     private _voteStillInProgressEvent: EventDispatcher<WebSocketManager, constants.VoteStillInProgressMessage>;
     private _missionStillInProgressEvent: EventDispatcher<WebSocketManager, constants.MissionStillInProgressMessage>;
+    get IsReady() {
+        return this._webSocket.readyState === WebSocket.OPEN;
+    }
     //#region constructors
     constructor()
     constructor(webSocketUrl: string)

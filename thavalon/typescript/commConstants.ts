@@ -1,4 +1,4 @@
-import {MissionResult, Card, Vote} from "./gameConstants";
+import {MissionResult, Card, Vote} from "./gameConstants.js";
 
 export interface WebSocketMessage {
     success: boolean;

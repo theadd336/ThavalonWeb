@@ -1,4 +1,4 @@
-import { Team, Vote, Card } from "./gameConstants";
+import { Team, Vote, Card, MissionResult } from "./gameConstants";
 import "bootstrap-select";
 import * as $ from "jquery";
 
@@ -102,7 +102,7 @@ export class GameView {
     newProposal(isProposing: boolean, proposerIndex: number, proposalOrder: string[], 
         proposalNumber: number, maxNumProposals: number, proposalSize: number, 
         numOnMission: number, skipForceIndicator = false, currentProposal?: string[]): void {
-        
+
         this.populateProposalTab(isProposing, proposerIndex, proposalOrder, proposalNumber,
             maxNumProposals, numOnMission, skipForceIndicator, currentProposal);
     }
@@ -157,7 +157,80 @@ export class GameView {
         }
         this._missionBodyLocation.textContent = missionInProgressSentence;
     }
+
+    /**
+     * Populates the mission content when a mission goes for any player.
+     * @param isOnMission Indicates if the player is on the mission.
+     * @param playersOnMission A list of players on the mission.
+     */
+    populateMissionStartInfo(isOnMission: boolean, playersOnMission: string[]): void {
+        if (isOnMission) {
+            this.populateMissionTabOnMission();
+        } else {
+            this.populateMissionTabSpectating(playersOnMission);
+        }
+        this._proposalVoteContent.innerHTML = "";
+        this._proposalVoteContent.textContent = "Mission is going.";
+    }
     
+    /**
+     * Updates the UI to show the results of the previous mission.
+     * @param priorMissionNum The number of the mission that just went
+     * @param missionResult The result of the mission
+     * @param playersOnMission Player names on the mission
+     * @param playedCards Cards played on the mission
+     */
+    populateMissionResults(priorMissionNum: number, missionResult: MissionResult, 
+                        playersOnMission: string[], playedCards: Card[]): void {
+        let missionResultTemplate = null;
+        if (missionResult === MissionResult.Pass) {
+            missionResultTemplate = <HTMLTemplateElement> document.getElementById("missionPassedTemplate");
+        } else {
+            missionResultTemplate = <HTMLTemplateElement> document.getElementById("missionFailedTemplate");
+        }
+        if (typeof missionResultTemplate === null) {
+            throw new Error("Could not find appropriate mission templates.");
+        }
+        
+        const missionIndicatorLocation = document.getElementById("m" + priorMissionNum.toString() + "Indicator");
+        missionIndicatorLocation.innerHTML = "";
+        const missionResultNode = missionResultTemplate.content.cloneNode(true);
+        missionIndicatorLocation.appendChild(missionResultNode);
+        this._missionBodyLocation.innerHTML = "";
+        this._missionBodyLocation.textContent = "Waiting for the next mission.";
+        this.updateMissionPopovers(playersOnMission, playedCards, missionIndicatorLocation);
+    }
+
+    /**
+     * Adds all relevant information for voting for any player.
+     * @param playersOnProposal Players to on the proposal.
+     */
+    populateVotingInformation(playersOnProposal: string[]): void {
+        if (typeof playersOnProposal !== "object" || playersOnProposal.length === 0) {
+            throw new Error("Players on the proposal cannot be empty.");
+        }
+        this.populateVoteHeader();
+        this.populateVoteBody(playersOnProposal);
+    }
+    /**
+     * Populates the vote tab for a player that submitted a vote while voting has not ended.
+     * @param submittedVote The player's submitted vote.
+     */
+    voteStillInProgress(submittedVote: Vote): void {
+        // Remove the buttons and put a message in their place to inform the user voting is complete.
+        this._proposalVoteContent.innerHTML = "";
+        // Format the sentence based on the vote boolean.
+        let alreadyVotedSentence = "You have ";
+        if (submittedVote === Vote.Upvote) {
+            alreadyVotedSentence += "upvoted. ";
+        } else {
+            alreadyVotedSentence += "downvoted. ";
+        }
+        alreadyVotedSentence += "Please wait while others finish voting."
+        // Create the text node and add it to the voting section.
+        const alreadyVotedTextNode = document.createTextNode(alreadyVotedSentence);
+        this._proposalVoteContent.appendChild(alreadyVotedTextNode);
+    }
     //#endregion
     //#region private methods
     /**
@@ -230,6 +303,15 @@ export class GameView {
         return node;
     }
 
+    /**
+     * Populates the proposal header during the proposal phase.
+     * @param isProposing Indicates if this player is the proposer
+     * @param proposerName Name of the proposing player
+     * @param proposalNumber Current number of proposals that have occurred (1-indexed)
+     * @param maxNumProposals Max number of the proposals in the round
+     * @param numOnMission Number of players on the proposal/mission
+     * @param skipForceIndicator If true, doesn't show the force indicator
+     */
     private populateProposalHeader(isProposing: boolean, proposerName: string, proposalNumber: number, maxNumProposals: number, numOnMission: number, skipForceIndicator = false): void {
         this._proposalVoteTab.textContent = "Proposals";
 
@@ -312,6 +394,13 @@ export class GameView {
     }
 
     /**
+     * Changes the vote tab title to "Voting".
+     */
+    private populateVoteHeader(): void {
+        this._proposalVoteTab.textContent = "Voting";
+    }
+
+    /**
      * Populates the content of the voting section for players.
      * @param playerList The players to vote on.
      */
@@ -332,6 +421,64 @@ export class GameView {
         const votingButtonsTemplate = <HTMLTemplateElement> document.getElementById("voteButtonsTemplate");
         const votingButtons = votingButtonsTemplate.content.cloneNode(true);
         this._proposalVoteContent.appendChild(votingButtons);
+    }
+
+    /**
+     * Populates the mission buttons for players on a mission.
+     */
+    private populateMissionTabOnMission(): void {
+        this._missionBodyLocation.innerHTML = "";
+        const missionBodyTemplate = <HTMLTemplateElement> document.getElementById("onMissionTemplate");
+        const missionBodyOnMission = missionBodyTemplate.content.cloneNode(true);
+        this._missionBodyLocation.appendChild(missionBodyOnMission);
+    }
+
+    /**
+     * Populates the mission tab for players not on the mission.
+     * @param playersOnMission A string array of players on the mission
+     */
+    private populateMissionTabSpectating(playersOnMission: string[]): void {
+        const missionBodyTemplate = <HTMLTemplateElement> document.getElementById("notOnMissionTemplate");
+        const missionBodySpectating = <HTMLElement> missionBodyTemplate.content.cloneNode(true);
+        this._missionBodyLocation.innerHTML = "";
+        const preNode = missionBodySpectating.querySelector("pre");
+        let missionSentence = "Please wait while " + playersOnMission.join(", ") + 
+        " go on a mission.";
+        preNode.textContent = missionSentence;
+        this._missionBodyLocation.appendChild(missionBodySpectating);
+    }
+
+    /**
+     * Builds and initializes the popover for the correct mission
+     * @param playersOnMission List of player names on the mission
+     * @param playedCards List of cards played on the mission
+     * @param missionIndicatorLocation HTMLElement of the correct mission indicator
+     */
+    private updateMissionPopovers(playersOnMission: string[], playedCards: Card[], missionIndicatorLocation: HTMLElement): void {
+        // First, add the players on the mission.
+        let popoverText = "Players: ";
+        const numPlayers = playersOnMission.length;
+        for (let i = 0; i < numPlayers; i++) {
+            //Handle cases of the last player (and), a two player mission (no comma), or generic case.
+            if (i + 1 === numPlayers) {
+                popoverText += "and " + playersOnMission[i] + " (" + numPlayers + ")";
+            } else if (numPlayers === 2) {
+                popoverText += playersOnMission[i] + " ";
+            } else {
+                popoverText += playersOnMission[i] + ", ";
+            }
+        }
+        // Add a linebreak for formatting.
+        popoverText += "<br />";
+        // Handle cards played.
+        popoverText += "Cards Played: ";
+        for (const card in playedCards) {
+            popoverText += Card[card] + ", ";
+        }
+        // Add cards to popover and initialize.
+        missionIndicatorLocation.setAttribute("data-content", popoverText);
+        const popover = $(missionIndicatorLocation);
+        popover.popover();
     }
     //#endregion
 }

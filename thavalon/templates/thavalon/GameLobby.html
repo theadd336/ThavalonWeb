@@ -13,7 +13,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
     <script>$('select').selectpicker();</script>
     <script src="{% static 'thavalon/js/GameLobby.js' %}"></script>
-    <script src="{% static 'thavalon/js/communication.js' %}"></script>
+    <script src="{% static 'thavalon/js/communication.js' %}" type="module"></script>
+    <script src="{% static 'thavalon/js/gameActivity.js' %}" type="module">
+      
+    </script>
 </head>
 <body>
 
@@ -176,7 +179,8 @@
     //  '/ws/thavalon/{{ game_id|escapejs }}/game/');
     
     const url = 'ws://' + window.location.host + '/ws/thavalon/{{ game_id|escapejs }}/game/';
-    const gameWebSocket = new ThavalonWeb.Communication.WebSocketManager(url); 
+    // const gameWebSocket = new ThavalonWeb.Communication.WebSocketManager(url);
+    const game = new gameActivity.GameDirector();
 	// gameWebSocket.onmessage = function(e) {
   //     const data = JSON.parse(e.data);
   //     if (!data.success) {

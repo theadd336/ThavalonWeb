@@ -1,4 +1,4 @@
-export const enum Card {
+export enum Card {
     Success,
     Fail,
     Reverse
