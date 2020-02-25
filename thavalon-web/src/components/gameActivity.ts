@@ -1,13 +1,13 @@
-import * as constants from "./gameConstants.js";
+import * as constants from "../Core/gameConstants.js";
 import { WebSocketManager } from "./communication.js";
-import { GameView } from "./gameView.js";
+// import { GameView } from "./gameView.js";
 
 export class GameDirector {
     //#region private members
     private _gamePhase: constants.GamePhase;
     private _role: string;
     private readonly _webSocketManager: WebSocketManager;
-    private readonly _gameView: GameView;
+    // private readonly _gameView: GameView;
     //#endregion
     //#region Public Properties
     //#endregion
@@ -15,7 +15,7 @@ export class GameDirector {
     //#region public methods
     constructor() {
         this._webSocketManager = new WebSocketManager();
-        this._gameView = new GameView();
+        // this._gameView = new GameView();
         this.initializeInfoOnConnect();
         }
     

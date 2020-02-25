@@ -1,5 +1,6 @@
-import { EventDispatcher, IEvent } from "../../node_modules/strongly-typed-events/dist/index";
-import * as constants from "./commConstants.js";
+import { EventDispatcher, IEvent } from "strongly-typed-events";
+import * as constants from "../Core/commConstants.js";
+import WebSocket from "ws";
 
 declare function populateGameState(data: constants.WebSocketMessage): void
 declare function onStartGame(data: constants.WebSocketMessage): void
@@ -12,6 +13,7 @@ declare function onVoteStillInProgress(data: constants.WebSocketMessage): void
 declare function missionStillInProgress(data: constants.WebSocketMessage): void
 
 export class WebSocketManager {
+
     private readonly _webSocket: WebSocket;
     private _gameStartEvent: EventDispatcher<WebSocketManager, string>;
     private _proposalReceivedEvent: EventDispatcher<WebSocketManager, constants.ProposalReceivedMessage>;
@@ -21,9 +23,11 @@ export class WebSocketManager {
     private _missionResultsEvent: EventDispatcher<WebSocketManager, constants.MissionResultsMessage>;
     private _voteStillInProgressEvent: EventDispatcher<WebSocketManager, constants.VoteStillInProgressMessage>;
     private _missionStillInProgressEvent: EventDispatcher<WebSocketManager, constants.MissionStillInProgressMessage>;
+
     get IsReady() {
         return this._webSocket.readyState === WebSocket.OPEN;
     }
+    
     //#region constructors
     constructor()
     constructor(webSocketUrl: string)
@@ -90,8 +94,8 @@ export class WebSocketManager {
 
     //#endregion
     //#region private methods
-    private parseIncomingMessage(rawMessage: MessageEvent): void {
-        const messageData = JSON.parse(rawMessage.data);
+    private parseIncomingMessage(rawMessage: WebSocket.MessageEvent): void {
+        const messageData = JSON.parse(rawMessage.data.toString());
         if (!this.isValidMessageFormat(messageData)) {
             throw new Error("Could not parse WebSocket event data.");
         }
@@ -134,7 +138,7 @@ export class WebSocketManager {
         }
     }
 
-    private errorMessageHandler(rawMessage: Event): void {
+    private errorMessageHandler(rawMessage: WebSocket.ErrorEvent): void {
     }
 
     private isValidMessageFormat(messageData: any): messageData is constants.WebSocketMessage {

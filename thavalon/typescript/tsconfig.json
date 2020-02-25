@@ -3,8 +3,10 @@
         "outDir": "../../static/thavalon/js/",
         "target": "ES6",
         "sourceMap": true,
+        "noImplicitAny": true,
         "alwaysStrict": true,
         "moduleResolution": "node",
-        "module": "ES2015"
+        "module": "commonjs",
+        "jsx": "react"
     }
 }

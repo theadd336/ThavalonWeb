@@ -1,27 +1,30 @@
+export const MIN_NUM_PLAYERS = 2;
+export const MAX_NUM_PLAYERS = 10;
+
 export enum Card {
     Success,
     Fail,
     Reverse
 }
 
-export const enum GamePhase {
+export enum GamePhase {
     Proposal,
     Voting,
     Mission,
     Assassination
 }
 
-export const enum Vote {
+export enum Vote {
     Downvote,
     Upvote
 }
 
-export const enum Team {
+export enum Team {
     Good,
     Evil
 }
 
-export const enum MissionResult {
+export enum MissionResult {
     Pass,
     Fail
 }
