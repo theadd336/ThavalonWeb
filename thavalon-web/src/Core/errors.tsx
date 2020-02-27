@@ -11,3 +11,10 @@ export class MissingPropertyError extends Error {
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
+
+export class InvalidMissionError extends Error {
+    constructor(errorMessage?: string) {
+        super(errorMessage);
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}

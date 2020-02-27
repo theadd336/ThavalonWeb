@@ -1,5 +1,6 @@
 export const MIN_NUM_PLAYERS = 2;
 export const MAX_NUM_PLAYERS = 10;
+export const MAX_NUM_MISSIONS = 5;
 
 export enum Card {
     Success,
