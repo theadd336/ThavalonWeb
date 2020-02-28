@@ -1,9 +1,137 @@
 import * as React from "react";
 import { Popover, OverlayTrigger } from "react-bootstrap";
 import { MissingPropertyError, InvalidMissionError } from "../Core/errors";
-import { MissionResult, Card, MAX_NUM_MISSIONS } from "../Core/gameConstants";
-import { object } from "prop-types";
+import { MissionResult, Card } from "../Core/gameConstants";
 
+//#region interfaces
+/**
+ * Defines the props object for MissionIndicator.
+ */
+interface MissionIndicatorProps {
+    discriminator: "MissionIndicatorProps",
+    missionNum: number,
+    playersOnMission: string[],
+    result: MissionResult,
+    cardsPlayed: Card[]
+}
+
+/**
+ * Defines the props object for MissionPlaceholderIndicator
+ */
+interface MissionPlaceholderProps {
+    discriminator: "MissionPlaceholderProps",
+    missionNum: number,
+    numPlayersOnMisison: number,
+    requiresDoubleFail: boolean
+}
+
+/**
+ * Defines the props object for the MissionIndicatorCollection
+ */
+interface MissionIndicatorCollectionProps {
+    numMissions: number,
+    missionsInfo: (MissionIndicatorProps | MissionPlaceholderProps)[]
+}
+
+/**
+ * Defines the state object for MissionIndicatorCollection
+ */
+interface MissionIndicatorCollectionState {
+    missionsCollection: (MissionIndicatorProps | MissionPlaceholderProps)[]
+}
+//#endregion
+
+/**
+ * Collection of mission indicators. Maintains the list and handles initializing placeholders or indicators.
+ */
+export class MissionIndicatorCollection extends React.Component<MissionIndicatorCollectionProps, MissionIndicatorCollectionState> {
+    /**
+     * Instantiates a new collection of mission indicators.
+     * @param props Properties for the collection. Includes either resulted mission info or placeholder info.
+     */
+    constructor(props: MissionIndicatorCollectionProps) {
+        super(props);
+        // Initialize variables and perform initial validation.
+        const missionCollection = [];
+        const allMissionInfo = props.missionsInfo;
+        if (allMissionInfo.length !== this.props.numMissions) {
+            throw new InvalidMissionError("The number of missions to initialize must match the number of provided information objects.");
+        }
+
+        // For any information, validate which type it is. If the mission has actual information (in the case of a reconnect),
+        // initialize a new indicator. Otherwise, initialize a placeholder. Then add it to the collection.
+        for (const missionInfo of allMissionInfo) {
+            missionCollection.push(missionInfo);
+        }
+
+        // Post-instantiation validation.
+        if (missionCollection.length !== props.numMissions) {
+            throw new InvalidMissionError("Error during contruction of mission indicators.");
+        }
+
+        // If all tests pass, initialize the state.
+        this.state = {
+            missionsCollection: missionCollection
+        }
+    }
+
+    /**
+     * Renders the collection of mission indicators.
+     */
+    render(): JSX.Element {
+        const missionIndicators = this.state.missionsCollection.map((indicator) => {
+            if (this.instanceOfMissionIndicatorProps(indicator)) {
+                return (
+                    <MissionIndicator 
+                        discriminator={indicator.discriminator}
+                        missionNum={indicator.missionNum}
+                        playersOnMission={indicator.playersOnMission}
+                        cardsPlayed={indicator.cardsPlayed}
+                        result={indicator.result} />);
+            } else {
+                return (
+                    <MissionPlaceholderIndicator
+                        discriminator={indicator.discriminator}
+                        missionNum={indicator.missionNum}
+                        numPlayersOnMisison={indicator.numPlayersOnMisison}
+                        requiresDoubleFail={indicator.requiresDoubleFail} />);
+            }
+        });
+        return (
+            <div className="row">
+                {missionIndicators}
+            </div>
+        );
+    }
+
+    /**
+     * Updates the appropriate mission with the mission's results.
+     * @param missionResults Results from the mission that now has results.
+     */
+    addMissionResults(missionResults: MissionIndicatorProps): void {
+        if (typeof missionResults === undefined) {
+            throw new MissingPropertyError("Mission results are required.");
+        }
+        const missionNum = missionResults.missionNum;
+        if (missionNum < 0 || missionNum >= this.props.numMissions) {
+            throw new InvalidMissionError("The mission number does not exist.");
+        }
+        const missionsCollection = this.state.missionsCollection;
+        missionsCollection[missionNum] = missionResults;
+        this.setState({missionsCollection: missionsCollection});
+    }
+
+    /**
+     * Type guard to determine if the information provided is enough for a resulted mission.
+     * @param object Object to type guard
+     */
+    private instanceOfMissionIndicatorProps(object: any): object is MissionIndicatorProps {
+        return object.discriminator === "MissionIndicatorProps";
+    }
+
+}
+
+//#region private classes
 /**
  * Handles mission indicator images and popovers.
  */
@@ -30,7 +158,11 @@ class MissionIndicator extends React.Component<MissionIndicatorProps> {
     }
 
     render(): JSX.Element {
-        return this.formatImageLink();
+        return (
+            <div className="col-2">
+                {this.formatImageLink()}
+            </div>
+        );
     }
 
     //#region private methods
@@ -136,24 +268,6 @@ class MissionIndicator extends React.Component<MissionIndicatorProps> {
 }
 
 /**
- * Defines the props object for MissionIndicator.
- */
-interface MissionIndicatorProps {
-    discriminator: "MissionIndicatorProps",
-    missionNum: number,
-    playersOnMission: string[],
-    result: MissionResult,
-    cardsPlayed: Card[]
-}
-
-interface MissionPlaceholderProps {
-    discriminator: "MissionPlaceholderProps",
-    missionNum: number,
-    numPlayersOnMisison: number,
-    requiresDoubleFail: boolean
-}
-
-/**
  * Shows mission information for missions that have not gone yet, such as player counts.
  */
 class MissionPlaceholderIndicator extends React.Component<MissionPlaceholderProps> {
@@ -184,108 +298,17 @@ class MissionPlaceholderIndicator extends React.Component<MissionPlaceholderProp
             </span>);
         }
         return (
-            <p className="rounded-circle">
-                <span className="numPlayerIndicator">
-                    {this.props.missionNum}
-                </span>
-                <br />
-                "Players"
-                {doubleFailIndicator}
-            </p>
+            <div className="col-2">
+                <p className="rounded-circle">
+                    <span className="numPlayerIndicator">
+                        {this.props.missionNum}
+                    </span>
+                    <br />
+                    "Players"
+                    {doubleFailIndicator}
+                </p>
+            </div>
         );
     }
 } 
-
-/**
- * Collection of mission indicators. Maintains the list and handles initializing placeholders or indicators.
- */
-export class MissionIndicatorCollection extends React.Component<{numMissions: number}, MissionIndicatorCollectionState> {
-    /**
-     * Instantiates a new collection of mission indicators.
-     * @param props Properties for the collection. Includes either resulted mission info or placeholder info.
-     */
-    constructor(props: MissionIndicatorCollectionProps) {
-        super({numMissions: props.numMissions});
-        // Initialize variables and perform initial validation.
-        const missionCollection = [];
-        const allMissionInfo = props.missionsInfo;
-        if (allMissionInfo.length !== this.props.numMissions) {
-            throw new InvalidMissionError("The number of missions to initialize must match the number of provided information objects.");
-        }
-
-        // For any information, validate which type it is. If the mission has actual information (in the case of a reconnect),
-        // initialize a new indicator. Otherwise, initialize a placeholder. Then add it to the collection.
-        let missionIndicator: MissionPlaceholderIndicator | MissionIndicator
-        for (let i = 0; i < props.numMissions; i++) {
-            const missionInfo = allMissionInfo[i]; 
-            if (this.instanceOfMissionIndicatorProps(missionInfo)) {
-                missionIndicator = new MissionIndicator(missionInfo);
-            } else {
-                missionIndicator = new MissionPlaceholderIndicator(missionInfo);
-            }
-            missionCollection.push(missionIndicator);
-        }
-
-        // Post-instantiation validation.
-        if (missionCollection.length !== props.numMissions) {
-            throw new InvalidMissionError("Error during contruction of mission indicators.");
-        }
-
-        // If all tests pass, initialize the state.
-        this.state = {
-            missionsCollection: missionCollection
-        }
-    }
-
-    /**
-     * Renders the collection of mission indicators.
-     */
-    render(): JSX.Element {
-        const missionIndicators = this.state.missionsCollection.map((indicator) =>
-            <div className="col-2">
-                {indicator}
-            </div>
-        );
-        return (
-            <div className="row">
-                {missionIndicators}
-            </div>
-        );
-    }
-
-    /**
-     * Updates the appropriate mission with the mission's results.
-     * @param missionResults Results from the mission that now has results.
-     */
-    addMissionResults(missionResults: MissionIndicatorProps): void {
-        if (typeof missionResults === undefined) {
-            throw new MissingPropertyError("Mission results are required.");
-        }
-        const missionNum = missionResults.missionNum;
-        if (missionNum < 0 || missionNum >= this.props.numMissions) {
-            throw new InvalidMissionError("The mission number does not exist.");
-        }
-        const missionIndicator = new MissionIndicator(missionResults);
-        const missionsCollection = this.state.missionsCollection;
-        missionsCollection[missionNum] = missionIndicator;
-        this.setState({missionsCollection: missionsCollection});
-    }
-
-    /**
-     * Type guard to determine if the information provided is enough for a resulted mission.
-     * @param object Object to type guard
-     */
-    private instanceOfMissionIndicatorProps(object: any): object is MissionIndicatorProps {
-        return object.discriminator === "MissionIndicatorProps";
-    }
-
-}
-
-interface MissionIndicatorCollectionProps {
-    numMissions: number,
-    missionsInfo: (MissionIndicatorProps | MissionPlaceholderProps)[]
-}
-
-interface MissionIndicatorCollectionState {
-    missionsCollection: (MissionIndicator | MissionPlaceholderIndicator)[]
-}
+//#endregion
