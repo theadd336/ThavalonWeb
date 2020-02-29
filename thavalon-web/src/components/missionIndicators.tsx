@@ -1,7 +1,10 @@
 import * as React from "react";
-import { Popover, OverlayTrigger } from "react-bootstrap";
+import { Popover, OverlayTrigger, Card as BootstrapCard } from "react-bootstrap";
 import { MissingPropertyError, InvalidMissionError } from "../Core/errors";
 import { MissionResult, Card } from "../Core/gameConstants";
+import FailToken from "../static/red-coin.png";
+import SuccessToken from "../static/black-coin.png";
+
 
 //#region interfaces
 /**
@@ -54,7 +57,7 @@ export class MissionIndicatorCollection extends React.Component<MissionIndicator
         // Initialize variables and perform initial validation.
         const missionCollection = [];
         const allMissionInfo = props.missionsInfo;
-        if (allMissionInfo.length !== this.props.numMissions) {
+        if (allMissionInfo.length > this.props.numMissions) {
             throw new InvalidMissionError("The number of missions to initialize must match the number of provided information objects.");
         }
 
@@ -199,11 +202,9 @@ class MissionIndicator extends React.Component<MissionIndicatorProps> {
     private selectIndicatorImage(result?: MissionResult): string {
         switch(result) {
             case MissionResult.Pass:
-                console.log("pass link here")
-                return "https://i.imgur.com/pJTlA0g.png";
+                return SuccessToken;
             case MissionResult.Fail:
-                console.log("fail link here")
-                return "https://i.imgur.com/pJTlA0g.png";
+                return FailToken
             default:
                 console.log("greyscale link here")
                 return "https://i.imgur.com/pJTlA0g.png";
@@ -289,26 +290,47 @@ class MissionPlaceholderIndicator extends React.Component<MissionPlaceholderProp
      * Renders the placeholder component.
      */
     render(): JSX.Element {
-        let doubleFailIndicator = <span></span>;
-        if (this.props.requiresDoubleFail) {
-            doubleFailIndicator = (
-            <span className="circularText">
-                <br />
-                "Two Fails Required"
-            </span>);
-        }
+        const missionCard = this.createCard();
         return (
             <div className="col-2">
-                <p className="rounded-circle">
-                    <span className="numPlayerIndicator">
-                        {this.props.missionNum}
-                    </span>
-                    <br />
-                    "Players"
-                    {doubleFailIndicator}
-                </p>
-            </div>
-        );
+                {missionCard}
+            </div>);
+    }
+
+    /**
+     * Creates a bootstrap card for the mission indicator.
+     */
+    private createCard(): JSX.Element {
+        let doubleFailIndicator = "";
+        if (this.props.requiresDoubleFail) {
+            doubleFailIndicator = "Two Fails Required";
+        }
+
+        const card = (
+            <BootstrapCard 
+                bg="light" 
+                className="rounded-circle indicatorPlaceholderStyle">
+                <BootstrapCard.Body>
+                    <BootstrapCard.Title>
+                        {"Mission " + this.props.missionNum}
+                    </BootstrapCard.Title>
+                    <BootstrapCard.Text>
+                        <span className="missionNumStyle">
+                            {this.props.numPlayersOnMisison}
+                        </span>
+                        <br />
+                        <span>
+                            Players
+                            <br />
+                            <span className="text-danger">
+                                {doubleFailIndicator}
+                            </span>
+                        </span>
+                    </BootstrapCard.Text>
+                </BootstrapCard.Body>
+            </BootstrapCard>);
+
+        return card;
     }
 } 
 //#endregion
