@@ -31,7 +31,7 @@ interface MissionPlaceholderProps {
 /**
  * Defines the props object for the MissionIndicatorCollection
  */
-interface MissionIndicatorCollectionProps {
+export interface MissionIndicatorCollectionProps {
     numMissions: number,
     missionsInfo: (MissionIndicatorProps | MissionPlaceholderProps)[]
 }

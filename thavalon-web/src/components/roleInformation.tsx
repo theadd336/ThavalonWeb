@@ -25,9 +25,12 @@ export class RoleCaption extends React.Component<RoleCaptionProps>
             teamIndicator = <span className="text-success"> [GOOD]</span>;
         }
         return (
-            <span>
-                {"You are " + this.props.role} 
-                {teamIndicator}
-            </span>);
+            <div className="row col-12 text-center">
+                <span>
+                    {"You are " + this.props.role} 
+                    {teamIndicator}
+                </span>
+            </div>
+        );
     }
 }

@@ -44,6 +44,10 @@ export interface VoteStillInProgressMessage {
     submittedVote: Vote
 }
 
-export interface MissionStillInProgressMessage {
-    playedCard: Card
+export interface IConnectionManager {
+    IsReady: any
+}
+
+export interface ConnManagerProps {
+    webSocket: IConnectionManager
 }
