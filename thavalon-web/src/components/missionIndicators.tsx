@@ -1,9 +1,11 @@
 import * as React from "react";
 import { Popover, OverlayTrigger, Card as BootstrapCard } from "react-bootstrap";
-import { MissingPropertyError, InvalidMissionError } from "../Core/errors";
-import { MissionResult, Card } from "../Core/gameConstants";
+import { MissingPropertyError, InvalidMissionError, ConnectionError } from "../Core/errors";
+import { MissionResult, Card, AllMissionInfo } from "../Core/gameConstants";
 import FailToken from "../static/red-coin.png";
 import SuccessToken from "../static/black-coin.png";
+import { WebSocketProp, WebSocketManager } from "./communication";
+import { WebSocketMessage, IncomingMessageTypes, MissionResultsMessage } from "../Core/commConstants";
 
 
 //#region interfaces
@@ -31,7 +33,7 @@ interface MissionPlaceholderProps {
 /**
  * Defines the props object for the MissionIndicatorCollection
  */
-export interface MissionIndicatorCollectionProps {
+export interface AllMissionInfoMessage {
     numMissions: number,
     missionsInfo: (MissionIndicatorProps | MissionPlaceholderProps)[]
 }
@@ -47,36 +49,37 @@ interface MissionIndicatorCollectionState {
 /**
  * Collection of mission indicators. Maintains the list and handles initializing placeholders or indicators.
  */
-export class MissionIndicatorCollection extends React.Component<MissionIndicatorCollectionProps, MissionIndicatorCollectionState> {
+export class MissionIndicatorCollection extends React.Component<WebSocketProp, MissionIndicatorCollectionState> {
+    private _connection: WebSocketManager;
     /**
      * Instantiates a new collection of mission indicators.
      * @param props Properties for the collection. Includes either resulted mission info or placeholder info.
      */
-    constructor(props: MissionIndicatorCollectionProps) {
+    constructor(props: WebSocketProp) {
         super(props);
-        // Initialize variables and perform initial validation.
-        const missionCollection = [];
-        const allMissionInfo = props.missionsInfo;
-        if (allMissionInfo.length > this.props.numMissions) {
-            throw new InvalidMissionError("The number of missions to initialize must match the number of provided information objects.");
-        }
-
-        // For any information, validate which type it is. If the mission has actual information (in the case of a reconnect),
-        // initialize a new indicator. Otherwise, initialize a placeholder. Then add it to the collection.
-        for (const missionInfo of allMissionInfo) {
-            missionCollection.push(missionInfo);
-        }
-
-        // Post-instantiation validation.
-        if (missionCollection.length !== props.numMissions) {
-            throw new InvalidMissionError("Error during contruction of mission indicators.");
+        if (props.webSocket !instanceof(WebSocketManager)) {
+            throw new MissingPropertyError("The connection manager is missing.");
         }
 
         // If all tests pass, initialize the state.
         this.state = {
-            missionsCollection: missionCollection
+            missionsCollection: []
         }
+
+        this._connection = props.webSocket;
     }
+
+    componentDidMount(): void {
+        //Add event handlers if the connection is open.
+        if (!this._connection.IsOpen) {
+            throw new ConnectionError("The connection is in a broken state.");
+        }
+
+        this._connection.onSuccessfulMessage.subscribe((sender, message) => {
+            this.receiveSuccessfulMessage(sender, message);
+        });
+    }
+
 
     /**
      * Renders the collection of mission indicators.
@@ -116,10 +119,10 @@ export class MissionIndicatorCollection extends React.Component<MissionIndicator
             throw new MissingPropertyError("Mission results are required.");
         }
         const missionNum = missionResults.missionNum;
-        if (missionNum < 0 || missionNum >= this.props.numMissions) {
+        const missionsCollection = this.state.missionsCollection;
+        if (missionNum < 0 || missionNum >= missionsCollection.length) {
             throw new InvalidMissionError("The mission number does not exist.");
         }
-        const missionsCollection = this.state.missionsCollection;
         missionsCollection[missionNum] = missionResults;
         this.setState({missionsCollection: missionsCollection});
     }
@@ -132,6 +135,67 @@ export class MissionIndicatorCollection extends React.Component<MissionIndicator
         return object.discriminator === "MissionIndicatorProps";
     }
 
+    /**
+     * Populates the entire mission collection on a connection or reconnection.
+     * @param message Message object with information for all missions
+     */
+    private populateMissionCollection(message: WebSocketMessage) {
+        //TODO: Figure out which message types we need for casting.
+        const allMissionInfoMessage = message.data as AllMissionInfoMessage
+        const missionCollection = [];
+        const { numMissions, missionsInfo } = allMissionInfoMessage
+        if (missionsInfo.length !== numMissions) {
+            throw new InvalidMissionError("The number of missions to initialize must match the number of provided information objects.");
+        }
+        // For any information, validate which type it is. If the mission has actual information (in the case of a reconnect),
+        // initialize a new indicator. Otherwise, initialize a placeholder. Then add it to the collection.
+        for (const missionInfo of missionsInfo) {
+            missionCollection.push(missionInfo);
+        }
+        // Post-instantiation validation.
+        if (missionCollection.length !== numMissions) {
+            throw new InvalidMissionError("Error during contruction of mission indicators.");
+        }
+        
+        this.setState({missionsCollection: missionCollection})
+    }
+
+    /**
+     * Handle a message from the server.
+     * @param sender Object that sent this event. Currently unused.
+     * @param message Message from the server.
+     */
+    private receiveSuccessfulMessage(sender: object, message: WebSocketMessage): void {
+        // If it's not a mission result, we don't care.
+        switch (message.type) {
+            case IncomingMessageTypes.MissionResult:
+                this.updateMissionResults(message);
+                break;
+            case IncomingMessageTypes.AllMissionInfo:
+                this.populateMissionCollection(message);
+                break;
+            }
+        }
+
+    private updateMissionResults(message: WebSocketMessage) {
+        // Grab the data and cast it appropriately. Also get the current collection of missions.
+        const missionResult = message.data as MissionResultsMessage;
+        const missionCollection = this.state.missionsCollection;
+        // If the mission num is out of range, throw an error. This shouldn't happen.
+        const missionNum = missionResult.priorMissionNum;
+        if (missionNum < 0 || missionNum >= missionCollection.length) {
+            throw new InvalidMissionError("The mission result is out of range.");
+        }
+        // Update the correct mission with the required information and set the state.
+        missionCollection[missionNum] = {
+            discriminator: "MissionIndicatorProps",
+            missionNum: missionNum,
+            playersOnMission: missionResult.playersOnMission,
+            result: missionResult.missionResult,
+            cardsPlayed: missionResult.playedCards
+        };
+        this.setState({ missionsCollection: missionCollection });
+    }
 }
 
 //#region private classes

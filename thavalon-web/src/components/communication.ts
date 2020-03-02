@@ -1,11 +1,15 @@
 import { EventDispatcher, IEvent } from "strongly-typed-events";
 import * as constants from "../Core/commConstants.js";
 
+export interface WebSocketProp {
+    webSocket: WebSocketManager
+}
+
 export class WebSocketManager implements constants.IConnectionManager {
 
     private readonly _webSocket: WebSocket;
     private _onSuccessfulMessage: EventDispatcher<WebSocketManager, constants.WebSocketMessage>
-    get IsReady(): boolean {
+    get IsOpen(): boolean {
         return this._webSocket.readyState === WebSocket.OPEN;
     }
 
@@ -14,8 +18,6 @@ export class WebSocketManager implements constants.IConnectionManager {
     }
     
     //#region constructors
-    constructor()
-    constructor(webSocketUrl: string)
     constructor(webSocketUrl?: string) {
         // If there isn't a url, try to pull it from the window location.
         if (typeof webSocketUrl === "undefined") {
@@ -40,8 +42,13 @@ export class WebSocketManager implements constants.IConnectionManager {
     //#endregion
 
     //#region public methods
-    send(message: string): void {
-        this._webSocket.send(message);
+    send(message: {type: string}): void {
+        if (typeof message.type !== "string") {
+            //TODO: Improve this error.
+            throw new Error("");
+        }
+        const serializedMessage = JSON.stringify(message);
+        this._webSocket.send(serializedMessage);
     }
 
     //#endregion

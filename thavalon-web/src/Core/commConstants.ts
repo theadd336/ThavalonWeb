@@ -1,4 +1,4 @@
-import {MissionResult, Card, Vote} from "./gameConstants.js";
+import {MissionResult, Card, Vote, Team} from "./gameConstants.js";
 
 export interface WebSocketMessage {
     success: boolean;
@@ -45,9 +45,22 @@ export interface VoteStillInProgressMessage {
 }
 
 export interface IConnectionManager {
-    IsReady: any
+    IsOpen: any
 }
 
-export interface ConnManagerProps {
-    webSocket: IConnectionManager
+
+// Everything below here is legit.
+export enum IncomingMessageTypes {
+    RoleInformation = "role_information",
+    MissionResult = "mission_result",
+    AllMissionInfo = "all_mission_info",
+}
+
+export interface RoleInformationMessage {
+    role: string,
+    team: Team
+}
+
+export enum OutgoingMessageTypes {
+    RoleInformation = "role_information",
 }
