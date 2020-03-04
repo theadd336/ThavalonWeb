@@ -3,6 +3,7 @@ import { MissionIndicatorCollection } from "./missionIndicators";
 import { RoleCaption } from "./roleInformation";
 import { WebSocketManager, WebSocketProp } from "./communication";
 import { MissingPropertyError } from "../Core/errors";
+import { Nav, Navbar } from "react-bootstrap";
 
 
 /**
@@ -17,7 +18,7 @@ export class GameBoard extends React.Component<WebSocketProp>
      */
     constructor(props: WebSocketProp) {
         super(props);
-        if (props.webSocket !instanceof(WebSocketManager)) {
+        if (!(props.webSocket instanceof(WebSocketManager))) {
             throw new MissingPropertyError("There is no valid connection.");
         }
     }
@@ -26,8 +27,35 @@ export class GameBoard extends React.Component<WebSocketProp>
         return (
             <div className="container pt-5">
                 <RoleCaption webSocket={this.props.webSocket} />
-                <MissionIndicatorCollection />
+                <MissionIndicatorCollection webSocket={this.props.webSocket} />
             </div>
+        );
+    }
+}
+
+/**
+ * Constant class that represents the header.
+ */
+export class Header extends React.Component {
+    render(): JSX.Element {
+        return (
+            <Navbar 
+                bg="light"
+                variant="light">
+                <Navbar.Brand href="/thavalon">
+                    Home
+                </Navbar.Brand>
+                <Nav className="mr-auto">
+                    <Nav.Link href="/thavalon/ViewLobbies.html">
+                        View Lobbies
+                    </Nav.Link>
+                </Nav>
+                <Nav>
+                    <Nav.Link href="#">
+                        Rules
+                    </Nav.Link>
+                </Nav>
+            </Navbar>
         );
     }
 }

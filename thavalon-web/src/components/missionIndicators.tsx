@@ -57,7 +57,7 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
      */
     constructor(props: WebSocketProp) {
         super(props);
-        if (props.webSocket !instanceof(WebSocketManager)) {
+        if (!(props.webSocket instanceof(WebSocketManager))) {
             throw new MissingPropertyError("The connection manager is missing.");
         }
 
@@ -70,11 +70,6 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
     }
 
     componentDidMount(): void {
-        //Add event handlers if the connection is open.
-        if (!this._connection.IsOpen) {
-            throw new ConnectionError("The connection is in a broken state.");
-        }
-
         this._connection.onSuccessfulMessage.subscribe((sender, message) => {
             this.receiveSuccessfulMessage(sender, message);
         });

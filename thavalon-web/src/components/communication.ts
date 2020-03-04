@@ -1,5 +1,6 @@
 import { EventDispatcher, IEvent } from "strongly-typed-events";
 import * as constants from "../Core/commConstants.js";
+import { WSAEACCES } from "constants";
 
 export interface WebSocketProp {
     webSocket: WebSocketManager
@@ -7,10 +8,10 @@ export interface WebSocketProp {
 
 export class WebSocketManager implements constants.IConnectionManager {
 
-    private readonly _webSocket: WebSocket;
+    private _webSocket: WebSocket;
     private _onSuccessfulMessage: EventDispatcher<WebSocketManager, constants.WebSocketMessage>
     get IsOpen(): boolean {
-        return this._webSocket.readyState === WebSocket.OPEN;
+        return (this._webSocket.readyState === WebSocket.OPEN);
     }
 
     get onSuccessfulMessage(): IEvent<WebSocketManager, constants.WebSocketMessage> {
@@ -48,9 +49,32 @@ export class WebSocketManager implements constants.IConnectionManager {
             throw new Error("");
         }
         const serializedMessage = JSON.stringify(message);
-        this._webSocket.send(serializedMessage);
+        this.waitForOpenConnection(this, () => {
+            console.log("Message sent.");
+            this._webSocket.send(serializedMessage);
+        })
     }
-
+    
+    /**
+     * Holds messages until the connection is open. Then, calls the callback to send the message.
+     * @param socketManager An instance of the websocket manager. Probably this.
+     * @param callBack Callback function upon the connection opening.
+     */
+    waitForOpenConnection(socketManager: WebSocketManager, callBack: any) {
+        setTimeout(
+            function () {
+                if (socketManager.IsOpen) {
+                    console.log("Socket is open");
+                    if (callBack != null) {
+                        callBack();
+                    }
+                } else {
+                    console.log("Waiting for connection...");
+                    socketManager.waitForOpenConnection(socketManager, callBack);
+                }
+            }, 3000 // Wait 3 seconds max.
+        );
+    }
     //#endregion
     //#region private methods
     private parseIncomingMessage(rawMessage: MessageEvent): void {

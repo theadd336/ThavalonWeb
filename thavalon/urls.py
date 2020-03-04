@@ -8,6 +8,4 @@ urlpatterns = [
     path("zzzDoNotCallJoin_Game/", views.GameLobbiesView.join_game, name="join_game"),
     path("<str:game_id>/", views.LobbyWaitingView.load, name="join_lobby"),
     path("<str:game_id>/GameLobby/", views.GameView.load_game_page, name="game_page"),
-    path("Lobby1/<str:room_name>/", views.room, name="room"),
-    path("<str:room_name>/", views.room, name="room"),
 ]

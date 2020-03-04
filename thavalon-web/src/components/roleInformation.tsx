@@ -37,10 +37,6 @@ export class RoleCaption extends React.Component<WebSocketProp, RoleCaptionState
      * Sets up event handlers when the component is loaded into the DOM.
      */
     componentDidMount(): void {
-        if (!this._connection.IsOpen) {
-            throw new ConnectionError();
-        }
-
         this._connection.onSuccessfulMessage.subscribe((sender, message) => {
             this.messageReceived(sender, message);
         })
