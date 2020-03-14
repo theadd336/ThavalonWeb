@@ -164,6 +164,7 @@ def test_start_game_verify_proposal_order() -> None:
     assert game.proposal_order_names == ["name3", "name1", "name2", "name5", "name4"]
     assert game.proposal_order_players == [p3, p1, p2, p5, p4]
 
+    assert game.lobby_status == LobbyStatus.IN_PROGRESS
 
 @pytest.mark.repeat(10)
 @pytest.mark.parametrize("num_players, session_id_to_player", [

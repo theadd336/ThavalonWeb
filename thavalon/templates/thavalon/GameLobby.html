@@ -15,7 +15,6 @@
     <script src="{% static 'thavalon/js/GameLobby.js' %}"></script>
     <script src="{% static 'thavalon/js/communication.js' %}" type="module"></script>
     <script src="{% static 'thavalon/js/gameActivity.js' %}" type="module">
-      
     </script>
 </head>
 <body>
@@ -241,7 +240,6 @@
       const message = {"type": "play_card", "card": card};
       gameWebSocket.send(JSON.stringify(message));
     }
-    
   </script>
 </body>
 </html>

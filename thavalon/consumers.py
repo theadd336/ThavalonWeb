@@ -73,7 +73,6 @@ class LobbyConsumer(WebsocketConsumer):
 
     def connect(self):
         self.game_id = self.lobby_group_name = self.scope["url_route"]["kwargs"]["game_id"]
-
         try:
             self.game = _GAME_MANAGER.get_game(self.game_id)
             self.player_id = self.scope["session"]["player_id"]

@@ -118,7 +118,6 @@ class Game:
         self.current_mission: List[str] = 0
         # count of cards played so far
         self.current_mission_count: int = 0
-
         # the player that is maeve, for ability purposes
         self.maeve_player: Optional[Player] = None
 
