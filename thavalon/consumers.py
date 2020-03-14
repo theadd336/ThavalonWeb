@@ -73,7 +73,6 @@ class LobbyConsumer(WebsocketConsumer):
 
     def connect(self):
         self.game_id = self.lobby_group_name = self.scope["url_route"]["kwargs"]["game_id"]
-
         try:
             self.game = _GAME_MANAGER.get_game(self.game_id)
             self.player_id = self.scope["session"]["player_id"]
@@ -160,6 +159,7 @@ class GameConsumer(WebsocketConsumer):
             "vote": self.vote,
             "play_card": self.play_card,
             "use_ability": self.use_ability,
+            "on_connect": self.on_connect
             }
 
     def connect(self):
@@ -174,8 +174,6 @@ class GameConsumer(WebsocketConsumer):
         if not self.game.is_player_in_game(self.player_id):
             return
         async_to_sync(self.channel_layer.group_add)(self.lobby_group_name, self.channel_name)
-
-        self.on_connect()
         return
 
     def disconnect(self, code):
@@ -192,7 +190,7 @@ class GameConsumer(WebsocketConsumer):
             raise NotImplementedError
         function_to_call(text_data)
 
-    def on_connect(self):
+    def on_connect(self, _):
         response = responses.GameStateResponse()
         # # Try loading gamestate information. Handle any errors and tell the client about them.
         # try:

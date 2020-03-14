@@ -11,7 +11,6 @@ from game.player import Player
 def test_player_equality(player1, player2, expected) -> None:
     assert expected == (player1 == player2)
 
-
 @pytest.mark.parametrize("player, expected", [
     (Player("session_id", "name"), "Player: name"),
     (Player("session_id2", "name2"), "Player: name2")

@@ -1,0 +1,125 @@
+import * as React from "react";
+import { WebSocketProp, WebSocketManager } from "./communication"; 
+import { MissingPropertyError } from "../Core/errors";
+import { IncomingMessage, OutgoingMessage, IncomingMessageTypes } from "../Core/commConstants";
+
+/**
+ * Abstract tab component class that sets up event handlers and cleans them up when the component will be destroyed.
+ */
+export abstract class TabComponent<S = {}> extends React.Component<WebSocketProp, S> {
+    private _connection: WebSocketManager;
+    /**
+     * Initializes the class and sets up the connection.
+     * @param props Props object with the WebSocketManager
+     */
+    constructor(props: WebSocketProp) {
+        super(props);
+        if (!(props.webSocket instanceof WebSocketManager)) {
+            throw new MissingPropertyError("The WebSocketManager is missing.");
+        }
+        this._connection = props.webSocket;
+    }
+
+    /**
+     * Sets up event handlers when the component mounts.
+     */
+    componentDidMount(): void {
+        this._connection.onSuccessfulMessage.subscribe((sender, message) => {
+            this.receiveSuccessfulMessage(sender, message);
+        });
+        
+        this._connection.onErrorMessage.subscribe((sender, message) => {
+            this.receiveErrorMessage(sender, message);
+        });
+    }
+
+    /**
+     * Unsubscribes from events when the component is going to be destroyed.
+     */
+    componentWillUnmount(): void {
+        this._connection.onSuccessfulMessage.unsubscribe((sender, message) => {
+            this.receiveSuccessfulMessage(sender, message);
+        });
+
+        this._connection.onErrorMessage.unsubscribe((sender, message) => {
+            this.receiveErrorMessage(sender, message);
+        });
+    }
+
+    protected receiveSuccessfulMessage(sender: object, message: IncomingMessage): void {
+    }
+
+    protected receiveErrorMessage(sender: object, message: IncomingMessage): void {
+    }
+
+    protected sendMessage(message: OutgoingMessage): void {
+        if (typeof message === "undefined") {
+            return;
+        }
+        this._connection.send(message);
+    }
+}
+
+class GameTabCollection extends React.Component<WebSocketProp> {
+    constructor(props: WebSocketProp) {
+        super(props);
+        if (!(props.webSocket instanceof WebSocketManager)) {
+            throw new MissingPropertyError("The WebSocketManager is missing from the tabs collection.");
+        }
+    }
+
+    //#region Public Methods
+    render(): JSX.Element {
+        return <span />
+    }
+    //#endregion
+
+    //#region Private Methods
+    /**
+     * Creates a primary tab to render. Primary tabs do have focus on start. 
+     * There should only be on primary tab.
+     * @param id HTML ID of the tab. Used by CSS.
+     * @param children Any JSX children that need to be rendered.
+     */
+    private createPrimaryTab(id: string, ...children: JSX.Element[]): JSX.Element | null {
+        if (typeof id !== "string") {
+            return null;
+        }
+
+        const primaryTab = (
+            <div 
+                className="tab-pane fade show active"
+                id={id}
+                role="tabpanel"
+                aria-labelledby={id + "-tab"}>
+                
+                {children}
+            </div>
+        );
+        return primaryTab;
+    }
+
+    /**
+     * Creates a secondary tab to render. Secondary tabs do not have focus on start.
+     * @param id HTML ID of the tab. Used by CSS.
+     * @param children Any JSX children that need to be rendered.
+     */
+    private createSecondaryTab(id: string, ...children: JSX.Element[]): JSX.Element | null {
+        if (typeof id !== "string") {
+            return null;
+        }
+
+        const secondaryTab = (
+            <div 
+                className="tab-pane fade"
+                id={id}
+                role="tabpanel"
+                aria-labelledby={id + "-tab"}>
+                
+                {children}
+            </div>
+        );
+        return secondaryTab;
+    }
+    //#endregion
+}
