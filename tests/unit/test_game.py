@@ -1113,3 +1113,9 @@ def test_get_all_player_role_info():
             "Mordred": "Mordred"
         }
     }
+
+
+# @pytest.mark.parametrize("num_players, expected", [
+#
+# ])
+# def test_get_assassination_targets():

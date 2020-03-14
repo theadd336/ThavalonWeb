@@ -26,7 +26,6 @@ class Role(ABC):
         self.players_seen.append(player)
 
     # TODO: Test
-    # TODO: Override for Agravaine to always return Fail
     def validate_mission_card(self, card: MissionCard) -> bool:
         # only reversers can reverse
         if card == MissionCard.REVERSE:
