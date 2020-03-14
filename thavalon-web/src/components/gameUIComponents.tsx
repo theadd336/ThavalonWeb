@@ -59,3 +59,67 @@ export class Header extends React.Component {
         );
     }
 }
+
+export class GameTabCollection extends React.Component<WebSocketProp> {
+    constructor(props: WebSocketProp) {
+        super(props);
+        if (!(props.webSocket instanceof WebSocketManager)) {
+            throw new MissingPropertyError("The WebSocketManager is missing from the tabs collection.");
+        }
+    }
+
+    //#region Public Methods
+    render(): JSX.Element {
+        return <span></span>
+    }
+    //#endregion
+
+    //#region Private Methods
+    /**
+     * Creates a primary tab to render. Primary tabs do have focus on start. 
+     * There should only be on primary tab.
+     * @param id HTML ID of the tab. Used by CSS.
+     * @param children Any JSX children that need to be rendered.
+     */
+    private createPrimaryTab(id: string, ...children: JSX.Element[]): JSX.Element | null {
+        if (typeof id !== "string") {
+            return null;
+        }
+
+        const primaryTab = (
+            <div 
+                className="tab-pane fade show active"
+                id={id}
+                role="tabpanel"
+                aria-labelledby={id + "-tab"}>
+                
+                {children}
+            </div>
+        );
+        return primaryTab;
+    }
+
+    /**
+     * Creates a secondary tab to render. Secondary tabs do not have focus on start.
+     * @param id HTML ID of the tab. Used by CSS.
+     * @param children Any JSX children that need to be rendered.
+     */
+    private createSecondaryTab(id: string, ...children: JSX.Element[]): JSX.Element | null {
+        if (typeof id !== "string") {
+            return null;
+        }
+
+        const secondaryTab = (
+            <div 
+                className="tab-pane fade"
+                id={id}
+                role="tabpanel"
+                aria-labelledby={id + "-tab"}>
+                
+                {children}
+            </div>
+        );
+        return secondaryTab;
+    }
+    //#endregion
+}
