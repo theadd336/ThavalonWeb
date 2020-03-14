@@ -2,7 +2,7 @@ import React from 'react';
 import styled from '@emotion/styled'
 import './static/styles.scss';
 import { WebSocketManager } from './components/communication';
-import { GameBoard, Header } from "./components/gameUIComponents";
+import { GameBoard, Header, GameInformationCollection } from "./components/gameUIComponents";
 
 const AppContainer = styled.div`
   margin: 0;
@@ -16,6 +16,7 @@ function App() {
     <AppContainer>
       <Header />
       <GameBoard webSocket={connection} />
+      <GameInformationCollection webSocket={connection} />
     </AppContainer>
   );
 }

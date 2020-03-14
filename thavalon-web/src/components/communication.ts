@@ -1,6 +1,5 @@
 import { EventDispatcher, IEvent } from "strongly-typed-events";
 import * as constants from "../Core/commConstants.js";
-import { WSAEACCES } from "constants";
 
 export interface WebSocketProp {
     webSocket: WebSocketManager
@@ -9,15 +8,20 @@ export interface WebSocketProp {
 export class WebSocketManager implements constants.IConnectionManager {
 
     private _webSocket: WebSocket;
-    private _onSuccessfulMessage: EventDispatcher<WebSocketManager, constants.WebSocketMessage>
+    private _onSuccessfulMessage: EventDispatcher<WebSocketManager, constants.IncomingMessage>;
+    private _onErrorMessage: EventDispatcher<WebSocketManager, constants.IncomingMessage>
     get IsOpen(): boolean {
         return (this._webSocket.readyState === WebSocket.OPEN);
     }
 
-    get onSuccessfulMessage(): IEvent<WebSocketManager, constants.WebSocketMessage> {
+    get onSuccessfulMessage(): IEvent<WebSocketManager, constants.IncomingMessage> {
         return this._onSuccessfulMessage.asEvent();
     }
-    
+
+    get onErrorMessage(): IEvent<WebSocketManager, constants.IncomingMessage> {
+        return this._onErrorMessage.asEvent();
+    }
+
     //#region constructors
     constructor(webSocketUrl?: string) {
         // If there isn't a url, try to pull it from the window location.
@@ -38,12 +42,13 @@ export class WebSocketManager implements constants.IConnectionManager {
         };
 
         // Set up event handlers for recieved messages
-        this._onSuccessfulMessage = new EventDispatcher<WebSocketManager, constants.WebSocketMessage>();
+        this._onSuccessfulMessage = new EventDispatcher<WebSocketManager, constants.IncomingMessage>();
+        this._onErrorMessage = new EventDispatcher<WebSocketManager, constants.IncomingMessage>();
     }
     //#endregion
 
     //#region public methods
-    send(message: {type: string}): void {
+    send(message: constants.OutgoingMessage): void {
         if (typeof message.type !== "string") {
             //TODO: Improve this error.
             throw new Error("");
@@ -84,9 +89,9 @@ export class WebSocketManager implements constants.IConnectionManager {
         }
         
         if (!messageData.success) {
-            // TODO: Add better error handling
-            alert(messageData.errorMessage);
-            return;
+            this.raiseErrorMessage(messageData);
+        } else {
+            this.raiseSuccessfulMessage(messageData);
         }
     }
 
@@ -94,13 +99,17 @@ export class WebSocketManager implements constants.IConnectionManager {
         throw new Error("A socket error has occurred");
     }
 
-    private raiseSuccessfulMessage(data: constants.WebSocketMessage): void {
+    private raiseSuccessfulMessage(data: constants.IncomingMessage): void {
         this._onSuccessfulMessage.dispatch(this, data);
     }
 
+    private raiseErrorMessage(data: constants.IncomingMessage): void {
+        this._onErrorMessage.dispatch(this, data);
+    }
 
-    private isValidMessageFormat(messageData: any): messageData is constants.WebSocketMessage {
-        return (messageData as constants.WebSocketMessage) !== undefined;
+
+    private isValidMessageFormat(messageData: any): messageData is constants.IncomingMessage {
+        return (messageData as constants.IncomingMessage) !== undefined;
     }
     //#endregion
 }

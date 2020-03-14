@@ -1,12 +1,5 @@
 import {MissionResult, Card, Vote, Team} from "./gameConstants.js";
 
-export interface WebSocketMessage {
-    success: boolean;
-    errorMessage: string;
-    type: string;
-    data: object;
-}
-
 export interface ProposalReceivedMessage {
     proposerName: string,
     proposedPlayerList: string[],
@@ -51,16 +44,24 @@ export interface IConnectionManager {
 
 // Everything below here is legit.
 export enum IncomingMessageTypes {
-    RoleInformation = "role_information",
-    MissionResult = "mission_result",
-    AllMissionInfo = "all_mission_info",
-}
-
-export interface RoleInformationMessage {
-    role: string,
-    team: Team
+    RoleInformation,
+    MissionResult,
+    AllMissionInfo,
+    PlayerOrder
 }
 
 export enum OutgoingMessageTypes {
-    RoleInformation = "role_information",
+    RoleInformation
+}
+
+export interface IncomingMessage {
+    success: boolean;
+    errorMessage: string;
+    type: IncomingMessageTypes;
+    data: object;
+}
+
+export interface OutgoingMessage {
+    type: OutgoingMessageTypes;
+    data?: object;
 }

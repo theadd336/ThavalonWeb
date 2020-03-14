@@ -4,6 +4,7 @@ import { RoleCaption } from "./roleInformation";
 import { WebSocketManager, WebSocketProp } from "./communication";
 import { MissingPropertyError } from "../Core/errors";
 import { Nav, Navbar } from "react-bootstrap";
+import { RoleInformationTab } from "./roleInformation";
 
 
 /**
@@ -60,7 +61,7 @@ export class Header extends React.Component {
     }
 }
 
-export class GameTabCollection extends React.Component<WebSocketProp> {
+export class GameInformationCollection extends React.Component<WebSocketProp> {
     constructor(props: WebSocketProp) {
         super(props);
         if (!(props.webSocket instanceof WebSocketManager)) {
@@ -68,58 +69,30 @@ export class GameTabCollection extends React.Component<WebSocketProp> {
         }
     }
 
-    //#region Public Methods
     render(): JSX.Element {
-        return <span></span>
-    }
-    //#endregion
-
-    //#region Private Methods
-    /**
-     * Creates a primary tab to render. Primary tabs do have focus on start. 
-     * There should only be on primary tab.
-     * @param id HTML ID of the tab. Used by CSS.
-     * @param children Any JSX children that need to be rendered.
-     */
-    private createPrimaryTab(id: string, ...children: JSX.Element[]): JSX.Element | null {
-        if (typeof id !== "string") {
-            return null;
-        }
-
-        const primaryTab = (
-            <div 
-                className="tab-pane fade show active"
-                id={id}
-                role="tabpanel"
-                aria-labelledby={id + "-tab"}>
-                
-                {children}
+        const tabHeaderCollection = this.createTabHeaders();
+        const tabsCollection = this.createAllTabs();
+        return (
+            <div className="container-fluid pt-3">
+                <div className="row">
+                    <div className="col-12">
+                        {tabHeaderCollection}
+                    </div>
+                    <div 
+                        className="tab-content py-3 px-3 px-sm-0"
+                        id="nav-tabContent">
+                        {tabsCollection}
+                    </div>
+                </div>
             </div>
         );
-        return primaryTab;
     }
 
-    /**
-     * Creates a secondary tab to render. Secondary tabs do not have focus on start.
-     * @param id HTML ID of the tab. Used by CSS.
-     * @param children Any JSX children that need to be rendered.
-     */
-    private createSecondaryTab(id: string, ...children: JSX.Element[]): JSX.Element | null {
-        if (typeof id !== "string") {
-            return null;
-        }
-
-        const secondaryTab = (
-            <div 
-                className="tab-pane fade"
-                id={id}
-                role="tabpanel"
-                aria-labelledby={id + "-tab"}>
-                
-                {children}
-            </div>
-        );
-        return secondaryTab;
+    private createTabHeaders(): JSX.Element {
+        return <span></span>;
     }
-    //#endregion
+
+    private createAllTabs(): JSX.Element[] {
+        return [<span></span>];
+    }
 }

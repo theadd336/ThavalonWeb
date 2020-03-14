@@ -5,7 +5,7 @@ import { MissionResult, Card, AllMissionInfo } from "../Core/gameConstants";
 import FailToken from "../static/red-coin.png";
 import SuccessToken from "../static/black-coin.png";
 import { WebSocketProp, WebSocketManager } from "./communication";
-import { WebSocketMessage, IncomingMessageTypes, MissionResultsMessage } from "../Core/commConstants";
+import { IncomingMessage, IncomingMessageTypes, MissionResultsMessage } from "../Core/commConstants";
 
 
 //#region interfaces
@@ -134,7 +134,7 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
      * Populates the entire mission collection on a connection or reconnection.
      * @param message Message object with information for all missions
      */
-    private populateMissionCollection(message: WebSocketMessage) {
+    private populateMissionCollection(message: IncomingMessage) {
         //TODO: Figure out which message types we need for casting.
         const allMissionInfoMessage = message.data as AllMissionInfoMessage
         const missionCollection = [];
@@ -149,7 +149,7 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
         }
         // Post-instantiation validation.
         if (missionCollection.length !== numMissions) {
-            throw new InvalidMissionError("Error during contruction of mission indicators.");
+            throw new InvalidMissionError("Error during construction of mission indicators.");
         }
         
         this.setState({missionsCollection: missionCollection})
@@ -160,7 +160,7 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
      * @param sender Object that sent this event. Currently unused.
      * @param message Message from the server.
      */
-    private receiveSuccessfulMessage(sender: object, message: WebSocketMessage): void {
+    private receiveSuccessfulMessage(sender: object, message: IncomingMessage): void {
         // If it's not a mission result, we don't care.
         switch (message.type) {
             case IncomingMessageTypes.MissionResult:
@@ -172,7 +172,7 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
             }
         }
 
-    private updateMissionResults(message: WebSocketMessage) {
+    private updateMissionResults(message: IncomingMessage) {
         // Grab the data and cast it appropriately. Also get the current collection of missions.
         const missionResult = message.data as MissionResultsMessage;
         const missionCollection = this.state.missionsCollection;
@@ -192,6 +192,8 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
         this.setState({ missionsCollection: missionCollection });
     }
 }
+
+
 
 //#region private classes
 /**
