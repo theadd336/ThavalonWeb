@@ -91,7 +91,7 @@ function createNameForm(lobbyId) {
 	inputNode.id = lobbyId + "txtUserName";
 	inputNode.setAttribute("style", "display:none;");
 	inputNode.setAttribute("placeholder", "Enter display name");
-	inputNode.setAttribute("onkeypress", "formEnter(e, this)");
+	inputNode.setAttribute("onkeypress", "return formEnter(event, this)");
 	return inputNode;
 
 }
