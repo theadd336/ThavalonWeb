@@ -20,3 +20,79 @@ html, body, #app, #app>div {
         font-size: 15pt;
     }
 }
+
+.ul-borderless *{
+    border: none!important;
+}
+
+.btn-join {
+    font-size: 16pt;
+    font-weight: 600;
+}
+
+.btn-join:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+/*div[class="row"] {
+    outline: 1px dotted rgba(0, 0, 0, 0.25);
+}
+
+div[class^="col-"] {
+    background-color: rgba(255, 0, 0, 0.2);
+    outline: 1px dotted rgba(0, 0, 0, 0.5);
+}*/
+
+.tab-content{
+background: #fdfdfd;
+    line-height: 25px;
+    border: 1px solid #ddd;
+    border-top:5px solid #e74c3c;
+    border-bottom:5px solid #e74c3c;
+    padding:30px 25px;
+}
+
+.img-grayscale {
+-webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
+filter: grayscale(100%);
+}
+
+.gameBoardTabs {
+    border: none;
+    color:#fff;
+    background:#272e38;
+    border-radius:0;
+
+    .nav-item {
+        .nav-link {
+            border: none;
+            padding: 18px 25px;
+            color:#fff;
+            background:#272e38;
+            border-radius:0;
+        }
+        .nav-link:hover,
+        .nav-link:focus {
+            border: none;
+            background: #e74c3c;
+            color:#fff;
+            border-radius:0;
+            transition:background 0.20s linear;
+        }
+        .nav-link.active {
+            border: none;
+            padding: 18px 25px;
+            color:#fff;
+            background: #e74c3c;
+            border-radius:0;
+        }
+        .nav-link.active:after {
+            content: "";
+            position: relative;
+            bottom: -60px;
+            left: -10%;
+            border: 15px solid transparent;
+            border-top-color: #e74c3c ;
+        }
+    }
+}

@@ -47,11 +47,16 @@ export enum IncomingMessageTypes {
     RoleInformation,
     MissionResult,
     AllMissionInfo,
-    PlayerOrder
+    PlayerOrder,
+    VoteResult,
+    NewProposal,
+    ProposalReceived,
+    MoveToVote
 }
 
 export enum OutgoingMessageTypes {
-    RoleInformation
+    RoleInformation,
+    SubmitVote
 }
 
 export interface IncomingMessage {

@@ -1,5 +1,5 @@
 import { EventDispatcher, IEvent } from "strongly-typed-events";
-import * as constants from "../Core/commConstants.js";
+import * as constants from "../Core/commConstants";
 
 export interface WebSocketProp {
     webSocket: WebSocketManager
@@ -49,7 +49,7 @@ export class WebSocketManager implements constants.IConnectionManager {
 
     //#region public methods
     send(message: constants.OutgoingMessage): void {
-        if (typeof message.type !== "string") {
+        if (!(message.type in constants.OutgoingMessageTypes)) {
             //TODO: Improve this error.
             throw new Error("");
         }
