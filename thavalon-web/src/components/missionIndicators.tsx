@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Popover, OverlayTrigger, Card as BootstrapCard } from "react-bootstrap";
+import { Popover, OverlayTrigger, Card as BootstrapCard, Row } from "react-bootstrap";
 import { MissingPropertyError, InvalidMissionError, ConnectionError } from "../Core/errors";
 import { MissionResult, Card, AllMissionInfo } from "../Core/gameConstants";
 import FailToken from "../static/red-coin.png";
@@ -99,9 +99,9 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
             }
         });
         return (
-            <div className="row">
+            <Row>
                 {missionIndicators}
-            </div>
+            </Row>
         );
     }
 

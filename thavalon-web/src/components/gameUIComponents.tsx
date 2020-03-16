@@ -28,10 +28,14 @@ export class GameBoard extends React.Component<WebSocketProp>
     
     render(): JSX.Element {
         return (
-            <div className="container pt-5">
-                <RoleCaption webSocket={this.props.webSocket} />
+            <Container className="pt-5">
+                <Row>
+                    <Col className="text-center" >
+                        <RoleCaption webSocket={this.props.webSocket} />
+                    </Col>
+                </Row>
                 <MissionIndicatorCollection webSocket={this.props.webSocket} />
-            </div>
+            </Container>
         );
     }
 }

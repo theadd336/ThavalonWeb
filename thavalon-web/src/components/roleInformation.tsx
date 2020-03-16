@@ -4,6 +4,7 @@ import { MissingPropertyError } from "../Core/errors";
 import { WebSocketManager, WebSocketProp } from "./communication";
 import { IncomingMessage, OutgoingMessageTypes, IncomingMessageTypes } from "../Core/commConstants";
 import { TabComponent } from "./tabComponents";
+import { Row } from "react-bootstrap";
 
 
 //#region Private interfaces
@@ -74,12 +75,10 @@ export class RoleCaption extends React.Component<WebSocketProp, RoleInformationS
             teamIndicator = <span className="text-success"> [GOOD]</span>;
         }
         return (
-            <div className="row col-12 text-center">
-                <span>
-                    {"You are " + this.state.role} 
-                    {teamIndicator}
-                </span>
-            </div>
+            <span>
+                {"You are " + this.state.role} 
+                {teamIndicator}
+            </span>
         );
     }
     //#endregion
