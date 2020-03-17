@@ -4,7 +4,6 @@ import { MissingPropertyError } from "../Core/errors";
 import { WebSocketManager, WebSocketProp } from "./communication";
 import { IncomingMessage, OutgoingMessageTypes, IncomingMessageTypes } from "../Core/commConstants";
 import { TabComponent } from "./tabComponents";
-import { Row } from "react-bootstrap";
 
 
 //#region Private interfaces

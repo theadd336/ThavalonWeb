@@ -1,19 +1,30 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
+from enum import Enum
+import json
 
+class OutgoingMessageTypes(Enum):
+    RoleInformation = 0
+    MissionResult = 1
+    PlayerOrder = 2
+    VoteResult = 3
+    NewProposal = 4
+    ProposalReceived = 5
+    MoveToVote = 6
 
 class Response(ABC):
-    def __init__(self, message_type: str, success: bool = False, error_message: str = ""):
+    def __init__(self, message_type: int, success: bool = False, error_message: str = ""):
         self.type = message_type
         self.success = success
         self.error_message = error_message
 
-    def send(self) -> Dict[str, object]:
+    def serialize(self) -> str:
         object_dict = dict()
         object_dict["type"] = self.type
         object_dict["success"] = self.success
         object_dict["errorMessage"] = self.error_message
-        return self._send_core(object_dict)
+        object_dict = self._send_core(object_dict)
+        return json.dumps(object_dict)
 
     def _send_core(self, object_dict):
         return object_dict
@@ -155,3 +166,25 @@ class OnMissionResultsResponse(Response):
         object_dict["playedCards"] = self.played_cards
         object_dict["playersOnMission"] = self.players_on_mission
         return object_dict
+
+class RoleInformationResponse(Response):
+    def __init__(
+            self, 
+            success=True, 
+            error_message="", 
+            player_info: Dict[str: any] =None):
+        super().__init__(
+            message_type = OutgoingMessageTypes.RoleInformation.value,
+            success = success,
+            error_message = error_message
+        )
+        self.role = ""
+        self.team = None
+        self.description = ""
+        if player_info is not None:
+            self.role = player_info.role.value
+            self.team
+
+        
+
+        

@@ -231,7 +231,7 @@ class Game:
         return {
             "role": player.role.role_name,
             "team": player.role.team.value,
-            "information": player.role.get_description()
+            "description": player.role.get_description()
         }
 
     def get_proposal_size(self) -> int:

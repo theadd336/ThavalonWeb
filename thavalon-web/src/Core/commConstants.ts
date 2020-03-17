@@ -26,13 +26,6 @@ export interface MissionStartMessage {
     priorVoteInformation: string[]
 }
 
-export interface MissionResultsMessage {
-    priorMissionNum: number,
-    missionResult: MissionResult,
-    playersOnMission: string[],
-    playedCards: Card[]
-}
-
 export interface VoteStillInProgressMessage {
     submittedVote: Vote
 }
@@ -56,7 +49,9 @@ export enum IncomingMessageTypes {
 
 export enum OutgoingMessageTypes {
     RoleInformation,
-    SubmitVote
+    SubmitVote,
+    AllMissionInfoRequest,
+
 }
 
 export interface IncomingMessage {

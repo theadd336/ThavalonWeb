@@ -5,7 +5,7 @@ import { MissionResult, Card, AllMissionInfo } from "../Core/gameConstants";
 import FailToken from "../static/red-coin.png";
 import SuccessToken from "../static/black-coin.png";
 import { WebSocketProp, WebSocketManager } from "./communication";
-import { IncomingMessage, IncomingMessageTypes, MissionResultsMessage } from "../Core/commConstants";
+import { IncomingMessage, IncomingMessageTypes, OutgoingMessageTypes } from "../Core/commConstants";
 
 
 //#region interfaces
@@ -30,10 +30,25 @@ interface MissionPlaceholderProps {
     requiresDoubleFail: boolean
 }
 
+interface AllMissionInfoRequest {
+    type: OutgoingMessageTypes.AllMissionInfoRequest
+}
+
+interface MissionResultsMessage {
+    priorMissionNum: number,
+    missionResult: MissionResult,
+    playersOnMission: string[],
+    playedCards: Card[]
+}
+
+interface AllMissionInfoResponse {
+    allMissionInfo: (MissionIndicatorProps | MissionPlaceholderProps)[]
+}
+
 /**
  * Defines the props object for the MissionIndicatorCollection
  */
-export interface AllMissionInfoMessage {
+interface AllMissionInfoMessage {
     numMissions: number,
     missionsInfo: (MissionIndicatorProps | MissionPlaceholderProps)[]
 }
@@ -65,7 +80,6 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
         this.state = {
             missionsCollection: []
         }
-
         this._connection = props.webSocket;
     }
 
@@ -73,6 +87,10 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
         this._connection.onSuccessfulMessage.subscribe((sender, message) => {
             this.receiveSuccessfulMessage(sender, message);
         });
+        const message: AllMissionInfoRequest = {
+            type: OutgoingMessageTypes.AllMissionInfoRequest
+        }
+        this._connection.send(message);
     }
 
 
