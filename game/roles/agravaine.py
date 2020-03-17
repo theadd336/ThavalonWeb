@@ -2,13 +2,10 @@ from .evil import Evil
 from ..role import Team
 from game.game_constants import MissionCard
 
-_NUM_USES = 3
-
-
 class Agravaine(Evil):
     def __init__(self, is_assassin=False):
         self.ability_count = 0
-            super().__init__("Agravaine", Team.EVIL, is_assassin=is_assassin)
+        super().__init__("Agravaine", Team.EVIL, is_assassin=is_assassin)
 
     def get_description(self):
         return "\n".join([

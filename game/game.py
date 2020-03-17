@@ -410,6 +410,18 @@ class Game:
             "vote_maeved": maeve_used
         }
 
+    # TODO: Test
+    def get_all_mission_default_info(self) -> Dict[str, Dict[str, Any]]:
+        return_dict = dict()
+        num_players = self.get_num_players()
+        mission_player_size = _MISSION_NUM_TO_PROPOSAL_SIZE[num_players]
+        for index, mission_size in enumerate(mission_player_size):
+            return_dict[index] = {
+                "numPlayersOnMission": mission_size,
+                "requiresDoubleFail": index == 3 and num_players >= 7
+            }
+        return return_dict
+
     def get_all_mission_results(self) -> Dict[str, Dict[int, Any]]:
         return_dict = dict()
         for mission_num in self.mission_num_to_result.keys():
@@ -537,25 +549,25 @@ class Game:
                     for role in _BASE_GOOD_ROLES + _GAME_SIZE_TO_GOOD_ROLES[len(self.session_id_to_player)]]) -
                     {Lancelot}]
 
-    # TODO: Test
-    def handle_agravaine(self, session_id: str) -> bool:
-        if self.lobby_status != LobbyStatus.IN_PROGRESS:
-            raise ValueError("Cannot handle agravaine, lobby not in progress")
-        if session_id not in self.session_id_to_player:
-            raise ValueError(f"Session id {session_id} not in game")
-        player = self.session_id_to_player[session_id]
-        if player.role.role_name != "Agravaine":
-            raise ValueError("Only agravaine can declare as agravaine")
-
-        if self.current_proposal_num != 1 or self.game_phase != GamePhase.PROPOSAL:
-            raise ValueError("Agravaine can only declare if it's the first proposal of the game.")
-        if self.mission_num == 0:
-            raise ValueError("Agravaine cannot declare if first mission has yet to go.")
-        prior_mission_num = self.mission_num - 1
-        if self.mission_num_to_result[prior_mission_num] != MissionResult.PASS:
-            raise ValueError("Agravaine can only affect passing missions.")
-        if player.name not in self.mission_players[prior_mission_num]:
-            raise ValueError(f"Player {player.name} was not on prior mission.")
+    # # TODO: Test
+    # def handle_agravaine(self, session_id: str) -> bool:
+    #     if self.lobby_status != LobbyStatus.IN_PROGRESS:
+    #         raise ValueError("Cannot handle agravaine, lobby not in progress")
+    #     if session_id not in self.session_id_to_player:
+    #         raise ValueError(f"Session id {session_id} not in game")
+    #     player = self.session_id_to_player[session_id]
+    #     if player.role.role_name != "Agravaine":
+    #         raise ValueError("Only agravaine can declare as agravaine")
+    #
+    #     if self.current_proposal_num != 1 or self.game_phase != GamePhase.PROPOSAL:
+    #         raise ValueError("Agravaine can only declare if it's the first proposal of the game.")
+    #     if self.mission_num == 0:
+    #         raise ValueError("Agravaine cannot declare if first mission has yet to go.")
+    #     prior_mission_num = self.mission_num - 1
+    #     if self.mission_num_to_result[prior_mission_num] != MissionResult.PASS:
+    #         raise ValueError("Agravaine can only affect passing missions.")
+    #     if player.name not in self.mission_players[prior_mission_num]:
+    #         raise ValueError(f"Player {player.name} was not on prior mission.")
         
 
     # def attempt_assassination(self, session_id: str, target_player_names: List[str], target_role_names: List[str])\
