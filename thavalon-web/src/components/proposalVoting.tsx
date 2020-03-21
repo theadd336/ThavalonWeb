@@ -4,6 +4,7 @@ import { GamePhase, Vote } from "../Core/gameConstants";
 import React from "react";
 import { ButtonGroup, Button } from "react-bootstrap";
 import { OutgoingMessageTypes, IncomingMessageTypes, IncomingMessage, OutgoingMessage } from "../Core/commConstants";
+import { ProposalSelectionForm } from "./proposalComponents";
 
 //#region Interfaces
 interface ProposalVoteInfo {
@@ -64,13 +65,14 @@ interface MoveToVoteMessage {
     proposal: string[];
 }
 
-interface ProposalUIProps {
+interface ProposalUIProps extends WebSocketProp {
     proposer: string;
     isProposing: boolean;
     proposal: string[];
     numOnProposal: number;
     playerOrder: string[];
 }
+
 //#endregion
 
 export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
@@ -93,7 +95,15 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
         let tab: JSX.Element;
         switch (gamePhase) {
             case GamePhase.Proposal:
-                tab = <span></span>
+                tab = (
+                    <ProposalUI 
+                        webSocket={this.props.webSocket}
+                        proposer={this.state.proposer}
+                        isProposing={this.state.isProposing}
+                        proposal={this.state.proposal}
+                        numOnProposal={this.state.numOnProposal}
+                        playerOrder={this.state.playerOrder} />
+                );
                 break;
             case GamePhase.Voting:
                 tab = (
@@ -142,7 +152,6 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
         if (this.state.playerOrder.length === 0) {
             this.sendMessage({type: OutgoingMessageTypes.PlayerOrder});
         }
-        console.log("Made it here")
         return {type: OutgoingMessageTypes.ProposalVoteInformationRequest};
     }
 
@@ -374,7 +383,16 @@ class ProposalUI extends React.Component<ProposalUIProps> {
     }
 
     private createProposerUI(): JSX.Element {
-        return <span></span>
+        
+        return (
+            <ProposalSelectionForm 
+                callback={(proposal: string[]) => {
+                    console.log("in callback");
+                    console.log(proposal);
+                }}
+                numOnProposal={this.props.numOnProposal}
+                playerOrder={this.props.playerOrder} />
+        );
     }
 
     private createOtherProposerUI(): JSX.Element {
@@ -398,6 +416,13 @@ class ProposalUI extends React.Component<ProposalUIProps> {
             return <li key={player}>player</li>
         });
         return (<ul>{proposalList}</ul>);
+    }
+
+    private createProposalForm(): JSX.Element {
+        const playerOrderOptions = this.props.playerOrder.map(player => {
+            return <option>{player}</option>
+        });
+        return <span>playerOrderOptions</span>;
     }
 }
 //#endregion
