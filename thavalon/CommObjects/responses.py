@@ -187,9 +187,11 @@ class RoleInformationResponse(Response):
             self.team
     
     def _send_core(self, object_dict):
-        object_dict["role"] = self.role
-        object_dict["team"] = self.team
-        object_dict["description"] = self.description
+        local_dict = dict()
+        local_dict["role"] = self.role
+        local_dict["team"] = self.team
+        local_dict["description"] = self.description
+        object_dict["data"] = local_dict
         return object_dict
 
 
@@ -207,7 +209,7 @@ class PlayerOrderResponse(Response):
         self.player_order = player_order
     
     def _send_core(self, object_dict):
-        object_dict["playerOrder"] = self.player_order
+        object_dict["data"] = {"playerOrder": self.player_order}
         return object_dict
 
 class VoteResultMessage(Response):
@@ -225,9 +227,11 @@ class VoteResultMessage(Response):
         self.was_maeved = was_maeved
 
     def _send_core(self, object_dict):
-        object_dict["missionNumber"] = self.mission_number
-        object_dict["proposalNumber"] = self.proposal_number
-        object_dict["voteInformation"] = self.vote_information
-        object_dict["wasMaeved"] = self.was_maeved
+        local_dict = dict()
+        local_dict["missionNumber"] = self.mission_number
+        local_dict["proposalNumber"] = self.proposal_number
+        local_dict["voteInformation"] = self.vote_information
+        local_dict["wasMaeved"] = self.was_maeved
+        object_dict["data"] = local_dict
         return object_dict
     
