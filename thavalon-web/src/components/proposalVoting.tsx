@@ -14,6 +14,7 @@ interface ProposalVoteInfo {
     numOnProposal: number;
     proposalNumber: number;
     maxNumProposals: number;
+    playerOrder: string[];
 }
 
 interface VoteUIProps extends WebSocketProp {
@@ -51,6 +52,14 @@ interface MoveToVoteMessage {
     type: IncomingMessageTypes.MoveToVote;
     proposal: string[];
 }
+
+interface ProposalUIProps {
+    proposer: string;
+    isProposing: boolean;
+    proposal: string[];
+    numOnProposal: number;
+    playerOrder: string[];
+}
 //#endregion
 
 export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
@@ -63,7 +72,8 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
             proposal: [],
             numOnProposal: 2,
             proposalNumber: 1,
-            maxNumProposals: 3
+            maxNumProposals: 3,
+            playerOrder: []
         }
     }
 
@@ -108,32 +118,28 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
             case IncomingMessageTypes.MoveToVote:
                 this.moveToVote(message.data as MoveToVoteMessage);
                 break;
+            case IncomingMessageTypes.PlayerOrder:
+                break;
         }
     }
 
     private handleNewProposal(proposalData: NewProposalMessage): void {
-        const newState: ProposalVoteInfo = {
+        const newState = {
             gamePhase: GamePhase.Proposal,
             proposer: proposalData.proposer,
             isProposing: proposalData.isProposing,
             proposal: [],
             numOnProposal: proposalData.numOnProposal,
             proposalNumber: proposalData.proposalNumber,
-            maxNumProposals: proposalData.maxNumProposals
+            maxNumProposals: proposalData.maxNumProposals,
         }
         this.setState(newState);
     }
 
     private moveToVote(voteData: MoveToVoteMessage): void {
-        const state = this.state;
-        const newState: ProposalVoteInfo = {
+        const newState = {
             gamePhase: GamePhase.Voting,
-            proposer: state.proposer,
-            isProposing: state.isProposing,
             proposal: voteData.proposal,
-            numOnProposal: state.numOnProposal,
-            proposalNumber: state.proposalNumber,
-            maxNumProposals: state.maxNumProposals
         }
         this.setState(newState);
     }
@@ -323,4 +329,44 @@ class CommonInformationUI extends React.Component<CommonInformationUIProps> {
     }
 }
 
+class ProposalUI extends React.Component<ProposalUIProps> {
+    constructor(props: ProposalUIProps) {
+        super(props);
+    }
+
+    render(): JSX.Element {
+        if (this.props.isProposing) {
+            return this.createProposerUI();
+        } else {
+            return this.createOtherProposerUI();
+        }
+    }
+
+    private createProposerUI(): JSX.Element {
+        return <span></span>
+    }
+
+    private createOtherProposerUI(): JSX.Element {
+        const proposal = this.props.proposal;
+        let proposalInfo: JSX.Element
+        if (proposal.length === 0) {
+            proposalInfo = (
+                <span>
+                    Please wait while {this.props.proposer} proposes a team.
+                </span>
+            );
+        } else {
+            proposalInfo = this.formatProposalList();
+        }
+        return proposalInfo;
+    }
+
+    private formatProposalList(): JSX.Element {
+        const proposal = this.props.proposal;
+        const proposalList = proposal.map((player) => {
+            return <li key={player}>player</li>
+        });
+        return (<ul>{proposalList}</ul>);
+    }
+}
 //#endregion

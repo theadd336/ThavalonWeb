@@ -122,13 +122,13 @@ class LobbyConsumer(WebsocketConsumer):
             player_number = self.game.remove_player(self.player_id)
         except ValueError as error:
             response.error_message = "An error occurred while leaving the game: " + str(error)
-            self.send(text_data=json.dumps(response.send()))
+            self.send(text_data=response.serialize())
             return
         # Player has been removed. Now, tell everyone listening to remove the player from the table
         response.success = True
         response.player_number = player_number
         response.player_name = player_name
-        async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, response.send())
+        async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, response.serialize())
         return
 
     def on_player_leave(self, event):
@@ -177,8 +177,7 @@ class GameConsumer(WebsocketConsumer):
     def disconnect(self, code):
         async_to_sync(self.channel_layer.group_discard)(
             self.lobby_group_name,
-            self.channel_name
-        )
+            self.channel_name)
 
     def receive(self, text_data):
         text_data = json.loads(text_data)
@@ -193,6 +192,7 @@ class GameConsumer(WebsocketConsumer):
     
     def role_information(self, _):
         success = True
+        error_message = ""
         try:
             player_info = self.game.get_player_info(self.player_id)
         except ValueError as e:
@@ -201,6 +201,38 @@ class GameConsumer(WebsocketConsumer):
             player_info = None
         response = responses.RoleInformationResponse(success, error_message, player_info)
         self.send(response.serialize())
+
+    def player_order(self, _):
+        success = True
+        proposal_info = dict()
+        try:
+            proposal_info = self.game.get_proposal_info()
+        except ValueError as e:
+            success = False
+            error_message = str(e)
+        
+        response = responses.PlayerOrderResponse(success, error_message, proposal_info.get("proposal_order"))
+        self.send(response.serialize())
+        
+    def send_vote_results(self, proposal_info):
+        num_upvotes = proposal_info.get("num_upvotes")
+        num_downvotes = proposal_info.get("num_downvotes")
+
+        if (num_upvotes is None or num_downvotes is None):
+            raise ValueError("Votes cannot be None.")
+        
+        vote_info = proposal_info.get("proposal_vote_info")
+        was_maeved = proposal_info.get("vote_maeved")
+        last_proposal_number = self.game.current_proposal_num - 1
+        if (last_proposal_number < 0):
+            last_proposal_number = 0
+        
+        vote_info["Number of Upvotes"] = num_upvotes
+        vote_info["Number of Downvotes"] = num_downvotes
+        mission_number = self.game.mission_num
+        response = responses.VoteResultMessage(mission_number, last_proposal_number, was_maeved, vote_info)
+        self.send(response.serialize())
+        
 
     # def on_connect(self, _):
     #     response = responses.GameStateResponse()

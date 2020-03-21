@@ -167,17 +167,17 @@ class OnMissionResultsResponse(Response):
         object_dict["playersOnMission"] = self.players_on_mission
         return object_dict
 
+#Everything below here is legit.
 class RoleInformationResponse(Response):
     def __init__(
             self, 
             success=True, 
             error_message="", 
-            player_info: Dict[str: any] =None):
+            player_info: Dict[str: any] = None):
         super().__init__(
             message_type = OutgoingMessageTypes.RoleInformation.value,
             success = success,
-            error_message = error_message
-        )
+            error_message = error_message)
         self.role = ""
         self.team = None
         self.description = ""
@@ -185,6 +185,41 @@ class RoleInformationResponse(Response):
             self.role = player_info.role.value
             self.team
 
-        
+class PlayerOrderResponse(Response):
+    def __init__(
+        self,
+        success=True,
+        error_message="",
+        player_order: List[str] = None):
 
-        
+        super().__init__(
+            message_type = OutgoingMessageTypes.PlayerOrder.value,
+            success=success,
+            error_message=error_message)
+        self.player_order = player_order
+    
+    def _send_core(self, object_dict):
+        object_dict["playerOrder"] = self.player_order
+        return object_dict
+
+class VoteResultMessage(Response):
+    def __init__(
+        self,
+        mission_number: int,
+        proposal_number: int,
+        was_maeved: bool,
+        vote_result: Dict[str: int]):
+        super().__init__(OutgoingMessageTypes.VoteResult, True, "")
+
+        self.mission_number = mission_number
+        self.proposal_number = proposal_number
+        self.vote_information = vote_result
+        self.was_maeved = was_maeved
+
+    def _send_core(self, object_dict):
+        object_dict["missionNumber"] = self.mission_number
+        object_dict["proposalNumber"] = self.proposal_number
+        object_dict["voteInformation"] = self.vote_information
+        object_dict["wasMaeved"] = self.was_maeved
+        return object_dict
+    

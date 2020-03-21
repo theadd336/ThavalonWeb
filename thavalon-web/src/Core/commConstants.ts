@@ -44,14 +44,17 @@ export enum IncomingMessageTypes {
     VoteResult,
     NewProposal,
     ProposalReceived,
-    MoveToVote
+    MoveToVote,
+    AssassinationResponse
 }
 
 export enum OutgoingMessageTypes {
     RoleInformation,
     SubmitVote,
     AllMissionInfoRequest,
-
+    SubmitProposal,
+    MoveToVote,
+    SubmitAssassination
 }
 
 export interface IncomingMessage {
