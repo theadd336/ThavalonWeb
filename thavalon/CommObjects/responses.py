@@ -246,6 +246,6 @@ class AllMissionInfoResponse(Response):
         self.num_missions = len(all_mission_info)
     
     def _send_core(self, object_dict):
-        local_dict = {"allMissionInfo": self.all_mission_info, "numMissions": self.num_missions}
+        local_dict = {"missionsInfo": self.all_mission_info, "numMissions": self.num_missions}
         object_dict["data"] = local_dict
         return object_dict
