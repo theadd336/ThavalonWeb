@@ -1,6 +1,6 @@
 import { TabComponent } from "./tabComponents";
 import { WebSocketProp } from "./communication";
-import { IncomingMessage, IncomingMessageTypes } from "../Core/commConstants";
+import { IncomingMessage, IncomingMessageTypes, OutgoingMessage, OutgoingMessageTypes } from "../Core/commConstants";
 import { ListGroup } from "react-bootstrap";
 import React from "react";
 
@@ -40,6 +40,9 @@ export class PlayerOrderTab extends TabComponent<PlayerOrderState> {
         this.setState(newState);
     }
 
+    protected sendMessageOnMount(): OutgoingMessage {
+        return {"type": OutgoingMessageTypes.PlayerOrder};
+    }
     /**
      * Renders the tab with the player order.
      */

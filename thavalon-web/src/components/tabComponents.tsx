@@ -1,9 +1,7 @@
 import * as React from "react";
 import { WebSocketProp, WebSocketManager } from "./communication"; 
 import { MissingPropertyError } from "../Core/errors";
-import { IncomingMessage, OutgoingMessage, IncomingMessageTypes } from "../Core/commConstants";
-import { OutgoingMessage } from "http";
-
+import { IncomingMessage, OutgoingMessage } from "../Core/commConstants";
 /**
  * Abstract tab component class that sets up event handlers and cleans them up when the component will be destroyed.
  */

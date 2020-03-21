@@ -168,7 +168,7 @@ class GameConsumer(WebsocketConsumer):
             IncomingMessageTypes.SubmitProposal.value: self.no_op,
             IncomingMessageTypes.MoveToVote.value: self.no_op,
             IncomingMessageTypes.SubmitAssassination.value: self.no_op,
-            IncomingMessageTypes.PlayerOrder.value: self.player_order
+            IncomingMessageTypes.PlayerOrder.value: self.send_player_order
         }
 
     def connect(self):
@@ -213,7 +213,7 @@ class GameConsumer(WebsocketConsumer):
         response = responses.RoleInformationResponse(success, error_message, player_info)
         self.send(response.serialize())
 
-    def player_order(self, _):
+    def send_player_order(self, _):
         success = True
         proposal_info = dict()
         try:
