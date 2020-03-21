@@ -1,6 +1,6 @@
 import random
 import pytest
-from conftest import maeve
+from conftest import generic_player, iseult, maeve, merlin, mordred, tristan
 from game.game import Game, GamePhase, LobbyStatus, MissionCard, MissionResult
 from game.player import Player
 from game.role import Team
@@ -201,8 +201,8 @@ def test_start_game_verify_proposal_order() -> None:
                 "id3": Player("id3", "Jared"),
                 "id4": Player("id4", "Meg"),
                 "id5": Player("id5", "Paul"),
-                "id5": Player("id5", "Raz"),
-                "id5": Player("id5", "Colin")
+                "id6": Player("id5", "Raz"),
+                "id7": Player("id5", "Colin")
             }
     )
 ])
@@ -216,11 +216,15 @@ def test_start_game_players_assigned(num_players, session_id_to_player) -> None:
     game.session_id_to_player = session_id_to_player
     game.start_game()
 
+    assassin_count = 0
     seen_role_names = []
     for player in session_id_to_player.values():
         assert player.role.role_name not in seen_role_names
         seen_role_names.append(player.role.role_name)
+        if player.role.is_assassin:
+            assassin_count += 1
 
+    assert assassin_count == 1
     assert game.lobby_status == LobbyStatus.IN_PROGRESS
 
 
@@ -917,7 +921,7 @@ def test_play_invalid_card():
 
 
 @pytest.mark.parametrize("mission_num, mission_num_to_results, session_id_to_card, expected_results, "
-                         "expected_mission_info", [
+                         "expected_all_mission_info", [
     (
             2,
             {
@@ -938,13 +942,32 @@ def test_play_invalid_card():
                     "mission_players": ["p1", "p2"],
                     "played_cards": ["SUCCESS", "FAIL"],
                     "game_phase": GamePhase.DONE,
-                    "lobby_status": LobbyStatus.DONE
+                    "lobby_status": LobbyStatus.DONE,
+                    "player_roles": {
+                        "GOOD": {},
+                        "EVIL": {
+                            "p1": "Maelegant",
+                            "p2": "Mordred"
+                        }
+                    }
                 }
             ],
             {
-                "players": {2: ["p1", "p2"]},
-                "mission_results": {0: MissionResult.FAIL, 1: MissionResult.FAIL, 2: MissionResult.FAIL},
-                "mission_cards": {2: [MissionCard.SUCCESS, MissionCard.FAIL]}
+                0: {
+                    "playersOnMissions": ["p1"],
+                    "missionResult": 1,
+                    "playedCards": ["FAIL"]
+                },
+                1: {
+                    "playersOnMissions": ["p2"],
+                    "missionResult": 1,
+                    "playedCards": ["SUCCESS"]
+                },
+                2: {
+                    "playersOnMissions": ["p1", "p2"],
+                    "missionResult": 1,
+                    "playedCards": ["SUCCESS", "FAIL"]
+                }
             }
     ),
     (
@@ -970,9 +993,21 @@ def test_play_invalid_card():
                 }
             ],
             {
-                "players": {2: ["p1", "p2"]},
-                "mission_results": {0: MissionResult.PASS, 1: MissionResult.PASS, 2: MissionResult.PASS},
-                "mission_cards": {2: [MissionCard.SUCCESS, MissionCard.SUCCESS]}
+                0: {
+                    "playersOnMissions": ["p1"],
+                    "missionResult": 0,
+                    "playedCards": ["FAIL"]
+                },
+                1: {
+                    "playersOnMissions": ["p2"],
+                    "missionResult": 0,
+                    "playedCards": ["SUCCESS"]
+                },
+                2: {
+                    "playersOnMissions": ["p1", "p2"],
+                    "missionResult": 0,
+                    "playedCards": ["SUCCESS", "SUCCESS"]
+                }
             }
     ),
     (
@@ -1006,20 +1041,32 @@ def test_play_invalid_card():
                 }
             ],
             {
-                "players": {2: ["p1", "p2"]},
-                "mission_results": {0: MissionResult.PASS, 1: MissionResult.PASS, 2: MissionResult.FAIL},
-                "mission_cards": {2: [MissionCard.FAIL, MissionCard.SUCCESS]}
+                0: {
+                    "playersOnMissions": ["p1"],
+                    "missionResult": 0,
+                    "playedCards": ["FAIL"]
+                },
+                1: {
+                    "playersOnMissions": ["p2"],
+                    "missionResult": 0,
+                    "playedCards": ["SUCCESS"]
+                },
+                2: {
+                    "playersOnMissions": ["p1", "p2"],
+                    "missionResult": 1,
+                    "playedCards": ["FAIL", "SUCCESS"]
+                }
             }
     )
 ])
 def test_play_mission_card(mission_num, mission_num_to_results, session_id_to_card, expected_results,
-                           expected_mission_info):
+                           expected_all_mission_info):
     game = Game()
     game.game_phase = GamePhase.MISSION
     game.lobby_status = LobbyStatus.IN_PROGRESS
     p1 = Player("1", "p1")
     p1.role = Maelegant()
-    p2 = Player("1", "p2")
+    p2 = Player("2", "p2")
     p2.role = Mordred()
     game.session_id_to_player = {"1": p1, "2": p2}
     game.current_mission = ["p1", "p2"]
@@ -1032,12 +1079,44 @@ def test_play_mission_card(mission_num, mission_num_to_results, session_id_to_ca
     game.proposer_id = "1"
     game.current_proposal_num = 1
     game.max_num_proposers = 3
+    game.mission_players = {0: ["p1"], 1: ["p2"]}
+    game.mission_cards = {0: [MissionCard.FAIL], 1: [MissionCard.SUCCESS]}
 
     random.seed(0)
     for index, (session_id, card) in enumerate(session_id_to_card.items()):
         assert game.play_mission_card(session_id, card) == expected_results[index]
 
-    assert game.get_all_mission_results() == expected_mission_info
+    assert game.get_all_mission_results() == expected_all_mission_info
     assert p1.mission_card is None
     assert p2.mission_card is None
     assert game.current_mission_count == 0
+
+
+def test_get_all_player_role_info():
+    game = Game()
+    game.session_id_to_player = {
+        "iseult": iseult,
+        "maeve": maeve,
+        "merlin": merlin,
+        "mordred": mordred,
+        "tristan": tristan,
+        "generic": generic_player,
+    }
+    assert game.get_all_player_role_info() == {
+        "GOOD": {
+            "Iseult": "Iseult",
+            "Merlin": "Merlin",
+            "Tristan": "Tristan",
+            "Generic": "Iseult"
+        },
+        "EVIL": {
+            "Maeve": "Maeve",
+            "Mordred": "Mordred"
+        }
+    }
+
+
+# @pytest.mark.parametrize("num_players, expected", [
+#
+# ])
+# def test_get_assassination_targets():

@@ -1,22 +1,17 @@
-from .game_constants import MissionCard
+from .game_constants import MissionCard, Team
 from .player import Player
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import List
 
 
-class Team(Enum):
-    GOOD = 0
-    EVIL = 1
-
-
 class Role(ABC):
-    def __init__(self, role_name: str, team: Team, is_reverser: bool = False) -> None:
+    def __init__(self, role_name: str, team: Team, is_reverser: bool = False, is_assassin: bool = False) -> None:
         self.role_name = role_name
         self.team = team
         self.is_reverser = is_reverser
         self.players_seen: List[Player] = []
         self.used_ability: bool = True
+        self.is_assassin = is_assassin
 
     @abstractmethod
     def get_description(self) -> str:
@@ -31,7 +26,6 @@ class Role(ABC):
         self.players_seen.append(player)
 
     # TODO: Test
-    # TODO: Override for Agravaine to always return Fail
     def validate_mission_card(self, card: MissionCard) -> bool:
         # only reversers can reverse
         if card == MissionCard.REVERSE:

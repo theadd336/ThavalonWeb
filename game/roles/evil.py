@@ -4,10 +4,10 @@ from typing import List
 
 
 class Evil(Role):
-    def __init__(self, role_name: str, team: Team, is_reverser: bool = False) -> None:
+    def __init__(self, role_name: str, team: Team, is_reverser: bool = False, is_assassin: bool = False) -> None:
         self.saw_colgrevance: bool = False
         self.saw_titania: bool = False
-        super().__init__(role_name, team, is_reverser)
+        super().__init__(role_name, team, is_reverser, is_assassin)
 
     def add_seen_player(self, player: Player) -> bool:
         if player.role.role_name == "Colgrevance":
@@ -27,4 +27,6 @@ class Evil(Role):
             result.append("Colgrevance lurks in the shadows. (There is another evil that you do not see).")
         if self.saw_titania:
             result.append("Titania has infiltrated your ranks. (One of the people is not Evil).")
+        if self.is_assassin:
+            result.append("\nYou are the assassin!")
         return "\n".join(result).strip()  # remove new line if there are no seen evil

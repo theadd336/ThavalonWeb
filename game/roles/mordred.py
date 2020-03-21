@@ -3,8 +3,8 @@ from ..role import Team
 
 
 class Mordred(Evil):
-    def __init__(self):
-        super().__init__("Mordred", Team.EVIL)
+    def __init__(self, is_assassin=False):
+        super().__init__("Mordred", Team.EVIL, is_assassin=is_assassin)
 
     def get_description(self):
         return "\n".join([
