@@ -3,7 +3,7 @@ from asgiref.sync import async_to_sync
 import json
 from game.gamemanager import GameManager
 from .CommObjects import responses
-from game.game_constants import MissionCard
+from game.game_constants import MissionCard, GamePhase
 from enum import Enum
 
 _GAME_MANAGER = GameManager()
@@ -16,6 +16,7 @@ class IncomingMessageTypes(Enum):
     MoveToVote = 4
     SubmitAssassination = 5
     PlayerOrder = 6
+    ProposalVoteInformationRequest = 7
 
 class ChatConsumer(WebsocketConsumer):
     def __init__(self, *args, **kwargs):
@@ -165,10 +166,11 @@ class GameConsumer(WebsocketConsumer):
             IncomingMessageTypes.RoleInformation.value: self.role_information,
             IncomingMessageTypes.SubmitVote.value: self.no_op,
             IncomingMessageTypes.AllMissionInfoRequest.value: self.send_all_mission_info,
-            IncomingMessageTypes.SubmitProposal.value: self.no_op,
+            IncomingMessageTypes.SubmitProposal.value: self.broadcast_tentative_proposal,
             IncomingMessageTypes.MoveToVote.value: self.no_op,
             IncomingMessageTypes.SubmitAssassination.value: self.no_op,
-            IncomingMessageTypes.PlayerOrder.value: self.send_player_order
+            IncomingMessageTypes.PlayerOrder.value: self.send_player_order,
+            IncomingMessageTypes.ProposalVoteInformationRequest.value: self.send_proposal_vote_info
         }
 
     def connect(self):
@@ -197,9 +199,6 @@ class GameConsumer(WebsocketConsumer):
         if function_to_call is None:
             raise NotImplementedError
         function_to_call(text_data)
-
-    def all_mission_info(self, _):
-        pass
     
     def role_information(self, _):
         success = True
@@ -256,6 +255,54 @@ class GameConsumer(WebsocketConsumer):
         
         response = responses.AllMissionInfoResponse(all_mission_info_list)
         self.send(response.serialize())
+
+    def broadcast_tentative_proposal(self, proposal_info):
+        tentative_proposal_event = {
+            "type": "send_tentative_proposal",
+            "proposal": proposal_info.get("proposal")
+        }
+
+        async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, tentative_proposal_event)
+    
+    def send_tentative_proposal(self, tentative_proposal_event):
+        proposal = tentative_proposal_event.get("proposal")
+        response = responses.TentativeProposalResponse(proposal)
+        self.send(response.serialize())
+
+    def send_proposal_vote_info(self, _):
+        game_phase = self.game.game_phase
+        if game_phase == GamePhase.PROPOSAL:
+            self.send_new_proposal_info()
+        elif game_phase == GamePhase.VOTE:
+            proposal = self.game.current_proposals[-1]
+            vote_info_event = {"proposal": proposal}
+            self.send_vote_info(vote_info_event)
+        elif game_phase == GamePhase.ASSASSINATION:
+            pass
+    
+    def send_new_proposal_info(self):
+        proposal_info = self.game.get_proposal_info()
+        proposer_id = proposal_info.get("proposer_id")
+        response = responses.NewProposalResponse(
+            self.game.get_player(proposer_id).name,
+            self.player_id == proposer_id,
+            proposal_info.get("proposal_size"),
+            proposal_info.get("current_proposal_num"),
+            proposal_info.get("max_num_proposers")
+        )
+        self.send(response.serialize())
+
+    def broadcast_moving_to_vote(self, proposal):
+        self.game.set_proposal(proposal)
+        vote_info_event = {"type": "send_vote_info", "proposal": proposal}
+        async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_info_event)
+        
+
+    def send_vote_info(self, vote_info_event):
+        proposal = vote_info_event.get("proposal")
+        response = responses.MoveToVoteResponse(proposal)
+        self.send(response.serialize())
+        
 
     def no_op(self, _):
         pass

@@ -55,7 +55,8 @@ export enum OutgoingMessageTypes {
     SubmitProposal,
     MoveToVote,
     SubmitAssassination,
-    PlayerOrder
+    PlayerOrder,
+    ProposalVoteInformationRequest
 }
 
 export interface IncomingMessage {

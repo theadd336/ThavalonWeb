@@ -89,30 +89,6 @@ class GameStateResponse(Response):
         return object_dict
 
 
-class NewProposalResponse(Response):
-    def __init__(self):
-        super().__init__(success=True, message_type="new_proposal")
-        self.is_proposing = False
-        self.proposer_index = 0
-        self.proposal_order = None
-        self.proposal_num = 1
-        self.max_num_proposals = 0
-        self.proposal_size = 1
-        self.current_proposal = None
-        self.proposal_vote_info = None
-
-    def _send_core(self, object_dict):
-        object_dict["isProposing"] = self.is_proposing
-        object_dict["proposerIndex"] = self.proposer_index
-        object_dict["proposalOrder"] = self.proposal_order
-        object_dict["proposalNum"] = self.proposal_num
-        object_dict["maxNumProposals"] = self.max_num_proposals
-        object_dict["proposalSize"] = self.proposal_size
-        object_dict["currentProposal"] = self.current_proposal
-        object_dict["proposalVoteInfo"] = self.proposal_vote_info
-        return object_dict
-
-
 class OnProposeResponse(Response):
     def __init__(self, proposed_player_list: List[str] = None):
         super().__init__(message_type="on_propose", success=True)
@@ -247,5 +223,54 @@ class AllMissionInfoResponse(Response):
     
     def _send_core(self, object_dict):
         local_dict = {"missionsInfo": self.all_mission_info, "numMissions": self.num_missions}
+        object_dict["data"] = local_dict
+        return object_dict
+
+
+class TentativeProposalResponse(Response):
+    def __init__(self, proposal: List[str]):
+        super().__init__(OutgoingMessageTypes.ProposalReceived, True)
+        self.proposal = proposal
+    
+    def _send_core(self, object_dict):
+        local_dict = {"proposal": self.proposal}
+        object_dict["data"] = local_dict
+        return object_dict
+
+
+class NewProposalResponse(Response):
+    def __init__(
+        self,
+        proposer: str,
+        is_proposing: bool,
+        num_on_proposal: int,
+        proposal_number: int,
+        max_num_proposals: int):
+
+        super().__init__(OutgoingMessageTypes.NewProposal, True)
+        self.proposer = proposer
+        self.is_proposing = is_proposing
+        self.num_on_proposal = num_on_proposal
+        self.proposal_number = proposal_number
+        self.max_num_proposals = max_num_proposals
+    
+    def _send_core(self, object_dict):
+        local_dict = dict()
+        local_dict["proposer"] = self.proposer
+        local_dict["isProposing"] = self.is_proposing
+        local_dict["numOnProposal"] = self.num_on_proposal
+        local_dict["proposalNumber"] = self.proposal_number
+        local_dict["maxNumProposals"] = self.max_num_proposals
+        object_dict["data"] = local_dict
+        return object_dict
+
+
+class MoveToVoteResponse(Response):
+    def __init__(self, proposal: List[str]):
+        super().__init__(OutgoingMessageTypes.MoveToVote, True)
+        self.proposal = proposal
+    
+    def _send_core(self, object_dict):
+        local_dict = {"proposal": self.proposal}
         object_dict["data"] = local_dict
         return object_dict

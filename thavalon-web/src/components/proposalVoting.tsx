@@ -3,7 +3,7 @@ import { WebSocketProp, WebSocketManager } from "./communication";
 import { GamePhase, Vote } from "../Core/gameConstants";
 import React from "react";
 import { ButtonGroup, Button } from "react-bootstrap";
-import { OutgoingMessageTypes, IncomingMessageTypes, IncomingMessage } from "../Core/commConstants";
+import { OutgoingMessageTypes, IncomingMessageTypes, IncomingMessage, OutgoingMessage } from "../Core/commConstants";
 
 //#region Interfaces
 interface ProposalVoteInfo {
@@ -40,7 +40,6 @@ interface SubmitVoteMessage {
 }
 
 interface NewProposalMessage {
-    type: IncomingMessageTypes.NewProposal;
     proposer: string;
     isProposing: boolean;
     numOnProposal: number;
@@ -48,8 +47,20 @@ interface NewProposalMessage {
     maxNumProposals: number;
 }
 
+interface TentativeProposalMessage {
+    type: OutgoingMessageTypes.SubmitProposal;
+    proposal: string[]
+}
+
+interface ProposalReceivedMessage {
+    proposal: string[];
+}
+
+interface PlayerOrderMessage {
+    playerOrder: string[];
+}
+
 interface MoveToVoteMessage {
-    type: IncomingMessageTypes.MoveToVote;
     proposal: string[];
 }
 
@@ -110,7 +121,7 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
         );
     }
 
-    receiveSuccessfulMessage(_: object, message: IncomingMessage): void {
+    protected receiveSuccessfulMessage(_: object, message: IncomingMessage): void {
         switch (message.type) {
             case IncomingMessageTypes.NewProposal:
                 this.handleNewProposal(message.data as NewProposalMessage);
@@ -119,8 +130,19 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                 this.moveToVote(message.data as MoveToVoteMessage);
                 break;
             case IncomingMessageTypes.PlayerOrder:
+                this.setPlayerOrder(message.data as PlayerOrderMessage);
+                break;
+            case IncomingMessageTypes.ProposalReceived:
+                this.receiveTentativeProposal(message.data as ProposalReceivedMessage);
                 break;
         }
+    }
+    
+    protected sendMessageOnMount(): OutgoingMessage {
+        if (this.state.playerOrder.length === 0) {
+            this.sendMessage({type: OutgoingMessageTypes.PlayerOrder});
+        }
+        return {type: OutgoingMessageTypes.ProposalVoteInformationRequest}
     }
 
     private handleNewProposal(proposalData: NewProposalMessage): void {
@@ -142,6 +164,14 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
             proposal: voteData.proposal,
         }
         this.setState(newState);
+    }
+
+    private receiveTentativeProposal(proposalData: ProposalReceivedMessage): void {
+        this.setState(proposalData);
+    }
+
+    private setPlayerOrder(playerOrderData: PlayerOrderMessage): void {
+        this.setState(playerOrderData);
     }
 }
 

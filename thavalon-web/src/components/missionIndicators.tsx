@@ -26,7 +26,7 @@ interface MissionIndicatorProps {
 interface MissionPlaceholderProps {
     discriminator: "MissionPlaceholderProps",
     missionNum: number,
-    numPlayersOnMisison: number,
+    numPlayersOnMission: number,
     requiresDoubleFail: boolean
 }
 
@@ -104,11 +104,12 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
                         cardsPlayed={indicator.cardsPlayed}
                         result={indicator.result} />);
             } else {
+                console.log(indicator.numPlayersOnMission);
                 return (
                     <MissionPlaceholderIndicator
                         discriminator={indicator.discriminator}
                         missionNum={indicator.missionNum}
-                        numPlayersOnMisison={indicator.numPlayersOnMisison}
+                        numPlayersOnMission={indicator.numPlayersOnMission}
                         requiresDoubleFail={indicator.requiresDoubleFail} />);
             }
         });
@@ -159,6 +160,7 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
         // For any information, validate which type it is. If the mission has actual information (in the case of a reconnect),
         // initialize a new indicator. Otherwise, initialize a placeholder. Then add it to the collection.
         for (const missionInfo of missionsInfo) {
+            console.log(missionInfo);
             missionCollection.push(missionInfo);
         }
         // Post-instantiation validation.
@@ -354,7 +356,7 @@ class MissionPlaceholderIndicator extends React.Component<MissionPlaceholderProp
     constructor(props: MissionPlaceholderProps) {
         super(props);
         if (typeof props.missionNum !== "number"
-            || typeof props.numPlayersOnMisison !== "number"
+            || typeof props.numPlayersOnMission !== "number"
             || typeof props.requiresDoubleFail !== "boolean") {
             
             throw new MissingPropertyError("Mission number, number of players, and double fail are required.");
@@ -387,11 +389,11 @@ class MissionPlaceholderIndicator extends React.Component<MissionPlaceholderProp
                 className="rounded-circle indicatorPlaceholderStyle">
                 <BootstrapCard.Body>
                     <BootstrapCard.Title>
-                        {"Mission " + this.props.missionNum}
+                        {"Mission " + this.props.missionNum + 1}
                     </BootstrapCard.Title>
                     <BootstrapCard.Text>
                         <span className="missionNumStyle">
-                            {this.props.numPlayersOnMisison}
+                            {this.props.numPlayersOnMission}
                         </span>
                         <br />
                         <span>
