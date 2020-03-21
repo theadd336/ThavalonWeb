@@ -164,7 +164,7 @@ class GameConsumer(WebsocketConsumer):
         self._message_types = {
             IncomingMessageTypes.RoleInformation.value: self.role_information,
             IncomingMessageTypes.SubmitVote.value: self.no_op,
-            IncomingMessageTypes.AllMissionInfoRequest.value: self.no_op,
+            IncomingMessageTypes.AllMissionInfoRequest.value: self.send_all_mission_info,
             IncomingMessageTypes.SubmitProposal.value: self.no_op,
             IncomingMessageTypes.MoveToVote.value: self.no_op,
             IncomingMessageTypes.SubmitAssassination.value: self.no_op,
