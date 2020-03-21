@@ -14,7 +14,8 @@ class IncomingMessageTypes(Enum):
     AllMissionInfoRequest = 2,
     SubmitProposal = 3,
     MoveToVote = 4,
-    SubmitAssassination = 5
+    SubmitAssassination = 5,
+    PlayerOrder = 6
 
 class ChatConsumer(WebsocketConsumer):
     def __init__(self, *args, **kwargs):
@@ -161,7 +162,13 @@ class GameConsumer(WebsocketConsumer):
         self.player_id = ""
         self.game = None
         self._message_types = {
-            IncomingMessageTypes.RoleInformation.value: self.role_information
+            IncomingMessageTypes.RoleInformation.value: self.role_information,
+            IncomingMessageTypes.SubmitVote.value: None,
+            IncomingMessageTypes.AllMissionInfoRequest.value: None,
+            IncomingMessageTypes.SubmitProposal.value: None,
+            IncomingMessageTypes.MoveToVote.value: None,
+            IncomingMessageTypes.SubmitAssassination.value: None,
+            IncomingMessageTypes.PlayerOrder.value: self.player_order
         }
 
     def connect(self):
