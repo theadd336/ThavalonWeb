@@ -250,7 +250,7 @@ class GameConsumer(WebsocketConsumer):
         missions_to_play = self.game.get_all_mission_default_info()
         all_mission_info_dict.update(missions_to_play)
         all_mission_info_list = list()
-        for _, result_dict in all_mission_info_dict.items:
+        for result_dict in all_mission_info_dict.items:
             all_mission_info_list.append(result_dict)
         
         response = responses.AllMissionInfoResponse(all_mission_info_list)
