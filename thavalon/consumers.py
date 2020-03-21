@@ -245,6 +245,17 @@ class GameConsumer(WebsocketConsumer):
         response = responses.VoteResultMessage(mission_number, last_proposal_number, was_maeved, vote_info)
         self.send(response.serialize())
         
+    def send_all_mission_info(self, _):
+        all_mission_info_dict = self.game.get_all_mission_results()
+        missions_to_play = self.game.get_mission_info()
+        all_mission_info_dict.update(missions_to_play)
+        all_mission_info_list = list()
+        for _, result_dict in all_mission_info_dict.items:
+            all_mission_info_list.append(result_dict)
+        
+        response = responses.AllMissionInfoResponse(all_mission_info_list)
+        self.send(response.serialize())
+
     def no_op(self, _):
         pass
 

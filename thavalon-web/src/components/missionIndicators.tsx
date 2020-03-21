@@ -41,10 +41,6 @@ interface MissionResultsMessage {
     playedCards: Card[]
 }
 
-interface AllMissionInfoResponse {
-    allMissionInfo: (MissionIndicatorProps | MissionPlaceholderProps)[]
-}
-
 /**
  * Defines the props object for the MissionIndicatorCollection
  */

@@ -6,11 +6,13 @@ import json
 class OutgoingMessageTypes(Enum):
     RoleInformation = 0
     MissionResult = 1
-    PlayerOrder = 2
-    VoteResult = 3
-    NewProposal = 4
-    ProposalReceived = 5
-    MoveToVote = 6
+    AllMissionInfo = 2
+    PlayerOrder = 3
+    VoteResult = 4
+    NewProposal = 5
+    ProposalReceived = 6
+    MoveToVote = 7
+    AssassinationResponse = 8
 
 class Response(ABC):
     def __init__(self, message_type: int, success: bool = False, error_message: str = ""):
@@ -235,4 +237,15 @@ class VoteResultMessage(Response):
         local_dict["wasMaeved"] = self.was_maeved
         object_dict["data"] = local_dict
         return object_dict
+
+
+class AllMissionInfoResponse(Response):
+    def __init__(self, all_mission_info):
+        super().__init__(OutgoingMessageTypes.AllMissionInfo.value, True)
+        self.all_mission_info = all_mission_info
+        self.num_missions = len(all_mission_info)
     
+    def _send_core(self, object_dict):
+        local_dict = {"allMissionInfo": self.all_mission_info, "numMissions": self.num_missions}
+        object_dict["data"] = local_dict
+        return object_dict

@@ -417,6 +417,7 @@ class Game:
         mission_player_size = _MISSION_NUM_TO_PROPOSAL_SIZE[num_players]
         for index, mission_size in enumerate(mission_player_size):
             return_dict[index] = {
+                "discriminator": "MissionPlaceholderProps",
                 "numPlayersOnMission": mission_size,
                 "requiresDoubleFail": index == 3 and num_players >= 7
             }
@@ -426,6 +427,7 @@ class Game:
         return_dict = dict()
         for mission_num in self.mission_num_to_result.keys():
             return_dict[mission_num] = {
+                "discriminator": "MissionIndicatorProps",
                 "missionResult": self.mission_num_to_result[mission_num].value,
                 "playersOnMissions": self.mission_players[mission_num],
                 "playedCards": [card.name for card in self.mission_cards[mission_num]]
