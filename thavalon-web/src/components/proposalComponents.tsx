@@ -1,6 +1,5 @@
-import React, { useState } from "react";
-import { ButtonGroup, Button, Form, FormControl } from "react-bootstrap";
-import { any } from "prop-types";
+import React from "react";
+import { Button, Form, ToggleButtonGroup, ToggleButton } from "react-bootstrap";
 
 //#region Interfaces
 interface ProposalSelectionFormProps {
@@ -22,38 +21,35 @@ export class ProposalSelectionForm extends React.Component<ProposalSelectionForm
 
     render(): JSX.Element {
         const playerOptionsList = this.props.playerOrder.map((player) => {
-            return <option>{player}</option>
+            return <ToggleButton value={player}>{player}</ToggleButton>;
         });
         return (
-            <Form 
-                onSubmit={this.handleSubmit}>
-                
-                <Form.Group controlId="proposalSelectionForm">
-                    <Form.Label>
-                        Select {this.props.numOnProposal} Players
-                    </Form.Label>
-                    <Form.Control
-                        onChange={this.handleFormChange}
-                        ref="proposalSelectionFormControl"
-                        as="select"
-                        custom
-                        multiple>
-
-                        {playerOptionsList}
-                    </Form.Control>
-                </Form.Group>
-                <Button type="submit">Submit Proposal</Button>
-            </Form>
-        )
+            <span>
+                <ToggleButtonGroup
+                    vertical={true}
+                    type="checkbox"
+                    onChange={this.handleFormChange.bind(this)}>
+                    {playerOptionsList}
+                </ToggleButtonGroup>
+                <br />
+                <br />
+                <Button type="button" onClick={this.handleSubmit.bind(this)}>
+                    Submit Proposal
+                </Button>
+            </span>
+        );
     }
 
-    private handleSubmit(event: React.FormEvent): void {
+    private handleSubmit(): void {
+        if (this.state.proposedPlayers.length > this.props.numOnProposal) {
+            alert("Only " + this.props.numOnProposal + " players are allowed.");
+            return;
+        }
         this.props.callback(this.state.proposedPlayers);
     }
 
-    private handleFormChange(event: any): void {
-        const proposedPlayers = event.target.value;
-        this.setState({proposedPlayers: proposedPlayers});
+    private handleFormChange(currentProposedPlayers: string[]): void {
+        this.setState({proposedPlayers: currentProposedPlayers});
     }
 
 }

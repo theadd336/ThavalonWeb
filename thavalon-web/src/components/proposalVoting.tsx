@@ -61,8 +61,12 @@ interface PlayerOrderMessage {
     playerOrder: string[];
 }
 
-interface MoveToVoteMessage {
+interface IncomingMoveToVoteMessage {
     proposal: string[];
+}
+
+interface OutgoingMoveToVoteMessage extends IncomingMoveToVoteMessage {
+    type: OutgoingMessageTypes.MoveToVote
 }
 
 interface ProposalUIProps extends WebSocketProp {
@@ -137,7 +141,7 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                 this.handleNewProposal(message.data as NewProposalMessage);
                 break;
             case IncomingMessageTypes.MoveToVote:
-                this.moveToVote(message.data as MoveToVoteMessage);
+                this.moveToVote(message.data as IncomingMoveToVoteMessage);
                 break;
             case IncomingMessageTypes.PlayerOrder:
                 this.setPlayerOrder(message.data as PlayerOrderMessage);
@@ -168,7 +172,7 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
         this.setState(newState);
     }
 
-    private moveToVote(voteData: MoveToVoteMessage): void {
+    private moveToVote(voteData: IncomingMoveToVoteMessage): void {
         const newState = {
             gamePhase: GamePhase.Voting,
             proposal: voteData.proposal,
@@ -177,7 +181,9 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
     }
 
     private receiveTentativeProposal(proposalData: ProposalReceivedMessage): void {
-        this.setState(proposalData);
+        if (!this.state.isProposing) {
+            this.setState(proposalData);
+        }
     }
 
     private setPlayerOrder(playerOrderData: PlayerOrderMessage): void {
@@ -369,9 +375,12 @@ class CommonInformationUI extends React.Component<CommonInformationUIProps> {
     }
 }
 
-class ProposalUI extends React.Component<ProposalUIProps> {
+class ProposalUI extends React.Component<ProposalUIProps, {proposal: string[]}> {
+    private _connection: WebSocketManager;
     constructor(props: ProposalUIProps) {
         super(props);
+        this._connection = props.webSocket;
+        this.state = {proposal: []};
     }
 
     render(): JSX.Element {
@@ -385,13 +394,19 @@ class ProposalUI extends React.Component<ProposalUIProps> {
     private createProposerUI(): JSX.Element {
         
         return (
-            <ProposalSelectionForm 
-                callback={(proposal: string[]) => {
-                    console.log("in callback");
-                    console.log(proposal);
-                }}
-                numOnProposal={this.props.numOnProposal}
-                playerOrder={this.props.playerOrder} />
+            <span>
+                <ProposalSelectionForm 
+                    callback={(proposal: string[]) => {
+                        this.sendTentativeProposal(proposal);
+                    }}
+                    numOnProposal={this.props.numOnProposal}
+                    playerOrder={this.props.playerOrder} />
+                <Button 
+                    type="button" 
+                    onClick={this.moveToVote.bind(this)}>
+                    Move to Vote
+                </Button>
+            </span>
         );
     }
 
@@ -418,11 +433,21 @@ class ProposalUI extends React.Component<ProposalUIProps> {
         return (<ul>{proposalList}</ul>);
     }
 
-    private createProposalForm(): JSX.Element {
-        const playerOrderOptions = this.props.playerOrder.map(player => {
-            return <option>{player}</option>
-        });
-        return <span>playerOrderOptions</span>;
+    private sendTentativeProposal(proposal: string[]): void {
+        const message: TentativeProposalMessage = {
+            type: OutgoingMessageTypes.SubmitProposal,
+            proposal: proposal
+        };
+        this._connection.send(message);
+        this.setState({proposal: proposal});
+    }
+
+    private moveToVote(): void {
+        const message: OutgoingMoveToVoteMessage = {
+            type: OutgoingMessageTypes.MoveToVote,
+            proposal: this.state.proposal
+        };
+        this._connection.send(message);
     }
 }
 //#endregion
