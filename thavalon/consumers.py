@@ -167,7 +167,7 @@ class GameConsumer(WebsocketConsumer):
             IncomingMessageTypes.SubmitVote.value: self.no_op,
             IncomingMessageTypes.AllMissionInfoRequest.value: self.send_all_mission_info,
             IncomingMessageTypes.SubmitProposal.value: self.broadcast_tentative_proposal,
-            IncomingMessageTypes.MoveToVote.value: self.no_op,
+            IncomingMessageTypes.MoveToVote.value: self.broadcast_moving_to_vote,
             IncomingMessageTypes.SubmitAssassination.value: self.no_op,
             IncomingMessageTypes.PlayerOrder.value: self.send_player_order,
             IncomingMessageTypes.ProposalVoteInformationRequest.value: self.send_proposal_vote_info
