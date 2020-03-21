@@ -4,7 +4,7 @@ import { GamePhase, Vote } from "../Core/gameConstants";
 import React from "react";
 import { ButtonGroup, Button } from "react-bootstrap";
 import { OutgoingMessageTypes, IncomingMessageTypes, IncomingMessage, OutgoingMessage } from "../Core/commConstants";
-import { ProposalSelectionForm } from "./proposalComponents";
+import { ProposalUI } from "./proposalComponents";
 
 //#region Interfaces
 interface ProposalVoteInfo {
@@ -198,7 +198,7 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
         if (this.state.hasVoted) {
             voteContent = this.renderAfterVote(this.state.vote);
         } else {
-            voteContent = this.renderBeforeVote(this.props);
+            voteContent = this.renderBeforeVote(this.props.proposal);
         }
         return voteContent;
     }

@@ -50,13 +50,7 @@ export class ProposalUI extends React.Component<ProposalUIProps, {proposal: stri
     }
 
     private createProposerUI(): JSX.Element {
-        let currentProposal: JSX.Element | undefined = undefined
-        if (this.state.proposal.length !== 0) {
-            const playerList = this.state.proposal.map((player) => {
-                return <li key={player}>{player}</li>;
-            });
-            currentProposal = <ul>{playerList}</ul>;
-        }
+        const currentProposal = this.formatOwnProposalList();
         return (
             <span>
                 {currentProposal}
@@ -76,6 +70,22 @@ export class ProposalUI extends React.Component<ProposalUIProps, {proposal: stri
         );
     }
 
+    private formatOwnProposalList(): JSX.Element | null {
+        if (this.state.proposal.length === 0) {
+            return null;
+        }
+        const playerList = this.state.proposal.map((player) => {
+            return <li key={player}>{player}</li>;
+        });
+        const currentProposal = (
+            <span>
+                You have proposed: 
+                <ul>{playerList}</ul>;
+            </span>
+        );
+        return currentProposal;
+    }
+
     private createOtherProposerUI(): JSX.Element {
         const proposal = this.props.proposal;
         let proposalInfo: JSX.Element
@@ -86,7 +96,12 @@ export class ProposalUI extends React.Component<ProposalUIProps, {proposal: stri
                 </span>
             );
         } else {
-            proposalInfo = this.formatProposalList();
+            proposalInfo = (
+                <span>
+                    {this.props.proposer} has proposed: 
+                    {this.formatProposalList()}
+                </span>
+            );
         }
         return proposalInfo;
     }

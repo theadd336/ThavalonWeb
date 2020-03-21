@@ -301,6 +301,10 @@ class GameConsumer(WebsocketConsumer):
         
 
     def send_vote_info(self, vote_info_event):
+        # Below if statement is needed for mission 1 handling.
+        if (self.game.game_phase == GamePhase.PROPOSAL):
+            self.send_new_proposal_info()
+            return
         proposal = vote_info_event.get("proposal")
         response = responses.MoveToVoteResponse(proposal)
         self.send(response.serialize())
