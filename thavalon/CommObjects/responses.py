@@ -186,11 +186,12 @@ class RoleInformationResponse(Response):
             self.role = player_info["role"]
             self.team
     
-    def _send_core(object_dict) {
+    def _send_core(self, object_dict):
         object_dict["role"] = self.role
         object_dict["team"] = self.team
         object_dict["description"] = self.description
-    }
+        return object_dict
+
 
 class PlayerOrderResponse(Response):
     def __init__(
