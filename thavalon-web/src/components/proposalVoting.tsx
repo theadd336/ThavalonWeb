@@ -48,11 +48,6 @@ interface NewProposalMessage {
     maxNumProposals: number;
 }
 
-interface TentativeProposalMessage {
-    type: OutgoingMessageTypes.SubmitProposal;
-    proposal: string[]
-}
-
 interface ProposalReceivedMessage {
     proposal: string[];
 }
@@ -64,19 +59,6 @@ interface PlayerOrderMessage {
 interface IncomingMoveToVoteMessage {
     proposal: string[];
 }
-
-interface OutgoingMoveToVoteMessage extends IncomingMoveToVoteMessage {
-    type: OutgoingMessageTypes.MoveToVote
-}
-
-interface ProposalUIProps extends WebSocketProp {
-    proposer: string;
-    isProposing: boolean;
-    proposal: string[];
-    numOnProposal: number;
-    playerOrder: string[];
-}
-
 //#endregion
 
 export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
@@ -375,79 +357,5 @@ class CommonInformationUI extends React.Component<CommonInformationUIProps> {
     }
 }
 
-class ProposalUI extends React.Component<ProposalUIProps, {proposal: string[]}> {
-    private _connection: WebSocketManager;
-    constructor(props: ProposalUIProps) {
-        super(props);
-        this._connection = props.webSocket;
-        this.state = {proposal: []};
-    }
 
-    render(): JSX.Element {
-        if (this.props.isProposing) {
-            return this.createProposerUI();
-        } else {
-            return this.createOtherProposerUI();
-        }
-    }
-
-    private createProposerUI(): JSX.Element {
-        
-        return (
-            <span>
-                <ProposalSelectionForm 
-                    callback={(proposal: string[]) => {
-                        this.sendTentativeProposal(proposal);
-                    }}
-                    numOnProposal={this.props.numOnProposal}
-                    playerOrder={this.props.playerOrder} />
-                <Button 
-                    type="button" 
-                    onClick={this.moveToVote.bind(this)}>
-                    Move to Vote
-                </Button>
-            </span>
-        );
-    }
-
-    private createOtherProposerUI(): JSX.Element {
-        const proposal = this.props.proposal;
-        let proposalInfo: JSX.Element
-        if (proposal.length === 0) {
-            proposalInfo = (
-                <span>
-                    Please wait while {this.props.proposer} proposes a team.
-                </span>
-            );
-        } else {
-            proposalInfo = this.formatProposalList();
-        }
-        return proposalInfo;
-    }
-
-    private formatProposalList(): JSX.Element {
-        const proposal = this.props.proposal;
-        const proposalList = proposal.map((player) => {
-            return <li key={player}>player</li>
-        });
-        return (<ul>{proposalList}</ul>);
-    }
-
-    private sendTentativeProposal(proposal: string[]): void {
-        const message: TentativeProposalMessage = {
-            type: OutgoingMessageTypes.SubmitProposal,
-            proposal: proposal
-        };
-        this._connection.send(message);
-        this.setState({proposal: proposal});
-    }
-
-    private moveToVote(): void {
-        const message: OutgoingMoveToVoteMessage = {
-            type: OutgoingMessageTypes.MoveToVote,
-            proposal: this.state.proposal
-        };
-        this._connection.send(message);
-    }
-}
 //#endregion

@@ -55,7 +55,6 @@ export class WebSocketManager implements constants.IConnectionManager {
         }
         const serializedMessage = JSON.stringify(message);
         this.waitForOpenConnection(this, () => {
-            console.log("Sending Message " + constants.OutgoingMessageTypes[message.type]);
             this._webSocket.send(serializedMessage);
         })
     }
@@ -69,12 +68,10 @@ export class WebSocketManager implements constants.IConnectionManager {
         setTimeout(
             function () {
                 if (socketManager.IsOpen) {
-                    console.log("Socket is open");
                     if (callBack != null) {
                         callBack();
                     }
                 } else {
-                    console.log("Waiting for connection...");
                     socketManager.waitForOpenConnection(socketManager, callBack);
                 }
             }, 3000 // Wait 3 seconds max.
