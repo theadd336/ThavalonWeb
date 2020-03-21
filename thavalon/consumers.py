@@ -216,6 +216,7 @@ class GameConsumer(WebsocketConsumer):
     def send_player_order(self, _):
         success = True
         proposal_info = dict()
+        error_message = ""
         try:
             proposal_info = self.game.get_proposal_info()
         except ValueError as e:
