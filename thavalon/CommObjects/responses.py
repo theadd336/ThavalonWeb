@@ -198,7 +198,7 @@ class VoteResultMessage(Response):
         proposal_number: int,
         was_maeved: bool,
         vote_result: Dict[str, int]):
-        super().__init__(OutgoingMessageTypes.VoteResult, True, "")
+        super().__init__(OutgoingMessageTypes.VoteResult.value, True, "")
 
         self.mission_number = mission_number
         self.proposal_number = proposal_number
@@ -229,7 +229,7 @@ class AllMissionInfoResponse(Response):
 
 class TentativeProposalResponse(Response):
     def __init__(self, proposal: List[str]):
-        super().__init__(OutgoingMessageTypes.ProposalReceived, True)
+        super().__init__(OutgoingMessageTypes.ProposalReceived.value, True)
         self.proposal = proposal
     
     def _send_core(self, object_dict):
@@ -247,7 +247,7 @@ class NewProposalResponse(Response):
         proposal_number: int,
         max_num_proposals: int):
 
-        super().__init__(OutgoingMessageTypes.NewProposal, True)
+        super().__init__(OutgoingMessageTypes.NewProposal.value, True)
         self.proposer = proposer
         self.is_proposing = is_proposing
         self.num_on_proposal = num_on_proposal
@@ -267,7 +267,7 @@ class NewProposalResponse(Response):
 
 class MoveToVoteResponse(Response):
     def __init__(self, proposal: List[str]):
-        super().__init__(OutgoingMessageTypes.MoveToVote, True)
+        super().__init__(OutgoingMessageTypes.MoveToVote.value, True)
         self.proposal = proposal
     
     def _send_core(self, object_dict):

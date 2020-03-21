@@ -7,6 +7,7 @@ import { Nav, Navbar, Tabs, Tab, Container, Row, Col } from "react-bootstrap";
 import { RoleInformationTab } from "./roleInformation";
 import { VoteHistoryTab } from "./votingInformation";
 import { PlayerOrderTab } from "./playerOrder";
+import { ProposalVoteTab } from "./proposalVoting";
 
 
 /**
@@ -120,7 +121,8 @@ class GameTabCollection extends React.Component<WebSocketProp> {
                     </Tab.Pane>
                     <Tab.Pane
                         eventKey="proposalVoting">
-
+                        
+                        <ProposalVoteTab webSocket={webSocket} />
                     </Tab.Pane>
                     <Tab.Pane
                         eventKey="missionCards">
