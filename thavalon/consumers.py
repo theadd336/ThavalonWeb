@@ -9,12 +9,12 @@ from enum import Enum
 _GAME_MANAGER = GameManager()
 
 class IncomingMessageTypes(Enum):
-    RoleInformation = 0,
-    SubmitVote = 1,
-    AllMissionInfoRequest = 2,
-    SubmitProposal = 3,
-    MoveToVote = 4,
-    SubmitAssassination = 5,
+    RoleInformation = 0
+    SubmitVote = 1
+    AllMissionInfoRequest = 2
+    SubmitProposal = 3
+    MoveToVote = 4
+    SubmitAssassination = 5
     PlayerOrder = 6
 
 class ChatConsumer(WebsocketConsumer):
