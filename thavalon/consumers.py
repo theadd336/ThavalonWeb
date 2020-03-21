@@ -163,11 +163,11 @@ class GameConsumer(WebsocketConsumer):
         self.game = None
         self._message_types = {
             IncomingMessageTypes.RoleInformation.value: self.role_information,
-            IncomingMessageTypes.SubmitVote.value: None,
-            IncomingMessageTypes.AllMissionInfoRequest.value: None,
-            IncomingMessageTypes.SubmitProposal.value: None,
-            IncomingMessageTypes.MoveToVote.value: None,
-            IncomingMessageTypes.SubmitAssassination.value: None,
+            IncomingMessageTypes.SubmitVote.value: self.no_op,
+            IncomingMessageTypes.AllMissionInfoRequest.value: self.no_op,
+            IncomingMessageTypes.SubmitProposal.value: self.no_op,
+            IncomingMessageTypes.MoveToVote.value: self.no_op,
+            IncomingMessageTypes.SubmitAssassination.value: self.no_op,
             IncomingMessageTypes.PlayerOrder.value: self.player_order
         }
 
@@ -244,6 +244,8 @@ class GameConsumer(WebsocketConsumer):
         response = responses.VoteResultMessage(mission_number, last_proposal_number, was_maeved, vote_info)
         self.send(response.serialize())
         
+    def no_op(self, _):
+        pass
 
     # def on_connect(self, _):
     #     response = responses.GameStateResponse()
