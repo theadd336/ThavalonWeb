@@ -182,7 +182,7 @@ class RoleInformationResponse(Response):
         self.team = None
         self.description = ""
         if player_info is not None:
-            self.role = player_info.role.value
+            self.role = player_info["role"].value
             self.team
 
 class PlayerOrderResponse(Response):
