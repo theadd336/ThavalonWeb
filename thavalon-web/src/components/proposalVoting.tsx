@@ -142,7 +142,8 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
         if (this.state.playerOrder.length === 0) {
             this.sendMessage({type: OutgoingMessageTypes.PlayerOrder});
         }
-        return {type: OutgoingMessageTypes.ProposalVoteInformationRequest}
+        console.log("Made it here")
+        return {type: OutgoingMessageTypes.ProposalVoteInformationRequest};
     }
 
     private handleNewProposal(proposalData: NewProposalMessage): void {

@@ -271,7 +271,9 @@ class GameConsumer(WebsocketConsumer):
 
     def send_proposal_vote_info(self, _):
         game_phase = self.game.game_phase
+        print(game_phase)
         if game_phase == GamePhase.PROPOSAL:
+            print("proposal")
             self.send_new_proposal_info()
         elif game_phase == GamePhase.VOTE:
             proposal = self.game.current_proposals[-1]
