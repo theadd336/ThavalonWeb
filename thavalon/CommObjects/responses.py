@@ -26,6 +26,7 @@ class Response(ABC):
         object_dict = self._send_core(object_dict)
         return json.dumps(object_dict)
 
+    @abstractmethod
     def _send_core(self, object_dict):
         return object_dict
 
@@ -184,6 +185,12 @@ class RoleInformationResponse(Response):
         if player_info is not None:
             self.role = player_info["role"]
             self.team
+    
+    def _send_core(object_dict) {
+        object_dict["role"] = self.role
+        object_dict["team"] = self.team
+        object_dict["description"] = self.description
+    }
 
 class PlayerOrderResponse(Response):
     def __init__(
