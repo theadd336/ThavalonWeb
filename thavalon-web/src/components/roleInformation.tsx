@@ -2,7 +2,7 @@ import * as React from "react";
 import { Team } from "../Core/gameConstants";
 import { MissingPropertyError } from "../Core/errors";
 import { WebSocketManager, WebSocketProp } from "./communication";
-import { IncomingMessage, OutgoingMessageTypes, IncomingMessageTypes } from "../Core/commConstants";
+import { IncomingMessage, OutgoingMessageTypes, IncomingMessageTypes, OutgoingMessage } from "../Core/commConstants";
 import { TabComponent } from "./tabComponents";
 
 
@@ -146,6 +146,10 @@ export class RoleInformationTab extends TabComponent<RoleInformationState> {
                 {formattedInfoString}
             </pre>
         );
+    }
+
+    protected sendMessageOnMount(): OutgoingMessage | null {
+        return {"type": OutgoingMessageTypes.RoleInformation}
     }
 }
 //#endregion

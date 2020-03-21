@@ -184,7 +184,8 @@ class RoleInformationResponse(Response):
         self.description = ""
         if player_info is not None:
             self.role = player_info["role"]
-            self.team
+            self.team = player_info["team"]
+            self.description = player_info["description"]
     
     def _send_core(self, object_dict):
         local_dict = dict()
