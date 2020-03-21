@@ -247,7 +247,7 @@ class GameConsumer(WebsocketConsumer):
         
     def send_all_mission_info(self, _):
         all_mission_info_dict = self.game.get_all_mission_results()
-        missions_to_play = self.game.get_mission_info()
+        missions_to_play = self.game.get_all_mission_default_info()
         all_mission_info_dict.update(missions_to_play)
         all_mission_info_list = list()
         for _, result_dict in all_mission_info_dict.items:

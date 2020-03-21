@@ -165,7 +165,7 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
         if (missionCollection.length !== numMissions) {
             throw new InvalidMissionError("Error during construction of mission indicators.");
         }
-        
+        console.log(missionCollection);
         this.setState({missionsCollection: missionCollection})
     }
 
