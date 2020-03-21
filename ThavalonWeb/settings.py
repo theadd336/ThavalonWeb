@@ -26,9 +26,8 @@ SECRET_KEY = 'f%4+_70!no28^n!3mn3p(a^q4kkw3fp!g=^o9omx)k-+_3u^sg'
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    "vleerinc.com",
+    "bennavetta.com",
     "127.0.0.1",
-    "76.235.97.38",
 ]
 
 

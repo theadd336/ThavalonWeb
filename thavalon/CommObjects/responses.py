@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Dict, List, Any
 from enum import Enum
 import json
 
@@ -173,7 +173,7 @@ class RoleInformationResponse(Response):
             self, 
             success=True, 
             error_message="", 
-            player_info: Dict[str: any] = None):
+            player_info: Dict[str, Any] = None):
         super().__init__(
             message_type = OutgoingMessageTypes.RoleInformation.value,
             success = success,
@@ -208,7 +208,7 @@ class VoteResultMessage(Response):
         mission_number: int,
         proposal_number: int,
         was_maeved: bool,
-        vote_result: Dict[str: int]):
+        vote_result: Dict[str, int]):
         super().__init__(OutgoingMessageTypes.VoteResult, True, "")
 
         self.mission_number = mission_number
