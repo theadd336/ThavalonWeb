@@ -55,7 +55,7 @@ export class WebSocketManager implements constants.IConnectionManager {
         }
         const serializedMessage = JSON.stringify(message);
         this.waitForOpenConnection(this, () => {
-            console.log("Message sent.");
+            console.log("Sending Message " + constants.OutgoingMessageTypes[message.type]);
             this._webSocket.send(serializedMessage);
         })
     }
