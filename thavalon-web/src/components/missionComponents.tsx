@@ -156,8 +156,7 @@ export class MissionTab extends TabComponent<MissionTabState> {
         this.setState({playedCard: card});
     }
 
-    protected receiveSuccessfulMessage(message: IncomingMessage): void {
-        console.log(message);
+    protected receiveSuccessfulMessage(_: object, message: IncomingMessage): void {
         if (message.type === IncomingMessageTypes.MissionInformation) {
             this.updateMissionInfo(message.data as MissionInfoMessage);
         } else if (message.type === IncomingMessageTypes.GamePhaseChange) {
