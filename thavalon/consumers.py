@@ -311,12 +311,13 @@ class GameConsumer(WebsocketConsumer):
     def submit_vote(self, vote_info):
         vote = vote_info.get("vote")
         game_info = self.game.set_vote(self.player_id, bool(vote))
-        self.broadcast_after_vote_status(game_info)
+        game_phase = game_info.get("game_phase")
+        if game_phase != GamePhase.VOTE:
+            self.broadcast_after_vote_status(game_info, game_phase)
     
-    def broadcast_after_vote_status(self, game_info):
+    def broadcast_after_vote_status(self, game_info, game_phase):
         vote_result_info_event = self._create_vote_result_object(game_info)
         async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_result_info_event)
-        game_phase = game_info.get("game_phase")
         print(game_info.get("num_upvotes"))
         print(game_info.get("num_downvotes"))
         if game_phase == GamePhase.PROPOSAL:
