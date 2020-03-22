@@ -338,7 +338,7 @@ class GameConsumer(WebsocketConsumer):
         mission_players = self.game.get_mission_info()
         session_ids = mission_players.get("mission_session_ids")
         isOnMission = self.player_id in session_ids
-        game_phase = self.game.game_phase
+        game_phase = self.game.game_phase.value
         response = responses.MissionInfoResponse(game_phase, mission_players, isOnMission)
         self.send(response.serialize())
 
