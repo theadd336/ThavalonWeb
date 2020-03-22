@@ -318,8 +318,6 @@ class GameConsumer(WebsocketConsumer):
     def broadcast_after_vote_status(self, game_info, game_phase):
         vote_result_info_event = self._create_vote_result_object(game_info)
         async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_result_info_event)
-        print(game_info.get("num_upvotes"))
-        print(game_info.get("num_downvotes"))
         if game_phase == GamePhase.PROPOSAL:
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_new_proposal_info"})
         elif game_phase == GamePhase.MISSION:
@@ -328,6 +326,7 @@ class GameConsumer(WebsocketConsumer):
 
 
     def _create_vote_result_object(self, game_info):
+        print(game_info.get("proposal_vote_info"))
         event_info = dict()
         event_info["type"] = "send_vote_results"
         event_info["num_upvotes"] = game_info.get("num_upvotes")

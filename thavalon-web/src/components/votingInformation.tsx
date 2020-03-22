@@ -20,7 +20,7 @@ interface VoteResultMessage {
     missionNumber: number
     proposalNumber: number
     voteInformation: {
-        [key: string]: Vote
+        [key: string]: Vote | number
     }
 }
 //#endregion
@@ -115,13 +115,15 @@ export class VoteHistoryTab extends TabComponent<VoteHistoryState> {
      * Creates a string array of the form "PlayerName: Vote"
      * @param voteInformation Object with player names as keys and their votes as values.
      */
-    private voteResultsToNamesAndVotes(voteInformation: {[key: string]: Vote}): JSX.Element[] {
+    private voteResultsToNamesAndVotes(voteInformation: {[key: string]: Vote | number}): JSX.Element[] {
         const playersAndVotes = [];
         let voteString = "";
         for (const playerName in voteInformation) {
             const vote = voteInformation[playerName];
             // Convert the vote enum to a string.
-            if (vote === Vote.Upvote) {
+            if (playerName === "Number of Upvotes" || playerName === "Number of Downvotes") {
+                voteString = vote.toString();
+            } else if (vote === Vote.Upvote) {
                 voteString = "upvoted";
             } else {
                 voteString = "downvoted";
