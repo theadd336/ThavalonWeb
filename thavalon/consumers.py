@@ -295,8 +295,9 @@ class GameConsumer(WebsocketConsumer):
         self.send(response.serialize())
 
     def broadcast_moving_to_vote(self, proposal):
-        self.game.set_proposal(proposal.get("proposal"))
-        vote_info_event = {"type": "send_vote_info", "proposal": proposal}
+        proposal_list = proposal.get("proposal")
+        self.game.set_proposal(proposal_list)
+        vote_info_event = {"type": "send_vote_info", "proposal": proposal_list}
         async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_info_event)
         
 
@@ -307,6 +308,7 @@ class GameConsumer(WebsocketConsumer):
             return
         proposal = vote_info_event.get("proposal")
         response = responses.MoveToVoteResponse(proposal)
+        print(response.proposal)
         self.send(response.serialize())
         
 

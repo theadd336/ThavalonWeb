@@ -92,6 +92,7 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                 );
                 break;
             case GamePhase.Voting:
+                console.log(this.state.proposal);
                 tab = (
                     <VoteUI 
                         webSocket={this.props.webSocket}
@@ -123,6 +124,8 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                 this.handleNewProposal(message.data as NewProposalMessage);
                 break;
             case IncomingMessageTypes.MoveToVote:
+                console.log("Incoming Message");
+                console.log(message.data);
                 this.moveToVote(message.data as IncomingMoveToVoteMessage);
                 break;
             case IncomingMessageTypes.PlayerOrder:
@@ -157,7 +160,7 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
     private moveToVote(voteData: IncomingMoveToVoteMessage): void {
         const newState = {
             gamePhase: GamePhase.Voting,
-            proposal: voteData.proposal,
+            proposal: voteData.proposal
         }
         this.setState(newState);
     }
@@ -184,6 +187,7 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
      */
     constructor(props: VoteUIProps) {
         super(props);
+        console.log(props);
         this.state = {
             hasVoted: false,
             vote: Vote.Downvote
@@ -198,7 +202,8 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
         if (this.state.hasVoted) {
             voteContent = this.renderAfterVote(this.state.vote);
         } else {
-            voteContent = this.renderBeforeVote(this.props.proposal);
+            console.log(this.props)
+            voteContent = this.renderBeforeVote(this.props);
         }
         return voteContent;
     }
@@ -233,7 +238,7 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
             afterVoteSentence += "downvoted. ";
         }
         afterVoteSentence += "Please wait while others finish voting.";
-        return (<pre>afterVoteSentence</pre>);
+        return (<pre>{afterVoteSentence}</pre>);
     }
 
     /**
@@ -243,6 +248,8 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
      */
     private renderBeforeVote(proposalInformation: VoteUIProps): JSX.Element {
         const votingOn = "Voting On:";
+        console.log("in render");
+        console.log(proposalInformation.proposal);
         const playersOnProposal = this.createProposedPlayerList(proposalInformation.proposal);
         const votingButtons = this.createVotingButtons();
         return (
@@ -274,10 +281,12 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
                 <Button 
                     variant="primary"
                     onClick={() => this.onSubmitVote(Vote.Upvote)}>
+                    Upvote
                 </Button>
                 <Button 
                     variant="danger"
                     onClick={() => this.onSubmitVote(Vote.Downvote)}>
+                    Downvote
                 </Button>
             </ButtonGroup>
         );
