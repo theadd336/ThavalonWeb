@@ -363,6 +363,7 @@ class GameConsumer(WebsocketConsumer):
         mission_result_info = self.game.get_all_mission_results().get(prior_mission_num)
         mission_result = mission_result_info.get("missionResult")
         players_on_mission = mission_result_info.get("playersOnMission")
+        print(players_on_mission)
         played_cards = mission_result_info.get("playedCards")
         response = responses.MissionResultResponse(prior_mission_num, mission_result, players_on_mission, played_cards)
         self.send(response.serialize())
