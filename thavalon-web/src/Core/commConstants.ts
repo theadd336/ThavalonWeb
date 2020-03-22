@@ -1,3 +1,5 @@
+import { GamePhase } from "./gameConstants";
+
 export enum IncomingMessageTypes {
     RoleInformation,
     MissionResult,
@@ -7,7 +9,9 @@ export enum IncomingMessageTypes {
     NewProposal,
     ProposalReceived,
     MoveToVote,
-    AssassinationResponse
+    AssassinationResponse,
+    MissionInformation,
+    GamePhaseChange
 }
 
 export enum OutgoingMessageTypes {
@@ -32,4 +36,8 @@ export interface IncomingMessage {
 export interface OutgoingMessage {
     type: OutgoingMessageTypes;
     data?: object;
+}
+
+export interface GamePhaseChangeMessage {
+    gamePhase: GamePhase;
 }

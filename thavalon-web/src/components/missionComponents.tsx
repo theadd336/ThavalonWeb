@@ -6,7 +6,7 @@ import FailToken from "../static/red-coin.png";
 import SuccessToken from "../static/black-coin.png";
 import ReverseToken from "../static/circle-png.png";
 import { Figure, Button, Container, Row } from "react-bootstrap";
-import { OutgoingMessageTypes } from "../Core/commConstants";
+import { OutgoingMessageTypes, IncomingMessage, IncomingMessageTypes, GamePhaseChangeMessage } from "../Core/commConstants";
 
 interface MissionTabState {
     gamePhase: GamePhase
@@ -18,6 +18,12 @@ interface MissionTabState {
 interface SubmitMissionCardMessage {
     type: OutgoingMessageTypes.PlayCard;
     playedCard: Card;
+}
+
+interface MissionInfoMessage {
+    playersOnMission: string[];
+    isOnMission: boolean;
+    playedCard?: Card;
 }
 
 export class MissionTab extends TabComponent<MissionTabState> {
@@ -148,5 +154,31 @@ export class MissionTab extends TabComponent<MissionTabState> {
         }
         this.sendMessage(message);
         this.setState({playedCard: card});
+    }
+
+    protected receiveSuccessfulMessage(message: IncomingMessage): void {
+        if (message.type === IncomingMessageTypes.MissionInformation) {
+            this.updateMissionInfo(message.data as MissionInfoMessage);
+        } else if (message.type === IncomingMessageTypes.GamePhaseChange) {
+            this.updateGamePhase(message.data as GamePhaseChangeMessage)
+        }
+    }
+
+    private updateGamePhase(gamePhaseMessage: GamePhaseChangeMessage): void {
+        const newState = {
+            gamePhase: gamePhaseMessage.gamePhase,
+            playedCard: undefined
+        }
+        this.setState(newState);
+    }
+
+    private updateMissionInfo(missionInfo: MissionInfoMessage): void {
+        const newState = {
+            gamePhase: GamePhase.Mission,
+            playersOnMission: missionInfo.playersOnMission,
+            isOnMission: missionInfo.isOnMission,
+            playedCard: missionInfo.playedCard
+        }
+        this.setState(newState);
     }
 }

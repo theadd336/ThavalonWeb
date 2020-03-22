@@ -13,6 +13,8 @@ class OutgoingMessageTypes(Enum):
     ProposalReceived = 6
     MoveToVote = 7
     AssassinationResponse = 8
+    MissionInformation = 9
+    GamePhaseChange = 10
 
 class Response(ABC):
     def __init__(self, message_type: int, success: bool = False, error_message: str = ""):
@@ -272,5 +274,21 @@ class MoveToVoteResponse(Response):
     
     def _send_core(self, object_dict):
         local_dict = {"proposal": self.proposal}
+        object_dict["data"] = local_dict
+        return object_dict
+
+
+class MissionInfoResponse(Response):
+    def __init__(self, game_phase: int, players_on_mission: List[str], isOnMission: bool):
+        super().__init__(OutgoingMessageTypes.MissionInformation, True)
+        self.game_phase = game_phase
+        self.players_on_mission = players_on_mission
+        self.isOnMission = isOnMission
+    
+    def _send_core(self, object_dict):
+        local_dict = dict()
+        local_dict["gamePhase"] = self.game_phase
+        local_dict["playersOnMission"] = self.players_on_mission
+        local_dict["isOnMission"] = self.isOnMission
         object_dict["data"] = local_dict
         return object_dict

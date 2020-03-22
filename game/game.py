@@ -369,7 +369,7 @@ class Game:
         # build up vote dictionary and clear votes for the future
         for player in self.session_id_to_player.values():
             if not maeve_used:
-                self.last_vote_info[player.name] = player.proposal_vote
+                self.last_vote_info[player.name] = int(player.proposal_vote)
             player.proposal_vote = None
 
         # if upvote, send mission. Will always be index 0, even in round 1

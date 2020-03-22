@@ -152,10 +152,3 @@ export class VoteHistoryTab extends TabComponent<VoteHistoryState> {
     }
     //#endregion
 }
-
-export class VotingTab extends TabComponent {
-    constructor(props: WebSocketProp) {
-        super(props);
-    }
-    
-}

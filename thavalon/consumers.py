@@ -326,7 +326,6 @@ class GameConsumer(WebsocketConsumer):
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_mission_info"})
 
     def _create_vote_result_object(self, game_info):
-        print(game_info.get("vote_maeved"))
         event_info = dict()
         event_info["type"] = "send_vote_results"
         event_info["num_upvotes"] = game_info.get("num_upvotes")
@@ -336,7 +335,12 @@ class GameConsumer(WebsocketConsumer):
         return event_info
         
     def send_mission_info(self, _):
-        pass
+        mission_players = self.game.get_mission_info()
+        session_ids = mission_players.get("mission_session_ids")
+        isOnMission = self.player_id in session_ids
+        game_phase = self.game.game_phase
+        response = responses.MissionInfoResponse(game_phase, mission_players, isOnMission)
+        self.send(response.serialize())
 
     def play_card(self, card_data):
         card_played = card_data.get("playedCard")
