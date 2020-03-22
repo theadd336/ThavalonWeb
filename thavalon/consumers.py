@@ -310,7 +310,34 @@ class GameConsumer(WebsocketConsumer):
         response = responses.MoveToVoteResponse(proposal)
         print(response.proposal)
         self.send(response.serialize())
+    
+    def submit_vote(self, vote_info):
+        vote = vote_info.get("vote")
+        game_info = self.game.set_vote(self.player_id, bool(vote))
+        self.broadcast_after_vote_status(game_info)
+    
+    def broadcast_after_vote_status(self, game_info):
+        vote_result_info_event = self._create_vote_result_object(game_info)
+        async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_result_info_event)
+        game_phase = game_info.get("game_phase")
+        if game_phase == GamePhase.PROPOSAL:
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_new_proposal_info"})
+        elif game_phase == GamePhase.MISSION:
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_mission_info"})
+
+
+
+    def _create_vote_result_object(self, game_info):
+        event_info = dict()
+        event_info["type"] = "send_vote_results"
+        event_info["num_upvotes"] = game_info.get("num_upvotes")
+        event_info["num_downvotes"] = game_info.get("num_downvotes")
+        event_info["proposal_vote_info"] = game_info.get("proposal_vote_info")
+        event_info["vote_maeved"] = game_info.get("vote_maeved")
+        return event_info
         
+    def send_mission_info(self, _):
+        pass
 
     def no_op(self, _):
         pass

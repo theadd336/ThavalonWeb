@@ -125,7 +125,6 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                 break;
             case IncomingMessageTypes.MoveToVote:
                 console.log("Incoming Message");
-                console.log(message.data);
                 this.moveToVote(message.data as IncomingMoveToVoteMessage);
                 break;
             case IncomingMessageTypes.PlayerOrder:
