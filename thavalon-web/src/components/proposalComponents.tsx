@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Form, ToggleButtonGroup, ToggleButton } from "react-bootstrap";
+import { Button, Form, ToggleButtonGroup, ToggleButton, Row } from "react-bootstrap";
 import { WebSocketManager, WebSocketProp } from "./communication";
 import { OutgoingMessageTypes } from "../Core/commConstants";
 
@@ -140,21 +140,32 @@ class ProposalSelectionForm extends React.Component<ProposalSelectionFormProps, 
 
     render(): JSX.Element {
         const playerOptionsList = this.props.playerOrder.map((player) => {
-            return <ToggleButton value={player}>{player}</ToggleButton>;
+            return (
+                <ToggleButton
+                    variant="outline-secondary" 
+                    value={player}>
+                    {player}
+                </ToggleButton>
+            );
         });
         return (
             <span>
-                <ToggleButtonGroup
-                    vertical={true}
-                    type="checkbox"
-                    onChange={this.handleFormChange.bind(this)}>
-                    {playerOptionsList}
-                </ToggleButtonGroup>
-                <br />
-                <br />
-                <Button type="button" onClick={this.handleSubmit.bind(this)}>
-                    Submit Proposal
-                </Button>
+                <Row>
+                    <ToggleButtonGroup
+                        vertical={true}
+                        type="checkbox"
+                        onChange={this.handleFormChange.bind(this)}>
+                        {playerOptionsList}
+                    </ToggleButtonGroup>
+                </Row>
+                <Row>
+                    <Button 
+                        type="button" 
+                        onClick={this.handleSubmit.bind(this)}
+                        variant="success">
+                        Submit Proposal
+                    </Button>
+                </Row>
             </span>
         );
     }

@@ -76,7 +76,8 @@ export class MissionTab extends TabComponent<MissionTabState> {
         const cardButtons = cards.map((figure, index) => {
             return (
                 <Button 
-                    type="button" 
+                    type="button"
+                    variant="outline-light"
                     onClick={() => {this.playCard(index)}}>
                     {figure}
                 </Button>
