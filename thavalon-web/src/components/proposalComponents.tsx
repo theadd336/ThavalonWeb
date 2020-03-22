@@ -124,10 +124,6 @@ export class ProposalUI extends React.Component<ProposalUIProps, {proposal: stri
     }
 
     private moveToVote(): void {
-        if (this.state.proposal.length !== this.props.numOnProposal) {
-            alert("Exactly " + this.props.numOnProposal + " players are required.");
-            return;
-        }
         const message: OutgoingMoveToVoteMessage = {
             type: OutgoingMessageTypes.MoveToVote,
             proposal: this.state.proposal
@@ -175,8 +171,8 @@ class ProposalSelectionForm extends React.Component<ProposalSelectionFormProps, 
     }
 
     private handleSubmit(): void {
-        if (this.state.proposedPlayers.length !== this.props.numOnProposal) {
-            alert("Exactly " + this.props.numOnProposal + " players are required.");
+        if (this.state.proposedPlayers.length > this.props.numOnProposal) {
+            alert("Only " + this.props.numOnProposal + " players are allowed.");
             return;
         }
         this.props.callback(this.state.proposedPlayers);
