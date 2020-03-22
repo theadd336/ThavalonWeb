@@ -297,7 +297,7 @@ class MissionInfoResponse(Response):
 class MissionResultResponse(Response):
     def __init__(
             self, 
-            mission_result: Dict[str: any]):
+            mission_result: Dict[str, Any]):
 
             super().__init__(OutgoingMessageTypes.MissionResult.value, True)
             self.mission_result = mission_result
