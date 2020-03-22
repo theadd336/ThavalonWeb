@@ -75,12 +75,12 @@ export class ProposalUI extends React.Component<ProposalUIProps, {proposal: stri
             return null;
         }
         const playerList = this.state.proposal.map((player) => {
-            return <li key={player}>{player}</li>;
+            return (<li key={player}>{player}</li>);
         });
         const currentProposal = (
             <span>
                 You have proposed: 
-                <ul>{playerList}</ul>;
+                <ul>{playerList}</ul>
             </span>
         );
         return currentProposal;
@@ -158,7 +158,7 @@ class ProposalSelectionForm extends React.Component<ProposalSelectionFormProps, 
                         {playerOptionsList}
                     </ToggleButtonGroup>
                 </Row>
-                <Row>
+                <Row className="pt-4">
                     <Button 
                         type="button" 
                         onClick={this.handleSubmit.bind(this)}

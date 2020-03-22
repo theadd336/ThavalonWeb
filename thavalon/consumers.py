@@ -344,7 +344,7 @@ class GameConsumer(WebsocketConsumer):
 
     def play_card(self, card_data):
         card_played = card_data.get("playedCard")
-        self.game.play_mission_card(self.player_id, card_played)
+        self.game.play_mission_card(self.player_id, MissionCard(card_played))
     
     def no_op(self, _):
         pass
