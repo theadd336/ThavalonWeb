@@ -296,19 +296,20 @@ class GameConsumer(WebsocketConsumer):
 
     def broadcast_moving_to_vote(self, proposal):
         proposal_list = proposal.get("proposal")
-        self.game.set_proposal(proposal_list)
         vote_info_event = {"type": "send_vote_info", "proposal": proposal_list}
         async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_info_event)
         
 
     def send_vote_info(self, vote_info_event):
         # Below if statement is needed for mission 1 handling.
-        if (self.game.game_phase == GamePhase.PROPOSAL):
+        if self.game.game_phase == GamePhase.PROPOSAL:
             self.send_new_proposal_info(None)
-            return
-        proposal = vote_info_event.get("proposal")
-        response = responses.MoveToVoteResponse(proposal)
-        self.send(response.serialize())
+        elif self.game.game_phase == GamePhase.MISSION:
+            self.send_mission_info(None)
+        else:
+            proposal = vote_info_event.get("proposal")
+            response = responses.MoveToVoteResponse(proposal)
+            self.send(response.serialize())
     
     def submit_vote(self, vote_info):
         vote = vote_info.get("vote")
