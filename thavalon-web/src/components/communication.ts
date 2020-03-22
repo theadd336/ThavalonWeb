@@ -5,7 +5,7 @@ export interface WebSocketProp {
     webSocket: WebSocketManager
 }
 
-export class WebSocketManager implements constants.IConnectionManager {
+export class WebSocketManager {
 
     private _webSocket: WebSocket;
     private _onSuccessfulMessage: EventDispatcher<WebSocketManager, constants.IncomingMessage>;
