@@ -88,7 +88,9 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                         isProposing={this.state.isProposing}
                         proposal={this.state.proposal}
                         numOnProposal={this.state.numOnProposal}
-                        playerOrder={this.state.playerOrder} />
+                        playerOrder={this.state.playerOrder}
+                        maxNumProposals={this.state.maxNumProposals}
+                        proposalNum={this.state.proposalNumber} />
                 );
                 break;
             case GamePhase.Voting:

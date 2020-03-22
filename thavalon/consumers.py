@@ -247,11 +247,11 @@ class GameConsumer(WebsocketConsumer):
         self.send(response.serialize())
         
     def send_all_mission_info(self, _):
-        all_mission_info_dict = self.game.get_all_mission_results()
-        missions_to_play = self.game.get_all_mission_default_info()
-        all_mission_info_dict.update(missions_to_play)
+        all_mission_results = self.game.get_all_mission_results()
+        all_mission_info = self.game.get_all_mission_default_info()
+        all_mission_info.update(all_mission_results)
         all_mission_info_list = list()
-        for mission_num, result_dict in all_mission_info_dict.items():
+        for mission_num, result_dict in all_mission_info.items():
             result_dict["missionNum"] = mission_num
             all_mission_info_list.append(result_dict)
         
@@ -296,16 +296,18 @@ class GameConsumer(WebsocketConsumer):
 
     def broadcast_moving_to_vote(self, proposal):
         proposal_list = proposal.get("proposal")
-        self.game.set_proposal(proposal_list)
-        vote_info_event = {"type": "send_vote_info", "proposal": proposal_list}
-        async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_info_event)
+        game_info = self.game.set_proposal(proposal_list)
+        game_phase = game_info.get("game_phase")
+        if game_phase == GamePhase.PROPOSAL:
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_new_proposal_info"})
+        elif game_phase == GamePhase.MISSION:
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_mission_info"})
+        else:
+            vote_info_event = {"type": "send_vote_info", "proposal": proposal_list}
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_info_event)
         
 
     def send_vote_info(self, vote_info_event):
-        # Below if statement is needed for mission 1 handling.
-        if (self.game.game_phase == GamePhase.PROPOSAL):
-            self.send_new_proposal_info(None)
-            return
         proposal = vote_info_event.get("proposal")
         response = responses.MoveToVoteResponse(proposal)
         self.send(response.serialize())

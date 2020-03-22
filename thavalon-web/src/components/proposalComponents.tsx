@@ -20,6 +20,8 @@ interface ProposalUIProps extends WebSocketProp {
     proposal: string[];
     numOnProposal: number;
     playerOrder: string[];
+    maxNumProposals: number;
+    proposalNum: number;
 }
 
 interface TentativeProposalMessage {
@@ -51,6 +53,7 @@ export class ProposalUI extends React.Component<ProposalUIProps, {proposal: stri
 
     private createProposerUI(): JSX.Element {
         const currentProposal = this.formatOwnProposalList();
+        const buttonCaption = (this.props.proposalNum === this.props.maxNumProposals ? "Send Mission" : "Move to Vote");
         return (
             <span>
                 {currentProposal}
@@ -64,7 +67,7 @@ export class ProposalUI extends React.Component<ProposalUIProps, {proposal: stri
                 <Button 
                     type="button" 
                     onClick={this.moveToVote.bind(this)}>
-                    Move to Vote
+                    {buttonCaption}
                 </Button>
             </span>
         );
