@@ -323,6 +323,7 @@ class GameConsumer(WebsocketConsumer):
         if game_phase == GamePhase.PROPOSAL:
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_new_proposal_info"})
         elif game_phase == GamePhase.MISSION:
+            print("mission phase")
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_mission_info"})
 
     def _create_vote_result_object(self, game_info):
