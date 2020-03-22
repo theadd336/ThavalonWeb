@@ -92,7 +92,6 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                 );
                 break;
             case GamePhase.Voting:
-                console.log(this.state.proposal);
                 tab = (
                     <VoteUI 
                         webSocket={this.props.webSocket}
@@ -124,7 +123,6 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                 this.handleNewProposal(message.data as NewProposalMessage);
                 break;
             case IncomingMessageTypes.MoveToVote:
-                console.log("Incoming Message");
                 this.moveToVote(message.data as IncomingMoveToVoteMessage);
                 break;
             case IncomingMessageTypes.PlayerOrder:
@@ -186,7 +184,6 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
      */
     constructor(props: VoteUIProps) {
         super(props);
-        console.log(props);
         this.state = {
             hasVoted: false,
             vote: Vote.Downvote
@@ -201,7 +198,6 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
         if (this.state.hasVoted) {
             voteContent = this.renderAfterVote(this.state.vote);
         } else {
-            console.log(this.props)
             voteContent = this.renderBeforeVote(this.props);
         }
         return voteContent;
@@ -247,8 +243,6 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
      */
     private renderBeforeVote(proposalInformation: VoteUIProps): JSX.Element {
         const votingOn = "Voting On:";
-        console.log("in render");
-        console.log(proposalInformation.proposal);
         const playersOnProposal = this.createProposedPlayerList(proposalInformation.proposal);
         const votingButtons = this.createVotingButtons();
         return (
