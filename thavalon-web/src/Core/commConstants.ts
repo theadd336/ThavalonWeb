@@ -1,4 +1,4 @@
-import { GamePhase } from "./gameConstants";
+import { GamePhase, MissionResult, Card } from "./gameConstants";
 
 export enum IncomingMessageTypes {
     RoleInformation,
@@ -40,4 +40,11 @@ export interface OutgoingMessage {
 
 export interface GamePhaseChangeMessage {
     gamePhase: GamePhase;
+}
+
+export interface MissionResultsMessage {
+    priorMissionNum: number;
+    missionResult: MissionResult;
+    playersOnMission: string[];
+    playedCards: Card[];
 }

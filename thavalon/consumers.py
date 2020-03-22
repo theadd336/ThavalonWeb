@@ -335,17 +335,43 @@ class GameConsumer(WebsocketConsumer):
         return event_info
         
     def send_mission_info(self, _):
-        mission_players = self.game.get_mission_info()
-        session_ids = mission_players.get("mission_session_ids")
+        mission_info = self.game.get_mission_info()
+        session_ids = mission_info.get("mission_session_ids")
+        players_on_mission = mission_info.get("mission_players")
         isOnMission = self.player_id in session_ids
         game_phase = self.game.game_phase.value
-        response = responses.MissionInfoResponse(game_phase, mission_players, isOnMission)
+        response = responses.MissionInfoResponse(game_phase, players_on_mission, isOnMission)
         self.send(response.serialize())
 
     def play_card(self, card_data):
         card_played = card_data.get("playedCard")
-        self.game.play_mission_card(self.player_id, MissionCard(card_played))
-    
+        after_mission_info = self.game.play_mission_card(self.player_id, MissionCard(card_played))
+        self.broadcast_after_mission_info(after_mission_info)
+
+    def broadcast_after_mission_info(self, after_mission_info):
+        game_phase = after_mission_info.get("game_phase")
+        if game_phase == GamePhase.MISSION:
+            return
+        async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_mission_results"})
+        async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_game_phase_update"})
+        if game_phase == GamePhase.PROPOSAL:
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_new_proposal_info"})
+
+
+    def send_mission_results(self, _):
+        prior_mission_num = self.game.mission_num - 1
+        mission_result_info = self.game.get_all_mission_results().get(prior_mission_num)
+        mission_result = mission_result_info.get("missionResult")
+        players_on_mission = mission_result.get("playersOnMission")
+        played_cards = mission_result.get("playedCards")
+        response = responses.MissionResultResponse(prior_mission_num, mission_result, players_on_mission, played_cards)
+        self.send(response.serialize())
+
+    def send_game_phase_update(self, _):
+        game_phase = self.game.game_phase.value
+        response = responses.GamePhaseChangeResponse(game_phase)
+        self.send(response.serialize())
+
     def no_op(self, _):
         pass
 

@@ -5,7 +5,7 @@ import { MissionResult, Card, AllMissionInfo } from "../Core/gameConstants";
 import FailToken from "../static/red-coin.png";
 import SuccessToken from "../static/black-coin.png";
 import { WebSocketProp, WebSocketManager } from "./communication";
-import { IncomingMessage, IncomingMessageTypes, OutgoingMessageTypes } from "../Core/commConstants";
+import { IncomingMessage, IncomingMessageTypes, OutgoingMessageTypes, MissionResultsMessage } from "../Core/commConstants";
 
 
 //#region interfaces
@@ -32,13 +32,6 @@ interface MissionPlaceholderProps {
 
 interface AllMissionInfoRequest {
     type: OutgoingMessageTypes.AllMissionInfoRequest
-}
-
-interface MissionResultsMessage {
-    priorMissionNum: number,
-    missionResult: MissionResult,
-    playersOnMission: string[],
-    playedCards: Card[]
 }
 
 /**

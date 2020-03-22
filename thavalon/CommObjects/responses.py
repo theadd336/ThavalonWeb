@@ -292,3 +292,37 @@ class MissionInfoResponse(Response):
         local_dict["isOnMission"] = self.isOnMission
         object_dict["data"] = local_dict
         return object_dict
+
+
+class MissionResultResponse(Response):
+    def __init__(
+            self, 
+            prior_mission_num: int, 
+            mission_result: int, 
+            players_on_mission: List[str], 
+            cards_played: List[int]):
+
+            super().__init__(OutgoingMessageTypes.MissionResult, True)
+            self.prior_mission_num = prior_mission_num
+            self. mission_result = mission_result
+            self.players_on_mission = players_on_mission
+            self.cards_played = cards_played
+    
+    def _send_core(self, object_dict):
+        local_dict = dict()
+        local_dict["missionResult"] = self.mission_result
+        local_dict["priorMissionNum"] = self.prior_mission_num
+        local_dict["playersOnMission"] = self.players_on_mission
+        local_dict["playedCards"] = self.cards_played
+        object_dict["data"] = local_dict
+        return object_dict
+
+
+class GamePhaseChangeResponse(Response):
+    def __init__(self, new_game_phase: int):
+        super().__init__(OutgoingMessageTypes.GamePhaseChange.value, True)
+        self.game_phase = new_game_phase
+    
+    def _send_core(self, object_dict):
+        object_dict["data"] = {"gamePhase": self.game_phase}
+        return object_dict

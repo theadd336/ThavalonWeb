@@ -430,7 +430,7 @@ class Game:
                 "discriminator": "MissionIndicatorProps",
                 "missionResult": self.mission_num_to_result[mission_num].value,
                 "playersOnMissions": self.mission_players[mission_num],
-                "playedCards": [card.name for card in self.mission_cards[mission_num]]
+                "playedCards": [card.value for card in self.mission_cards[mission_num]]
             }
         return return_dict
 

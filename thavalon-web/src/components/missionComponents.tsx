@@ -136,7 +136,10 @@ export class MissionTab extends TabComponent<MissionTabState> {
         }
         const cardImage = (
             <Figure>
-                <Figure.Image src={image} />
+                <Figure.Image 
+                    src={image}
+                    height="300"
+                    width="300" />
                 <Figure.Caption>
                     {Card[card]}
                 </Figure.Caption>
