@@ -16,8 +16,8 @@ interface MissionIndicatorProps {
     discriminator: "MissionIndicatorProps",
     missionNum: number,
     playersOnMission: string[],
-    result: MissionResult,
-    cardsPlayed: Card[]
+    missionResult: MissionResult,
+    playedCards: Card[]
 }
 
 /**
@@ -94,8 +94,8 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
                         discriminator={indicator.discriminator}
                         missionNum={indicator.missionNum}
                         playersOnMission={indicator.playersOnMission}
-                        cardsPlayed={indicator.cardsPlayed}
-                        result={indicator.result} />);
+                        playedCards={indicator.playedCards}
+                        missionResult={indicator.missionResult} />);
             } else {
                 return (
                     <MissionPlaceholderIndicator
@@ -110,23 +110,6 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
                 {missionIndicators}
             </Row>
         );
-    }
-
-    /**
-     * Updates the appropriate mission with the mission's results.
-     * @param missionResults Results from the mission that now has results.
-     */
-    addMissionResults(missionResults: MissionIndicatorProps): void {
-        if (typeof missionResults === undefined) {
-            throw new MissingPropertyError("Mission results are required.");
-        }
-        const missionNum = missionResults.missionNum;
-        const missionsCollection = this.state.missionsCollection;
-        if (missionNum < 0 || missionNum >= missionsCollection.length) {
-            throw new InvalidMissionError("The mission number does not exist.");
-        }
-        missionsCollection[missionNum] = missionResults;
-        this.setState({missionsCollection: missionsCollection});
     }
 
     /**
@@ -192,8 +175,8 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
             discriminator: "MissionIndicatorProps",
             missionNum: missionNum,
             playersOnMission: missionResult.playersOnMission,
-            result: missionResult.missionResult,
-            cardsPlayed: missionResult.playedCards
+            missionResult: missionResult.missionResult,
+            playedCards: missionResult.playedCards
         };
         console.log(missionCollection[missionNum]);
         this.setState({ missionsCollection: missionCollection });
@@ -216,8 +199,8 @@ class MissionIndicator extends React.Component<MissionIndicatorProps> {
         super(props);
         const missionNum = this.props.missionNum;
         const playersOnMission = this.props.playersOnMission;
-        const cardsPlayed = this.props.cardsPlayed;
-        const result = this.props.result;
+        const cardsPlayed = this.props.playedCards;
+        const result = this.props.missionResult;
 
         if (missionNum === undefined
             || playersOnMission === undefined 
@@ -242,13 +225,13 @@ class MissionIndicator extends React.Component<MissionIndicatorProps> {
      */
     private formatImageLink(): JSX.Element {
         // Extract the relavent props and state for easier access.
-        const { missionNum, playersOnMission, cardsPlayed, result } = this.props;
+        const { missionNum, playersOnMission, playedCards, missionResult } = this.props;
 
         // Select the correct image source based on the mission result.
-        const indicatorImageSource = this.selectIndicatorImage(result);
+        const indicatorImageSource = this.selectIndicatorImage(missionResult);
 
         // Initialize the popover and return that node.
-        const popover = this.initializePopover(missionNum, playersOnMission, cardsPlayed, result);
+        const popover = this.initializePopover(missionNum, playersOnMission, playedCards, missionResult);
         const indicatorNode = (
             <OverlayTrigger 
                 trigger="click"

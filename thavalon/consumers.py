@@ -302,9 +302,11 @@ class GameConsumer(WebsocketConsumer):
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_new_proposal_info"})
         elif game_phase == GamePhase.MISSION:
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_mission_info"})
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_game_phase_update"})
         else:
             vote_info_event = {"type": "send_vote_info", "proposal": proposal_list}
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_info_event)
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_game_phase_update"})
         
 
     def send_vote_info(self, vote_info_event):
@@ -324,8 +326,10 @@ class GameConsumer(WebsocketConsumer):
         async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, vote_result_info_event)
         if game_phase == GamePhase.PROPOSAL:
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_new_proposal_info"})
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_game_phase_update"})
         elif game_phase == GamePhase.MISSION:
             async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_mission_info"})
+            async_to_sync(self.channel_layer.group_send)(self.lobby_group_name, {"type": "send_game_phase_update"})
 
     def _create_vote_result_object(self, game_info):
         event_info = dict()
