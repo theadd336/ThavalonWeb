@@ -304,12 +304,13 @@ class GameConsumer(WebsocketConsumer):
         # Below if statement is needed for mission 1 handling.
         if self.game.game_phase == GamePhase.PROPOSAL:
             self.send_new_proposal_info(None)
-        elif self.game.game_phase == GamePhase.MISSION:
+            return
+        if self.game.game_phase == GamePhase.MISSION:
             self.send_mission_info(None)
-        else:
-            proposal = vote_info_event.get("proposal")
-            response = responses.MoveToVoteResponse(proposal)
-            self.send(response.serialize())
+            return
+        proposal = vote_info_event.get("proposal")
+        response = responses.MoveToVoteResponse(proposal)
+        self.send(response.serialize())
     
     def submit_vote(self, vote_info):
         vote = vote_info.get("vote")
