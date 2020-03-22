@@ -145,7 +145,6 @@ export class VoteHistoryTab extends TabComponent<VoteHistoryState> {
         if (message.type !== IncomingMessageTypes.VoteResult) {
             return;
         }
-
         const data = message.data as VoteResultMessage;
         const currentHistory = this.state.voteHistory;
         currentHistory.push(data);
