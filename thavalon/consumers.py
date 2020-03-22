@@ -282,7 +282,7 @@ class GameConsumer(WebsocketConsumer):
         elif game_phase == GamePhase.ASSASSINATION:
             pass
     
-    def send_new_proposal_info(self):
+    def send_new_proposal_info(self, _):
         proposal_info = self.game.get_proposal_info()
         proposer_id = proposal_info.get("proposer_id")
         response = responses.NewProposalResponse(
