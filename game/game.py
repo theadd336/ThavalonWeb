@@ -427,6 +427,7 @@ class Game:
         return_dict = dict()
         for mission_num in self.mission_num_to_result.keys():
             print(self.mission_players[mission_num])
+            print(mission_num)
             return_dict[mission_num] = {
                 "discriminator": "MissionIndicatorProps",
                 "missionResult": self.mission_num_to_result[mission_num].value,
