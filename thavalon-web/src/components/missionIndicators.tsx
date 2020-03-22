@@ -195,6 +195,7 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
             result: missionResult.missionResult,
             cardsPlayed: missionResult.playedCards
         };
+        console.log(missionCollection[missionNum]);
         this.setState({ missionsCollection: missionCollection });
     }
 }

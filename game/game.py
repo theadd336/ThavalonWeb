@@ -426,12 +426,10 @@ class Game:
     def get_all_mission_results(self) -> Dict[str, Dict[int, Any]]:
         return_dict = dict()
         for mission_num in self.mission_num_to_result.keys():
-            print(self.mission_players[mission_num])
-            print(mission_num)
             return_dict[mission_num] = {
                 "discriminator": "MissionIndicatorProps",
                 "missionResult": self.mission_num_to_result[mission_num].value,
-                "playersOnMissions": self.mission_players[mission_num],
+                "playersOnMission": self.mission_players[mission_num],
                 "playedCards": [card.value for card in self.mission_cards[mission_num]]
             }
         return return_dict

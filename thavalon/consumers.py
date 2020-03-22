@@ -360,7 +360,6 @@ class GameConsumer(WebsocketConsumer):
 
     def send_mission_results(self, _):
         prior_mission_num = self.game.mission_num - 1
-        print(prior_mission_num)
         mission_result_info = self.game.get_all_mission_results().get(prior_mission_num)
         mission_result_info["priorMissionNum"] = prior_mission_num
         response = responses.MissionResultResponse(mission_result_info)
