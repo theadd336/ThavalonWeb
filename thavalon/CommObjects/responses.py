@@ -302,7 +302,7 @@ class MissionResultResponse(Response):
             players_on_mission: List[str], 
             cards_played: List[int]):
 
-            super().__init__(OutgoingMessageTypes.MissionResult, True)
+            super().__init__(OutgoingMessageTypes.MissionResult.value, True)
             self.prior_mission_num = prior_mission_num
             self. mission_result = mission_result
             self.players_on_mission = players_on_mission
