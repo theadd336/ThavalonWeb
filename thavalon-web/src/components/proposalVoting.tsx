@@ -361,5 +361,4 @@ class CommonInformationUI extends React.Component<CommonInformationUIProps> {
     }
 }
 
-
 //#endregion
