@@ -29,6 +29,8 @@ tristan = Player("tristan", "Tristan")
 tristan.role = Tristan()
 percival = Player("percival", "Percival")
 percival.role = Percival()
+generic_player = Player("generic", "Generic")
+generic_player.role = Iseult()
 
 # TODO: replace role mocks with actual roles when available
 colgrevance = Player("colgrevance", "Colgrevance")

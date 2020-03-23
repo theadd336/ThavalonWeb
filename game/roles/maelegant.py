@@ -3,8 +3,8 @@ from ..role import Team
 
 
 class Maelegant(Evil):
-    def __init__(self):
-        super().__init__("Maelegant", Team.EVIL, is_reverser=True)
+    def __init__(self, is_assassin=False):
+        super().__init__("Maelegant", Team.EVIL, is_reverser=True, is_assassin=is_assassin)
 
     def get_description(self) -> str:
         return "\n".join([

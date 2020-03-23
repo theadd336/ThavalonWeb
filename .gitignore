@@ -116,3 +116,4 @@ dmypy.json
 venv
 node_modules
 package-lock.json
+ThavalonWeb/settings.py

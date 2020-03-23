@@ -5,9 +5,10 @@ _NUM_USES = 3
 
 
 class Maeve(Evil):
-    def __init__(self):
+    def __init__(self, is_assassin=False):
         self.ability_count = 0
-        super().__init__("Maeve", Team.EVIL)
+        self.used_ability = False
+        super().__init__("Maeve", Team.EVIL, is_assassin=is_assassin)
 
     def get_description(self):
         return "\n".join([
