@@ -11,7 +11,8 @@ export enum IncomingMessageTypes {
     MoveToVote,
     AssassinationResponse,
     MissionInformation,
-    GamePhaseChange
+    GamePhaseChange,
+    AbilityInformationResponse
 }
 
 export enum OutgoingMessageTypes {
@@ -23,7 +24,9 @@ export enum OutgoingMessageTypes {
     SubmitAssassination,
     PlayerOrder,
     ProposalVoteInformationRequest,
-    PlayCard
+    PlayCard,
+    AbilityInformationRequest,
+    UseAbility
 }
 
 export interface IncomingMessage {

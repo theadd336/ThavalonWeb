@@ -1,10 +1,13 @@
 import { TabComponent } from "./tabComponents";
-import { WebSocketProp, WebSocketManager } from "./communication";
+import { WebSocketProp } from "./communication";
 import { GamePhase, Vote } from "../Core/gameConstants";
 import React from "react";
-import { ButtonGroup, Button } from "react-bootstrap";
 import { OutgoingMessageTypes, IncomingMessageTypes, IncomingMessage, OutgoingMessage } from "../Core/commConstants";
 import { ProposalUI } from "./proposalComponents";
+import { VotingButtons } from "../Core/sharedComponents";
+import { Container, Row, Col } from "react-bootstrap";
+import { AbilityUI } from "./abilities/abilityComponents";
+
 
 //#region Interfaces
 interface ProposalVoteInfo {
@@ -82,7 +85,7 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
         switch (gamePhase) {
             case GamePhase.Proposal:
                 tab = (
-                    <ProposalUI 
+                    <ProposalUI
                         webSocket={this.props.webSocket}
                         proposer={this.state.proposer}
                         isProposing={this.state.isProposing}
@@ -95,7 +98,7 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                 break;
             case GamePhase.Voting:
                 tab = (
-                    <VoteUI 
+                    <VoteUI
                         webSocket={this.props.webSocket}
                         proposal={this.state.proposal} />
                 );
@@ -107,15 +110,26 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                 break;
         }
         return (
-            <div>
-                <CommonInformationUI 
-                    isProposing={this.state.isProposing}
-                    proposer={this.state.proposer}
-                    numOnProposal={this.state.numOnProposal}
-                    proposalNumber={this.state.proposalNumber}
-                    maxNumProposals={this.state.maxNumProposals} />
-                {tab}
-            </div>
+            <Container>
+                <Row>
+                    <CommonInformationUI
+                        isProposing={this.state.isProposing}
+                        proposer={this.state.proposer}
+                        numOnProposal={this.state.numOnProposal}
+                        proposalNumber={this.state.proposalNumber}
+                        maxNumProposals={this.state.maxNumProposals} />
+                </Row>
+                <Row>
+                    <Col>
+                        {tab}
+                    </Col>
+                    <Col>
+                        <AbilityUI
+                            playerOrder={this.state.playerOrder}
+                            webSocket={this.props.webSocket} />
+                    </Col>
+                </Row>
+            </Container>
         );
     }
 
@@ -135,12 +149,12 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                 break;
         }
     }
-    
+
     protected sendMessageOnMount(): OutgoingMessage {
         if (this.state.playerOrder.length === 0) {
-            this.sendMessage({type: OutgoingMessageTypes.PlayerOrder});
+            this.sendMessage({ type: OutgoingMessageTypes.PlayerOrder });
         }
-        return {type: OutgoingMessageTypes.ProposalVoteInformationRequest};
+        return { type: OutgoingMessageTypes.ProposalVoteInformationRequest };
     }
 
     private handleNewProposal(proposalData: NewProposalMessage): void {
@@ -235,7 +249,7 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
             afterVoteSentence += "downvoted. ";
         }
         afterVoteSentence += "Please wait while others finish voting.";
-        return (<pre>{afterVoteSentence}</pre>);
+        return (<p>{afterVoteSentence}</p>);
     }
 
     /**
@@ -246,13 +260,12 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
     private renderBeforeVote(proposalInformation: VoteUIProps): JSX.Element {
         const votingOn = "Voting On:";
         const playersOnProposal = this.createProposedPlayerList(proposalInformation.proposal);
-        const votingButtons = this.createVotingButtons();
         return (
-            <pre>
+            <p>
                 {votingOn}
                 {playersOnProposal}
-                {votingButtons}
-            </pre>
+                <VotingButtons callback={this.onSubmitVote.bind(this)} />
+            </p>
         );
     }
 
@@ -265,26 +278,6 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
             return <li key={player}>{player}</li>
         });
         return (<ul>{proposedPlayerList}</ul>);
-    }
-
-    /**
-     * Creates the voting buttons and adds applicable event handlers.
-     */
-    private createVotingButtons(): JSX.Element {
-        return (
-            <ButtonGroup vertical>
-                <Button 
-                    variant="primary"
-                    onClick={() => this.onSubmitVote(Vote.Upvote)}>
-                    Upvote
-                </Button>
-                <Button 
-                    variant="danger"
-                    onClick={() => this.onSubmitVote(Vote.Downvote)}>
-                    Downvote
-                </Button>
-            </ButtonGroup>
-        );
     }
 }
 
@@ -311,11 +304,11 @@ class CommonInformationUI extends React.Component<CommonInformationUIProps> {
         const proposalNumberIndicator = this.createProposalNumberIndicator(proposalNumber, maxNumProposals);
         const proposerSentence = this.createProposerSentence(isProposing, numOnProposal, proposer);
         return (
-            <pre>
+            <p>
                 {proposalNumberIndicator}
                 <br />
                 {proposerSentence}
-            </pre>
+            </p>
         );
     }
 
@@ -325,7 +318,7 @@ class CommonInformationUI extends React.Component<CommonInformationUIProps> {
      * @param maxNumProposals The maximum number of proposals in the round.
      */
     private createProposalNumberIndicator(proposalNumber: number, maxNumProposals: number): JSX.Element {
-        let proposalNumberIndicator = `Proposal ${proposalNumber}/${maxNumProposals} `;
+        let proposalNumberIndicator = `Proposal ${ proposalNumber }/${ maxNumProposals } `;
         let forceIndicator: JSX.Element | null = null;
         if (proposalNumber === maxNumProposals) {
             forceIndicator = (

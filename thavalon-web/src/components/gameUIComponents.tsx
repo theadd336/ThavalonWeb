@@ -3,7 +3,7 @@ import { MissionIndicatorCollection } from "./missionIndicators";
 import { RoleCaption } from "./roleInformation";
 import { WebSocketManager, WebSocketProp } from "./communication";
 import { MissingPropertyError } from "../Core/errors";
-import { Nav, Navbar, Tabs, Tab, Container, Row, Col } from "react-bootstrap";
+import { Nav, Navbar, Tab, Container, Row, Col } from "react-bootstrap";
 import { RoleInformationTab } from "./roleInformation";
 import { VoteHistoryTab } from "./votingInformation";
 import { PlayerOrderTab } from "./playerOrder";
@@ -25,11 +25,11 @@ export class GameBoard extends React.Component<WebSocketProp>
      */
     constructor(props: WebSocketProp) {
         super(props);
-        if (!(props.webSocket instanceof(WebSocketManager))) {
+        if (!(props.webSocket instanceof (WebSocketManager))) {
             throw new MissingPropertyError("There is no valid connection.");
         }
     }
-    
+
     render(): JSX.Element {
         return (
             <Container className="pt-5">
@@ -50,7 +50,7 @@ export class GameBoard extends React.Component<WebSocketProp>
 export class Header extends React.Component {
     render(): JSX.Element {
         return (
-            <Navbar 
+            <Navbar
                 bg="light"
                 variant="light">
                 <Navbar.Brand href="/thavalon">
@@ -82,7 +82,7 @@ export class GameInformationCollection extends React.Component<WebSocketProp> {
     render(): JSX.Element {
         return (
             <Container
-                className="pt-3" 
+                className="pt-3"
                 fluid>
                 <Row>
                     <Col>
@@ -94,14 +94,14 @@ export class GameInformationCollection extends React.Component<WebSocketProp> {
     }
 }
 
-class GameTabCollection extends React.Component<WebSocketProp, {activeKey: string}> {
+class GameTabCollection extends React.Component<WebSocketProp, { activeKey: string }> {
     private _connection: WebSocketManager;
     constructor(props: WebSocketProp) {
         super(props);
         if (!(props.webSocket instanceof WebSocketManager)) {
             throw new MissingPropertyError("The WebSocketManager is missing from the tabs collection.");
         }
-        this.state = {activeKey: "roleInformation"}
+        this.state = { activeKey: "roleInformation" }
         this._connection = props.webSocket;
     }
 
@@ -113,9 +113,9 @@ class GameTabCollection extends React.Component<WebSocketProp, {activeKey: strin
             <Tab.Container
                 defaultActiveKey="roleInformation"
                 activeKey={key}
-                onSelect={k => {this.updateActiveKey(k)}} 
+                onSelect={k => { this.updateActiveKey(k) }}
                 id="gameTabsCollection">
-                
+
                 <TabHeadersComponent />
                 <Tab.Content>
                     <Tab.Pane eventKey="roleInformation">
@@ -176,12 +176,12 @@ class GameTabCollection extends React.Component<WebSocketProp, {activeKey: strin
                 activeKey = "roleInformation";
                 break;
         }
-        this.setState({activeKey: activeKey});
+        this.setState({ activeKey: activeKey });
     }
 
     private updateActiveKey(key: string): void {
         if (key !== this.state.activeKey) {
-            this.setState({activeKey: key});
+            this.setState({ activeKey: key });
         }
     }
 }

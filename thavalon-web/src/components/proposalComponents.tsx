@@ -24,6 +24,11 @@ interface ProposalUIProps extends WebSocketProp {
     proposalNum: number;
 }
 
+interface ProposalUIState {
+    proposal: string[];
+    hasMovedToVote: boolean
+}
+
 interface TentativeProposalMessage {
     type: OutgoingMessageTypes.SubmitProposal;
     proposal: string[]
@@ -35,12 +40,15 @@ interface OutgoingMoveToVoteMessage {
 }
 //#endregion
 
-export class ProposalUI extends React.Component<ProposalUIProps, {proposal: string[]}> {
+export class ProposalUI extends React.Component<ProposalUIProps, ProposalUIState> {
     private _connection: WebSocketManager;
     constructor(props: ProposalUIProps) {
         super(props);
         this._connection = props.webSocket;
-        this.state = {proposal: []};
+        this.state = {
+            proposal: [],
+            hasMovedToVote: false
+        };
     }
 
     render(): JSX.Element {
@@ -57,16 +65,17 @@ export class ProposalUI extends React.Component<ProposalUIProps, {proposal: stri
         return (
             <span>
                 {currentProposal}
-                <ProposalSelectionForm 
+                <ProposalSelectionForm
                     callback={(proposal: string[]) => {
                         this.sendTentativeProposal(proposal);
                     }}
                     numOnProposal={this.props.numOnProposal}
                     playerOrder={this.props.playerOrder} />
                 <br />
-                <Button 
-                    type="button" 
-                    onClick={this.moveToVote.bind(this)}>
+                <Button
+                    type="button"
+                    onClick={this.moveToVote.bind(this)}
+                    disabled={this.state.hasMovedToVote}>
                     {buttonCaption}
                 </Button>
             </span>
@@ -82,7 +91,7 @@ export class ProposalUI extends React.Component<ProposalUIProps, {proposal: stri
         });
         const currentProposal = (
             <span>
-                You have proposed: 
+                You have proposed:
                 <ul>{playerList}</ul>
             </span>
         );
@@ -101,7 +110,7 @@ export class ProposalUI extends React.Component<ProposalUIProps, {proposal: stri
         } else {
             proposalInfo = (
                 <span>
-                    {this.props.proposer} has proposed: 
+                    {this.props.proposer} has proposed:
                     {this.formatProposalList()}
                 </span>
             );
@@ -123,29 +132,38 @@ export class ProposalUI extends React.Component<ProposalUIProps, {proposal: stri
             proposal: proposal
         };
         this._connection.send(message);
-        this.setState({proposal: proposal});
+        this.setState({ proposal: proposal });
     }
 
+    /**
+     * Event handler for the move to vote message. 
+     * Sends an outgoing message to the server with vote information.
+     */
     private moveToVote(): void {
+        if (this.state.proposal.length !== this.props.numOnProposal) {
+            alert("Exactly " + this.props.numOnProposal + " players are required.");
+            return;
+        }
         const message: OutgoingMoveToVoteMessage = {
             type: OutgoingMessageTypes.MoveToVote,
             proposal: this.state.proposal
         };
         this._connection.send(message);
+        this.setState({ hasMovedToVote: true });
     }
 }
 
 class ProposalSelectionForm extends React.Component<ProposalSelectionFormProps, ProposalSelectionFormState> {
     constructor(props: ProposalSelectionFormProps) {
         super(props);
-        this.state = {proposedPlayers: []}
+        this.state = { proposedPlayers: [] }
     }
 
     render(): JSX.Element {
         const playerOptionsList = this.props.playerOrder.map((player) => {
             return (
                 <ToggleButton
-                    variant="outline-secondary" 
+                    variant="outline-secondary"
                     value={player}>
                     {player}
                 </ToggleButton>
@@ -162,8 +180,8 @@ class ProposalSelectionForm extends React.Component<ProposalSelectionFormProps, 
                     </ToggleButtonGroup>
                 </Row>
                 <Row className="pt-4">
-                    <Button 
-                        type="button" 
+                    <Button
+                        type="button"
                         onClick={this.handleSubmit.bind(this)}
                         variant="success">
                         Submit Proposal
@@ -182,7 +200,7 @@ class ProposalSelectionForm extends React.Component<ProposalSelectionFormProps, 
     }
 
     private handleFormChange(currentProposedPlayers: string[]): void {
-        this.setState({proposedPlayers: currentProposedPlayers});
+        this.setState({ proposedPlayers: currentProposedPlayers });
     }
 
 }

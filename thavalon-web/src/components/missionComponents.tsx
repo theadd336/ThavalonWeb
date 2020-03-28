@@ -37,7 +37,7 @@ export class MissionTab extends TabComponent<MissionTabState> {
     }
 
     render(): JSX.Element {
-        const {gamePhase, isOnMission, playersOnMission, playedCard} = this.state;
+        const { gamePhase, isOnMission, playersOnMission, playedCard } = this.state;
         let tab: JSX.Element;
         if (gamePhase === GamePhase.Mission) {
             tab = this.renderTabForActiveMission(isOnMission, playersOnMission, playedCard);
@@ -75,10 +75,10 @@ export class MissionTab extends TabComponent<MissionTabState> {
 
         const cardButtons = cards.map((figure, index) => {
             return (
-                <Button 
+                <Button
                     type="button"
                     variant="outline-light"
-                    onClick={() => {this.playCard(index)}}>
+                    onClick={() => { this.playCard(index) }}>
                     {figure}
                 </Button>
             );
@@ -91,13 +91,18 @@ export class MissionTab extends TabComponent<MissionTabState> {
                 <Row>
                     {cardButtons}
                 </Row>
-            </Container>        
+            </Container>
         );
     }
 
+    /**
+     * Creates the mission tab for an observing player. This is just a static sentence.
+     * @param playersOnMission List of players on the mission.
+     */
     private createTabForObservingPlayer(playersOnMission: string[]): JSX.Element {
         let playersOnMissionSentence = "Please wait while ";
         playersOnMissionSentence = this.formatPlayerSentence(playersOnMission, playersOnMissionSentence);
+        playersOnMissionSentence += " go on a mission.";
         return <span>{playersOnMissionSentence}</span>
     }
 
@@ -136,7 +141,7 @@ export class MissionTab extends TabComponent<MissionTabState> {
         }
         const cardImage = (
             <Figure>
-                <Figure.Image 
+                <Figure.Image
                     src={image}
                     height="300"
                     width="300" />
@@ -157,7 +162,7 @@ export class MissionTab extends TabComponent<MissionTabState> {
             playedCard: card
         }
         this.sendMessage(message);
-        this.setState({playedCard: card});
+        this.setState({ playedCard: card });
     }
 
     protected receiveSuccessfulMessage(_: object, message: IncomingMessage): void {
