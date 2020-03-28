@@ -5,7 +5,7 @@ from game.gamemanager import GameManager
 from .CommObjects import responses
 from game.game_constants import MissionCard, GamePhase
 from enum import Enum
-from Typing import Any, Dict, Union, List
+from typing import Any, Dict, Union, List
 
 _GAME_MANAGER = GameManager()
 
@@ -20,6 +20,8 @@ class IncomingMessageTypes(Enum):
     PlayerOrder = 6
     ProposalVoteInformationRequest = 7
     PlayCard = 8
+    AbilityInformationRequest = 9
+    UseAbility = 10
 
 
 class ChatConsumer(WebsocketConsumer):

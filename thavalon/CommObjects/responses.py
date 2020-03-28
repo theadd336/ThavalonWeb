@@ -3,6 +3,7 @@ from typing import Dict, List, Any
 from enum import Enum
 import json
 
+
 class OutgoingMessageTypes(Enum):
     RoleInformation = 0
     MissionResult = 1
@@ -15,9 +16,13 @@ class OutgoingMessageTypes(Enum):
     AssassinationResponse = 8
     MissionInformation = 9
     GamePhaseChange = 10
+    AbilityInformationResponse = 11
+
 
 class Response(ABC):
-    def __init__(self, message_type: int, success: bool = False, error_message: str = ""):
+    def __init__(
+        self, message_type: int, success: bool = False, error_message: str = ""
+    ):
         self.type = message_type
         self.success = success
         self.error_message = error_message
@@ -36,11 +41,14 @@ class Response(ABC):
 
 
 class JoinLeaveGameResponse(Response):
-    def __init__(self, message_type: str,
-                 success: bool = False,
-                 error_message: str = "",
-                 player_names: List[str] = None,
-                 player_list: List[str] = None):
+    def __init__(
+        self,
+        message_type: str,
+        success: bool = False,
+        error_message: str = "",
+        player_names: List[str] = None,
+        player_list: List[str] = None,
+    ):
         super().__init__(message_type, success, error_message)
         self.player_names = player_names
         self.player_list = player_list
@@ -148,17 +156,17 @@ class OnMissionResultsResponse(Response):
         object_dict["playersOnMission"] = self.players_on_mission
         return object_dict
 
-#Everything below here is legit.
+
+# Everything below here is legit.
 class RoleInformationResponse(Response):
     def __init__(
-            self, 
-            success=True, 
-            error_message="", 
-            player_info: Dict[str, Any] = None):
+        self, success=True, error_message="", player_info: Dict[str, Any] = None
+    ):
         super().__init__(
-            message_type = OutgoingMessageTypes.RoleInformation.value,
-            success = success,
-            error_message = error_message)
+            message_type=OutgoingMessageTypes.RoleInformation.value,
+            success=success,
+            error_message=error_message,
+        )
         self.role = ""
         self.team = None
         self.description = ""
@@ -166,7 +174,7 @@ class RoleInformationResponse(Response):
             self.role = player_info["role"]
             self.team = player_info["team"]
             self.description = player_info["description"]
-    
+
     def _send_core(self, object_dict):
         local_dict = dict()
         local_dict["role"] = self.role
@@ -177,21 +185,19 @@ class RoleInformationResponse(Response):
 
 
 class PlayerOrderResponse(Response):
-    def __init__(
-        self,
-        success=True,
-        error_message="",
-        player_order: List[str] = None):
+    def __init__(self, success=True, error_message="", player_order: List[str] = None):
 
         super().__init__(
-            message_type = OutgoingMessageTypes.PlayerOrder.value,
+            message_type=OutgoingMessageTypes.PlayerOrder.value,
             success=success,
-            error_message=error_message)
+            error_message=error_message,
+        )
         self.player_order = player_order
-    
+
     def _send_core(self, object_dict):
         object_dict["data"] = {"playerOrder": self.player_order}
         return object_dict
+
 
 class VoteResultMessage(Response):
     def __init__(
@@ -199,7 +205,8 @@ class VoteResultMessage(Response):
         mission_number: int,
         proposal_number: int,
         was_maeved: bool,
-        vote_result: Dict[str, int]):
+        vote_result: Dict[str, int],
+    ):
         super().__init__(OutgoingMessageTypes.VoteResult.value, True, "")
 
         self.mission_number = mission_number
@@ -222,9 +229,12 @@ class AllMissionInfoResponse(Response):
         super().__init__(OutgoingMessageTypes.AllMissionInfo.value, True)
         self.all_mission_info = all_mission_info
         self.num_missions = len(all_mission_info)
-    
+
     def _send_core(self, object_dict):
-        local_dict = {"missionsInfo": self.all_mission_info, "numMissions": self.num_missions}
+        local_dict = {
+            "missionsInfo": self.all_mission_info,
+            "numMissions": self.num_missions,
+        }
         object_dict["data"] = local_dict
         return object_dict
 
@@ -233,7 +243,7 @@ class TentativeProposalResponse(Response):
     def __init__(self, proposal: List[str]):
         super().__init__(OutgoingMessageTypes.ProposalReceived.value, True)
         self.proposal = proposal
-    
+
     def _send_core(self, object_dict):
         local_dict = {"proposal": self.proposal}
         object_dict["data"] = local_dict
@@ -247,7 +257,8 @@ class NewProposalResponse(Response):
         is_proposing: bool,
         num_on_proposal: int,
         proposal_number: int,
-        max_num_proposals: int):
+        max_num_proposals: int,
+    ):
 
         super().__init__(OutgoingMessageTypes.NewProposal.value, True)
         self.proposer = proposer
@@ -255,7 +266,7 @@ class NewProposalResponse(Response):
         self.num_on_proposal = num_on_proposal
         self.proposal_number = proposal_number
         self.max_num_proposals = max_num_proposals
-    
+
     def _send_core(self, object_dict):
         local_dict = dict()
         local_dict["proposer"] = self.proposer
@@ -271,7 +282,7 @@ class MoveToVoteResponse(Response):
     def __init__(self, proposal: List[str]):
         super().__init__(OutgoingMessageTypes.MoveToVote.value, True)
         self.proposal = proposal
-    
+
     def _send_core(self, object_dict):
         local_dict = {"proposal": self.proposal}
         object_dict["data"] = local_dict
@@ -279,12 +290,14 @@ class MoveToVoteResponse(Response):
 
 
 class MissionInfoResponse(Response):
-    def __init__(self, game_phase: int, players_on_mission: List[str], isOnMission: bool):
+    def __init__(
+        self, game_phase: int, players_on_mission: List[str], isOnMission: bool
+    ):
         super().__init__(OutgoingMessageTypes.MissionInformation.value, True)
         self.game_phase = game_phase
         self.players_on_mission = players_on_mission
         self.isOnMission = isOnMission
-    
+
     def _send_core(self, object_dict):
         local_dict = dict()
         local_dict["gamePhase"] = self.game_phase
@@ -295,13 +308,11 @@ class MissionInfoResponse(Response):
 
 
 class MissionResultResponse(Response):
-    def __init__(
-            self, 
-            mission_result: Dict[str, Any]):
+    def __init__(self, mission_result: Dict[str, Any]):
 
-            super().__init__(OutgoingMessageTypes.MissionResult.value, True)
-            self.mission_result = mission_result
-    
+        super().__init__(OutgoingMessageTypes.MissionResult.value, True)
+        self.mission_result = mission_result
+
     def _send_core(self, object_dict):
         object_dict["data"] = self.mission_result
         return object_dict
@@ -311,7 +322,7 @@ class GamePhaseChangeResponse(Response):
     def __init__(self, new_game_phase: int):
         super().__init__(OutgoingMessageTypes.GamePhaseChange.value, True)
         self.game_phase = new_game_phase
-    
+
     def _send_core(self, object_dict):
         object_dict["data"] = {"gamePhase": self.game_phase}
         return object_dict
