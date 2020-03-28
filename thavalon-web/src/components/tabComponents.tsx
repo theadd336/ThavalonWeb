@@ -1,7 +1,7 @@
 import * as React from "react";
-import { WebSocketProp, WebSocketManager } from "./communication"; 
+import { WebSocketProp, WebSocketManager } from "./communication";
 import { MissingPropertyError } from "../Core/errors";
-import { IncomingMessage, OutgoingMessage, IncomingMessageTypes } from "../Core/commConstants";
+import { IncomingMessage, OutgoingMessage } from "../Core/commConstants";
 
 /**
  * Abstract tab component class that sets up event handlers and cleans them up when the component will be destroyed.
@@ -27,10 +27,15 @@ export abstract class TabComponent<S = {}> extends React.Component<WebSocketProp
         this._connection.onSuccessfulMessage.subscribe((sender, message) => {
             this.receiveSuccessfulMessage(sender, message);
         });
-        
+
         this._connection.onErrorMessage.subscribe((sender, message) => {
             this.receiveErrorMessage(sender, message);
         });
+
+        const message = this.sendMessageOnMount();
+        if (message !== null) {
+            this._connection.send(message);
+        }
     }
 
     /**
@@ -57,5 +62,9 @@ export abstract class TabComponent<S = {}> extends React.Component<WebSocketProp
             return;
         }
         this._connection.send(message);
+    }
+
+    protected sendMessageOnMount(): OutgoingMessage | null {
+        return null;
     }
 }

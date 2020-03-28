@@ -1,48 +1,5 @@
-import {MissionResult, Card, Vote, Team} from "./gameConstants.js";
+import { GamePhase, MissionResult, Card } from "./gameConstants";
 
-export interface ProposalReceivedMessage {
-    proposerName: string,
-    proposedPlayerList: string[],
-    isProposing: boolean
-}
-
-export interface MoveToVoteMessage {
-    proposedPlayerList: string[]
-}
-
-export interface NewProposalMessage {
-    isProposing: boolean,
-    proposerIndex: number[],
-    proposalNumber: number,
-    maxNumProposals: number,
-    proposalSize: number,
-    currentProposal: string[],
-    priorVoteInformation?: string[]
-}
-
-export interface MissionStartMessage {
-    isOnMission: boolean,
-    playersOnMissionList: string[],
-    priorVoteInformation: string[]
-}
-
-export interface MissionResultsMessage {
-    priorMissionNum: number,
-    missionResult: MissionResult,
-    playersOnMission: string[],
-    playedCards: Card[]
-}
-
-export interface VoteStillInProgressMessage {
-    submittedVote: Vote
-}
-
-export interface IConnectionManager {
-    IsOpen: any
-}
-
-
-// Everything below here is legit.
 export enum IncomingMessageTypes {
     RoleInformation,
     MissionResult,
@@ -51,12 +8,25 @@ export enum IncomingMessageTypes {
     VoteResult,
     NewProposal,
     ProposalReceived,
-    MoveToVote
+    MoveToVote,
+    AssassinationResponse,
+    MissionInformation,
+    GamePhaseChange,
+    AbilityInformationResponse
 }
 
 export enum OutgoingMessageTypes {
     RoleInformation,
-    SubmitVote
+    SubmitVote,
+    AllMissionInfoRequest,
+    SubmitProposal,
+    MoveToVote,
+    SubmitAssassination,
+    PlayerOrder,
+    ProposalVoteInformationRequest,
+    PlayCard,
+    AbilityInformationRequest,
+    UseAbility
 }
 
 export interface IncomingMessage {
@@ -69,4 +39,15 @@ export interface IncomingMessage {
 export interface OutgoingMessage {
     type: OutgoingMessageTypes;
     data?: object;
+}
+
+export interface GamePhaseChangeMessage {
+    gamePhase: GamePhase;
+}
+
+export interface MissionResultsMessage {
+    priorMissionNum: number;
+    missionResult: MissionResult;
+    playersOnMission: string[];
+    playedCards: Card[];
 }

@@ -1,11 +1,11 @@
 import * as React from "react";
-import { Popover, OverlayTrigger, Card as BootstrapCard } from "react-bootstrap";
-import { MissingPropertyError, InvalidMissionError, ConnectionError } from "../Core/errors";
-import { MissionResult, Card, AllMissionInfo } from "../Core/gameConstants";
+import { Popover, OverlayTrigger, Card as BootstrapCard, Row } from "react-bootstrap";
+import { MissingPropertyError, InvalidMissionError } from "../Core/errors";
+import { MissionResult, Card } from "../Core/gameConstants";
 import FailToken from "../static/red-coin.png";
 import SuccessToken from "../static/black-coin.png";
 import { WebSocketProp, WebSocketManager } from "./communication";
-import { IncomingMessage, IncomingMessageTypes, MissionResultsMessage } from "../Core/commConstants";
+import { IncomingMessage, IncomingMessageTypes, OutgoingMessageTypes, MissionResultsMessage } from "../Core/commConstants";
 
 
 //#region interfaces
@@ -16,8 +16,8 @@ interface MissionIndicatorProps {
     discriminator: "MissionIndicatorProps",
     missionNum: number,
     playersOnMission: string[],
-    result: MissionResult,
-    cardsPlayed: Card[]
+    missionResult: MissionResult,
+    playedCards: Card[]
 }
 
 /**
@@ -26,14 +26,18 @@ interface MissionIndicatorProps {
 interface MissionPlaceholderProps {
     discriminator: "MissionPlaceholderProps",
     missionNum: number,
-    numPlayersOnMisison: number,
+    numPlayersOnMission: number,
     requiresDoubleFail: boolean
+}
+
+interface AllMissionInfoRequest {
+    type: OutgoingMessageTypes.AllMissionInfoRequest
 }
 
 /**
  * Defines the props object for the MissionIndicatorCollection
  */
-export interface AllMissionInfoMessage {
+interface AllMissionInfoMessage {
     numMissions: number,
     missionsInfo: (MissionIndicatorProps | MissionPlaceholderProps)[]
 }
@@ -57,7 +61,7 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
      */
     constructor(props: WebSocketProp) {
         super(props);
-        if (!(props.webSocket instanceof(WebSocketManager))) {
+        if (!(props.webSocket instanceof (WebSocketManager))) {
             throw new MissingPropertyError("The connection manager is missing.");
         }
 
@@ -65,7 +69,6 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
         this.state = {
             missionsCollection: []
         }
-
         this._connection = props.webSocket;
     }
 
@@ -73,6 +76,10 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
         this._connection.onSuccessfulMessage.subscribe((sender, message) => {
             this.receiveSuccessfulMessage(sender, message);
         });
+        const message: AllMissionInfoRequest = {
+            type: OutgoingMessageTypes.AllMissionInfoRequest
+        }
+        this._connection.send(message);
     }
 
 
@@ -83,43 +90,26 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
         const missionIndicators = this.state.missionsCollection.map((indicator) => {
             if (this.instanceOfMissionIndicatorProps(indicator)) {
                 return (
-                    <MissionIndicator 
+                    <MissionIndicator
                         discriminator={indicator.discriminator}
                         missionNum={indicator.missionNum}
                         playersOnMission={indicator.playersOnMission}
-                        cardsPlayed={indicator.cardsPlayed}
-                        result={indicator.result} />);
+                        playedCards={indicator.playedCards}
+                        missionResult={indicator.missionResult} />);
             } else {
                 return (
                     <MissionPlaceholderIndicator
                         discriminator={indicator.discriminator}
                         missionNum={indicator.missionNum}
-                        numPlayersOnMisison={indicator.numPlayersOnMisison}
+                        numPlayersOnMission={indicator.numPlayersOnMission}
                         requiresDoubleFail={indicator.requiresDoubleFail} />);
             }
         });
         return (
-            <div className="row">
+            <Row>
                 {missionIndicators}
-            </div>
+            </Row>
         );
-    }
-
-    /**
-     * Updates the appropriate mission with the mission's results.
-     * @param missionResults Results from the mission that now has results.
-     */
-    addMissionResults(missionResults: MissionIndicatorProps): void {
-        if (typeof missionResults === undefined) {
-            throw new MissingPropertyError("Mission results are required.");
-        }
-        const missionNum = missionResults.missionNum;
-        const missionsCollection = this.state.missionsCollection;
-        if (missionNum < 0 || missionNum >= missionsCollection.length) {
-            throw new InvalidMissionError("The mission number does not exist.");
-        }
-        missionsCollection[missionNum] = missionResults;
-        this.setState({missionsCollection: missionsCollection});
     }
 
     /**
@@ -151,8 +141,7 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
         if (missionCollection.length !== numMissions) {
             throw new InvalidMissionError("Error during construction of mission indicators.");
         }
-        
-        this.setState({missionsCollection: missionCollection})
+        this.setState({ missionsCollection: missionCollection })
     }
 
     /**
@@ -169,8 +158,8 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
             case IncomingMessageTypes.AllMissionInfo:
                 this.populateMissionCollection(message);
                 break;
-            }
         }
+    }
 
     private updateMissionResults(message: IncomingMessage) {
         // Grab the data and cast it appropriately. Also get the current collection of missions.
@@ -186,9 +175,10 @@ export class MissionIndicatorCollection extends React.Component<WebSocketProp, M
             discriminator: "MissionIndicatorProps",
             missionNum: missionNum,
             playersOnMission: missionResult.playersOnMission,
-            result: missionResult.missionResult,
-            cardsPlayed: missionResult.playedCards
+            missionResult: missionResult.missionResult,
+            playedCards: missionResult.playedCards
         };
+        console.log(missionCollection[missionNum]);
         this.setState({ missionsCollection: missionCollection });
     }
 }
@@ -209,14 +199,14 @@ class MissionIndicator extends React.Component<MissionIndicatorProps> {
         super(props);
         const missionNum = this.props.missionNum;
         const playersOnMission = this.props.playersOnMission;
-        const cardsPlayed = this.props.cardsPlayed;
-        const result = this.props.result;
+        const cardsPlayed = this.props.playedCards;
+        const result = this.props.missionResult;
 
         if (missionNum === undefined
-            || playersOnMission === undefined 
+            || playersOnMission === undefined
             || result === undefined
             || cardsPlayed === undefined) {
-        
+
             throw new MissingPropertyError("A resulted mission must contain a result, players, and the cards played.");
         }
     }
@@ -235,19 +225,19 @@ class MissionIndicator extends React.Component<MissionIndicatorProps> {
      */
     private formatImageLink(): JSX.Element {
         // Extract the relavent props and state for easier access.
-        const { missionNum, playersOnMission, cardsPlayed, result } = this.props;
+        const { missionNum, playersOnMission, playedCards, missionResult } = this.props;
 
         // Select the correct image source based on the mission result.
-        const indicatorImageSource = this.selectIndicatorImage(result);
+        const indicatorImageSource = this.selectIndicatorImage(missionResult);
 
         // Initialize the popover and return that node.
-        const popover = this.initializePopover(missionNum, playersOnMission, cardsPlayed, result);
+        const popover = this.initializePopover(missionNum, playersOnMission, playedCards, missionResult);
         const indicatorNode = (
-            <OverlayTrigger 
+            <OverlayTrigger
                 trigger="click"
                 placement="top"
                 overlay={popover}>
-                <img 
+                <img
                     src={indicatorImageSource}
                     tabIndex={-1}>
                 </img>
@@ -261,7 +251,7 @@ class MissionIndicator extends React.Component<MissionIndicatorProps> {
      * @param result Result of the mission
      */
     private selectIndicatorImage(result?: MissionResult): string {
-        switch(result) {
+        switch (result) {
             case MissionResult.Pass:
                 return SuccessToken;
             case MissionResult.Fail:
@@ -306,16 +296,16 @@ class MissionIndicator extends React.Component<MissionIndicatorProps> {
         // Create the formatted JSX for the popover layout
         const popoverText = (
             <p>
-                {popoverPlayers} 
-                <br /> 
+                {popoverPlayers}
+                <br />
                 {popoverCardsPlayed}
             </p>
         );
-        
+
         // Initialize the popover and add information
-        const title = `Mission ${missionNum} Summary`;
+        const title = `Mission ${ missionNum } Summary`;
         const popover = (
-            <Popover 
+            <Popover
                 title={title}
                 id={"m" + missionNum + "Indicator"}
                 placement="top">
@@ -340,9 +330,9 @@ class MissionPlaceholderIndicator extends React.Component<MissionPlaceholderProp
     constructor(props: MissionPlaceholderProps) {
         super(props);
         if (typeof props.missionNum !== "number"
-            || typeof props.numPlayersOnMisison !== "number"
+            || typeof props.numPlayersOnMission !== "number"
             || typeof props.requiresDoubleFail !== "boolean") {
-            
+
             throw new MissingPropertyError("Mission number, number of players, and double fail are required.");
         }
     }
@@ -368,16 +358,16 @@ class MissionPlaceholderIndicator extends React.Component<MissionPlaceholderProp
         }
 
         const card = (
-            <BootstrapCard 
-                bg="light" 
+            <BootstrapCard
+                bg="light"
                 className="rounded-circle indicatorPlaceholderStyle">
                 <BootstrapCard.Body>
                     <BootstrapCard.Title>
-                        {"Mission " + this.props.missionNum}
+                        {"Mission " + (this.props.missionNum + 1)}
                     </BootstrapCard.Title>
                     <BootstrapCard.Text>
                         <span className="missionNumStyle">
-                            {this.props.numPlayersOnMisison}
+                            {this.props.numPlayersOnMission}
                         </span>
                         <br />
                         <span>
@@ -393,5 +383,5 @@ class MissionPlaceholderIndicator extends React.Component<MissionPlaceholderProp
 
         return card;
     }
-} 
+}
 //#endregion

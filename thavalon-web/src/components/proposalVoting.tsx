@@ -1,9 +1,13 @@
 import { TabComponent } from "./tabComponents";
-import { WebSocketProp, WebSocketManager } from "./communication";
+import { WebSocketProp } from "./communication";
 import { GamePhase, Vote } from "../Core/gameConstants";
 import React from "react";
-import { ButtonGroup, Button } from "react-bootstrap";
-import { OutgoingMessageTypes, IncomingMessageTypes, IncomingMessage } from "../Core/commConstants";
+import { OutgoingMessageTypes, IncomingMessageTypes, IncomingMessage, OutgoingMessage } from "../Core/commConstants";
+import { ProposalUI } from "./proposalComponents";
+import { VotingButtons } from "../Core/sharedComponents";
+import { Container, Row, Col } from "react-bootstrap";
+import { AbilityUI } from "./abilities/abilityComponents";
+
 
 //#region Interfaces
 interface ProposalVoteInfo {
@@ -14,6 +18,7 @@ interface ProposalVoteInfo {
     numOnProposal: number;
     proposalNumber: number;
     maxNumProposals: number;
+    playerOrder: string[];
 }
 
 interface VoteUIProps extends WebSocketProp {
@@ -39,7 +44,6 @@ interface SubmitVoteMessage {
 }
 
 interface NewProposalMessage {
-    type: IncomingMessageTypes.NewProposal;
     proposer: string;
     isProposing: boolean;
     numOnProposal: number;
@@ -47,8 +51,15 @@ interface NewProposalMessage {
     maxNumProposals: number;
 }
 
-interface MoveToVoteMessage {
-    type: IncomingMessageTypes.MoveToVote;
+interface ProposalReceivedMessage {
+    proposal: string[];
+}
+
+interface PlayerOrderMessage {
+    playerOrder: string[];
+}
+
+interface IncomingMoveToVoteMessage {
     proposal: string[];
 }
 //#endregion
@@ -63,7 +74,8 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
             proposal: [],
             numOnProposal: 2,
             proposalNumber: 1,
-            maxNumProposals: 3
+            maxNumProposals: 3,
+            playerOrder: []
         }
     }
 
@@ -72,11 +84,21 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
         let tab: JSX.Element;
         switch (gamePhase) {
             case GamePhase.Proposal:
-                tab = <span></span>
+                tab = (
+                    <ProposalUI
+                        webSocket={this.props.webSocket}
+                        proposer={this.state.proposer}
+                        isProposing={this.state.isProposing}
+                        proposal={this.state.proposal}
+                        numOnProposal={this.state.numOnProposal}
+                        playerOrder={this.state.playerOrder}
+                        maxNumProposals={this.state.maxNumProposals}
+                        proposalNum={this.state.proposalNumber} />
+                );
                 break;
             case GamePhase.Voting:
                 tab = (
-                    <VoteUI 
+                    <VoteUI
                         webSocket={this.props.webSocket}
                         proposal={this.state.proposal} />
                 );
@@ -88,54 +110,82 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                 break;
         }
         return (
-            <div>
-                <CommonInformationUI 
-                    isProposing={this.state.isProposing}
-                    proposer={this.state.proposer}
-                    numOnProposal={this.state.numOnProposal}
-                    proposalNumber={this.state.proposalNumber}
-                    maxNumProposals={this.state.maxNumProposals} />
-                {tab}
-            </div>
+            <Container>
+                <Row>
+                    <CommonInformationUI
+                        isProposing={this.state.isProposing}
+                        proposer={this.state.proposer}
+                        numOnProposal={this.state.numOnProposal}
+                        proposalNumber={this.state.proposalNumber}
+                        maxNumProposals={this.state.maxNumProposals} />
+                </Row>
+                <Row>
+                    <Col>
+                        {tab}
+                    </Col>
+                    <Col>
+                        <AbilityUI
+                            playerOrder={this.state.playerOrder}
+                            webSocket={this.props.webSocket} />
+                    </Col>
+                </Row>
+            </Container>
         );
     }
 
-    receiveSuccessfulMessage(_: object, message: IncomingMessage): void {
+    protected receiveSuccessfulMessage(_: object, message: IncomingMessage): void {
         switch (message.type) {
             case IncomingMessageTypes.NewProposal:
                 this.handleNewProposal(message.data as NewProposalMessage);
                 break;
             case IncomingMessageTypes.MoveToVote:
-                this.moveToVote(message.data as MoveToVoteMessage);
+                this.moveToVote(message.data as IncomingMoveToVoteMessage);
+                break;
+            case IncomingMessageTypes.PlayerOrder:
+                this.setPlayerOrder(message.data as PlayerOrderMessage);
+                break;
+            case IncomingMessageTypes.ProposalReceived:
+                this.receiveTentativeProposal(message.data as ProposalReceivedMessage);
                 break;
         }
     }
 
+    protected sendMessageOnMount(): OutgoingMessage {
+        if (this.state.playerOrder.length === 0) {
+            this.sendMessage({ type: OutgoingMessageTypes.PlayerOrder });
+        }
+        return { type: OutgoingMessageTypes.ProposalVoteInformationRequest };
+    }
+
     private handleNewProposal(proposalData: NewProposalMessage): void {
-        const newState: ProposalVoteInfo = {
+        const newState = {
             gamePhase: GamePhase.Proposal,
             proposer: proposalData.proposer,
             isProposing: proposalData.isProposing,
             proposal: [],
             numOnProposal: proposalData.numOnProposal,
             proposalNumber: proposalData.proposalNumber,
-            maxNumProposals: proposalData.maxNumProposals
+            maxNumProposals: proposalData.maxNumProposals,
         }
         this.setState(newState);
     }
 
-    private moveToVote(voteData: MoveToVoteMessage): void {
-        const state = this.state;
-        const newState: ProposalVoteInfo = {
+    private moveToVote(voteData: IncomingMoveToVoteMessage): void {
+        const newState = {
             gamePhase: GamePhase.Voting,
-            proposer: state.proposer,
-            isProposing: state.isProposing,
-            proposal: voteData.proposal,
-            numOnProposal: state.numOnProposal,
-            proposalNumber: state.proposalNumber,
-            maxNumProposals: state.maxNumProposals
+            proposal: voteData.proposal
         }
         this.setState(newState);
+    }
+
+    private receiveTentativeProposal(proposalData: ProposalReceivedMessage): void {
+        if (!this.state.isProposing) {
+            this.setState(proposalData);
+        }
+    }
+
+    private setPlayerOrder(playerOrderData: PlayerOrderMessage): void {
+        this.setState(playerOrderData);
     }
 }
 
@@ -199,7 +249,7 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
             afterVoteSentence += "downvoted. ";
         }
         afterVoteSentence += "Please wait while others finish voting.";
-        return (<pre>afterVoteSentence</pre>);
+        return (<p>{afterVoteSentence}</p>);
     }
 
     /**
@@ -210,13 +260,12 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
     private renderBeforeVote(proposalInformation: VoteUIProps): JSX.Element {
         const votingOn = "Voting On:";
         const playersOnProposal = this.createProposedPlayerList(proposalInformation.proposal);
-        const votingButtons = this.createVotingButtons();
         return (
-            <pre>
+            <p>
                 {votingOn}
                 {playersOnProposal}
-                {votingButtons}
-            </pre>
+                <VotingButtons callback={this.onSubmitVote.bind(this)} />
+            </p>
         );
     }
 
@@ -229,24 +278,6 @@ class VoteUI extends React.Component<VoteUIProps, VoteState> {
             return <li key={player}>{player}</li>
         });
         return (<ul>{proposedPlayerList}</ul>);
-    }
-
-    /**
-     * Creates the voting buttons and adds applicable event handlers.
-     */
-    private createVotingButtons(): JSX.Element {
-        return (
-            <ButtonGroup vertical>
-                <Button 
-                    variant="primary"
-                    onClick={() => this.onSubmitVote(Vote.Upvote)}>
-                </Button>
-                <Button 
-                    variant="danger"
-                    onClick={() => this.onSubmitVote(Vote.Downvote)}>
-                </Button>
-            </ButtonGroup>
-        );
     }
 }
 
@@ -273,11 +304,11 @@ class CommonInformationUI extends React.Component<CommonInformationUIProps> {
         const proposalNumberIndicator = this.createProposalNumberIndicator(proposalNumber, maxNumProposals);
         const proposerSentence = this.createProposerSentence(isProposing, numOnProposal, proposer);
         return (
-            <pre>
+            <p>
                 {proposalNumberIndicator}
                 <br />
                 {proposerSentence}
-            </pre>
+            </p>
         );
     }
 
@@ -287,7 +318,7 @@ class CommonInformationUI extends React.Component<CommonInformationUIProps> {
      * @param maxNumProposals The maximum number of proposals in the round.
      */
     private createProposalNumberIndicator(proposalNumber: number, maxNumProposals: number): JSX.Element {
-        let proposalNumberIndicator = `Proposal ${proposalNumber}/${maxNumProposals} `;
+        let proposalNumberIndicator = `Proposal ${ proposalNumber }/${ maxNumProposals } `;
         let forceIndicator: JSX.Element | null = null;
         if (proposalNumber === maxNumProposals) {
             forceIndicator = (

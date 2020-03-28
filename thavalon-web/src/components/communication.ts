@@ -5,10 +5,11 @@ export interface WebSocketProp {
     webSocket: WebSocketManager
 }
 
-export class WebSocketManager implements constants.IConnectionManager {
+export class WebSocketManager {
 
     private _webSocket: WebSocket;
     private _onSuccessfulMessage: EventDispatcher<WebSocketManager, constants.IncomingMessage>;
+    private _onAbilityTypeMessage: EventDispatcher<WebSocketManager, constants.IncomingMessage>;
     private _onErrorMessage: EventDispatcher<WebSocketManager, constants.IncomingMessage>
     get IsOpen(): boolean {
         return (this._webSocket.readyState === WebSocket.OPEN);
@@ -22,6 +23,10 @@ export class WebSocketManager implements constants.IConnectionManager {
         return this._onErrorMessage.asEvent();
     }
 
+    get onAbilityTypeMessage(): IEvent<WebSocketManager, constants.IncomingMessage> {
+        return this._onAbilityTypeMessage.asEvent();
+    }
+
     //#region constructors
     constructor(webSocketUrl?: string) {
         // If there isn't a url, try to pull it from the window location.
@@ -29,7 +34,7 @@ export class WebSocketManager implements constants.IConnectionManager {
             let wsUrlPath = window.location.pathname.split("/");
             wsUrlPath[wsUrlPath.length - 1] = "game";
             webSocketUrl = "ws://" + window.location.host + "/" +
-            wsUrlPath.join("/");
+                wsUrlPath.join("/");
         }
 
         // Now there should be a URL. Try to open a connnection.
@@ -44,6 +49,7 @@ export class WebSocketManager implements constants.IConnectionManager {
         // Set up event handlers for recieved messages
         this._onSuccessfulMessage = new EventDispatcher<WebSocketManager, constants.IncomingMessage>();
         this._onErrorMessage = new EventDispatcher<WebSocketManager, constants.IncomingMessage>();
+        this._onAbilityTypeMessage = new EventDispatcher<WebSocketManager, constants.IncomingMessage>();
     }
     //#endregion
 
@@ -55,11 +61,10 @@ export class WebSocketManager implements constants.IConnectionManager {
         }
         const serializedMessage = JSON.stringify(message);
         this.waitForOpenConnection(this, () => {
-            console.log("Message sent.");
             this._webSocket.send(serializedMessage);
         })
     }
-    
+
     /**
      * Holds messages until the connection is open. Then, calls the callback to send the message.
      * @param socketManager An instance of the websocket manager. Probably this.
@@ -69,12 +74,10 @@ export class WebSocketManager implements constants.IConnectionManager {
         setTimeout(
             function () {
                 if (socketManager.IsOpen) {
-                    console.log("Socket is open");
                     if (callBack != null) {
                         callBack();
                     }
                 } else {
-                    console.log("Waiting for connection...");
                     socketManager.waitForOpenConnection(socketManager, callBack);
                 }
             }, 3000 // Wait 3 seconds max.
@@ -87,9 +90,11 @@ export class WebSocketManager implements constants.IConnectionManager {
         if (!this.isValidMessageFormat(messageData)) {
             throw new Error("Could not parse WebSocket event data.");
         }
-        
+
         if (!messageData.success) {
             this.raiseErrorMessage(messageData);
+        } else if (messageData.type === constants.IncomingMessageTypes.AbilityInformationResponse) {
+            this.raiseAbilityMessage(messageData);
         } else {
             this.raiseSuccessfulMessage(messageData);
         }
@@ -107,6 +112,9 @@ export class WebSocketManager implements constants.IConnectionManager {
         this._onErrorMessage.dispatch(this, data);
     }
 
+    private raiseAbilityMessage(data: constants.IncomingMessage): void {
+        this._onAbilityTypeMessage.dispatchAsync(this, data);
+    }
 
     private isValidMessageFormat(messageData: any): messageData is constants.IncomingMessage {
         return (messageData as constants.IncomingMessage) !== undefined;
