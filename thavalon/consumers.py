@@ -188,6 +188,8 @@ class GameConsumer(WebsocketConsumer):
             IncomingMessageTypes.PlayerOrder.value: self.send_player_order,
             IncomingMessageTypes.ProposalVoteInformationRequest.value: self.send_proposal_vote_info,
             IncomingMessageTypes.PlayCard.value: self.play_card,
+            IncomingMessageTypes.AbilityInformationRequest.value: self.no_op,
+            IncomingMessageTypes.UseAbility.value: self.use_ability,
         }
 
     def connect(self):
