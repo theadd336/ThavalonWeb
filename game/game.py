@@ -549,6 +549,13 @@ class Game:
                     for role in _BASE_GOOD_ROLES + _GAME_SIZE_TO_GOOD_ROLES[len(self.session_id_to_player)]]) -
                     {Lancelot}]
 
+
+# for getting info
+# caption for ability, can use it, needs player list, needs vote options, ability timeout
+# make function async, takes in player id
+
+# for setting action - synchronous
+
     # # TODO: Test
     # def handle_agravaine(self, session_id: str) -> bool:
     #     if self.lobby_status != LobbyStatus.IN_PROGRESS:

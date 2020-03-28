@@ -10,7 +10,6 @@ class Nimue(Role):
         return "\n".join([
             "You are Nimue [GOOD].\n",
             "You know which Good and Evil roles are in the game, but not who has any given role.",
-            "You appear Evil to Merlin.",
             "You are a valid Assassination target.\n",
             "The following roles are in the game:",
             *[f"{player.role.role_name}" for player in self.players_seen]
