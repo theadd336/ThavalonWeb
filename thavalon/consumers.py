@@ -308,7 +308,7 @@ class GameConsumer(WebsocketConsumer):
         )
         self.send(response.serialize())
 
-    def send_vote_results(self, proposal_info: Dict[str, Union(int, bool)]):
+    def send_vote_results(self, proposal_info: Dict[str, Union[int, bool]]):
         """Sends the results of the previous voting round.
             Formats the raw information from the game and adds
             Maeve-specific info.
@@ -383,7 +383,7 @@ class GameConsumer(WebsocketConsumer):
         self.send(response.serialize())
 
     def broadcast_tentative_proposal(
-        self, proposal_info: Dict[str, Union(str, List[str])]
+        self, proposal_info: Dict[str, Union[str, List[str]]]
     ):
         """Receives the tentative proposal information from the proposer
             and broadcasts it all clients.
@@ -409,7 +409,7 @@ class GameConsumer(WebsocketConsumer):
         )
 
     def send_tentative_proposal(
-        self, tentative_proposal_event: Dict[str, Union(str, List[str])]
+        self, tentative_proposal_event: Dict[str, Union[str, List[str]]]
     ):
         """Sends a tentative proposal to the client.
         
@@ -473,7 +473,7 @@ class GameConsumer(WebsocketConsumer):
         )
         self.send(response.serialize())
 
-    def submit_proposal(self, proposal: Dict[str, Union(int, List[str])]):
+    def submit_proposal(self, proposal: Dict[str, Union[int, List[str]]]):
         """Submits a proposal from the client.
         
         Parameters
@@ -549,7 +549,7 @@ class GameConsumer(WebsocketConsumer):
         response = responses.MoveToVoteResponse(proposal)
         self.send(response.serialize())
 
-    def submit_vote(self, vote_info: Dict[str, Union(str, int)]):
+    def submit_vote(self, vote_info: Dict[str, Union[str, int]]):
         """Submits a vote from the client. If it is the last vote, tell all 
         GameConsumers that the game phase is advancing.
         
@@ -578,7 +578,7 @@ class GameConsumer(WebsocketConsumer):
             self.broadcast_after_vote_status(game_info, game_phase)
 
     def broadcast_after_vote_status(
-        self, game_info: Dict[str, Union(str, int, bool, Dict)], game_phase: GamePhase
+        self, game_info: Dict[str, Union[str, int, bool, Dict]], game_phase: GamePhase
     ):
         """Alerts all other GameConsumer instances in the game that the 
         vote has finished. What happens next depends on game phase.
@@ -619,8 +619,8 @@ class GameConsumer(WebsocketConsumer):
             )
 
     def _create_vote_result_object(
-        self, game_info: Dict[str, Union(str, int, bool, Dict)]
-    ) -> Dict[str, Union(str, int, bool, List[int])]:
+        self, game_info: Dict[str, Union[str, int, bool, Dict]]
+    ) -> Dict[str, Union[str, int, bool, List[int]]]:
         """Converts the game info dictionary into an event to send to other consumers.
         
         Parameters
