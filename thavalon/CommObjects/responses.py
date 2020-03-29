@@ -17,6 +17,7 @@ class OutgoingMessageTypes(Enum):
     MissionInformation = 9
     GamePhaseChange = 10
     AbilityInformationResponse = 11
+    ToastNotification = 12
 
 
 class Response(ABC):
@@ -374,4 +375,25 @@ class AbilityInformationResponse(Response):
         local_dict["needsVoteOptions"] = self.needs_vote_options
         local_dict["abilityTimeout"] = self.ability_timeout
         object_dict["data"] = local_dict
+        return object_dict
+
+
+class ToastNotificationResponse(Response):
+    """Serializable class representing a toast notification."""
+
+    def __init__(self, message: str, subtype: int = None) -> None:
+        """Initializes the toast notification response.
+        
+        Parameters
+        ----------
+        message : str
+            Message to display
+        subtype : int, optional
+            Message subtype, by default None
+        """
+        super().__init__(OutgoingMessageTypes.ToastNotification.value, True)
+        self.message = message
+
+    def _send_core(self, object_dict: Dict[str, Any]) -> Dict[str, Any]:
+        object_dict["data"] = {"message": self.message}
         return object_dict

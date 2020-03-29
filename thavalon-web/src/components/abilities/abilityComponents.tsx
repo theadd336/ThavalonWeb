@@ -89,7 +89,7 @@ export class AbilityUI extends React.Component<AbilityUIProps, AbilityUIState> {
         }
 
         if (hasUsedAbility === true) {
-            additionalComponent = <span>"You have used your ability."</span>;
+            additionalComponent = <span>You have used your ability.</span>;
         } else {
             additionalComponent = (
                 <AdditionalAbilityComponent
@@ -107,7 +107,9 @@ export class AbilityUI extends React.Component<AbilityUIProps, AbilityUIState> {
         return (
             <Col>
                 {description}
+                <br />
                 {additionalInformation}
+                <br />
                 {additionalComponent}
             </Col>
         );
@@ -206,6 +208,13 @@ export class AbilityUI extends React.Component<AbilityUIProps, AbilityUIState> {
  * Class handling any additional information required for ability use.
  */
 class AdditionalAbilityComponent extends React.Component<AdditionalAbilityProps, { player?: string, vote?: Vote }> {
+    constructor(props: AdditionalAbilityProps) {
+        super(props)
+        this.state = {
+            player: undefined,
+            vote: undefined
+        }
+    }
     render(): JSX.Element {
         let playerList: JSX.Element | null = null;
         let voteButtons: JSX.Element | null = null;
@@ -222,11 +231,11 @@ class AdditionalAbilityComponent extends React.Component<AdditionalAbilityProps,
                     <Col>
                         {playerList}
                     </Col>
-                    <Col>
+                    <Col className="pl-5">
                         {voteButtons}
                     </Col>
                 </Row>
-                <Row>
+                <Row className="pt-5">
                     <Button
                         type="button"
                         onClick={() => this.props.callback(this.state.player, this.state.vote)}>

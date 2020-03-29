@@ -12,7 +12,8 @@ export enum IncomingMessageTypes {
     AssassinationResponse,
     MissionInformation,
     GamePhaseChange,
-    AbilityInformationResponse
+    AbilityInformationResponse,
+    ToastNotification
 }
 
 export enum OutgoingMessageTypes {

@@ -112,15 +112,14 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
         return (
             <Container fluid={true}>
                 <Row>
-                    <CommonInformationUI
-                        isProposing={this.state.isProposing}
-                        proposer={this.state.proposer}
-                        numOnProposal={this.state.numOnProposal}
-                        proposalNumber={this.state.proposalNumber}
-                        maxNumProposals={this.state.maxNumProposals} />
-                </Row>
-                <Row>
                     <Col>
+                        <CommonInformationUI
+                            isProposing={this.state.isProposing}
+                            proposer={this.state.proposer}
+                            numOnProposal={this.state.numOnProposal}
+                            proposalNumber={this.state.proposalNumber}
+                            maxNumProposals={this.state.maxNumProposals} />
+
                         {tab}
                     </Col>
                     <Col>

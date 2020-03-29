@@ -11,6 +11,7 @@ import { ProposalVoteTab } from "./proposalVoting";
 import { MissionTab } from "./missionComponents";
 import { IncomingMessage, IncomingMessageTypes, GamePhaseChangeMessage } from "../Core/commConstants";
 import { GamePhase } from "../Core/gameConstants";
+import { ToastNotification } from "../Core/sharedComponents";
 
 
 /**
@@ -38,7 +39,14 @@ export class GameBoard extends React.Component<WebSocketProp>
                         <RoleCaption webSocket={this.props.webSocket} />
                     </Col>
                 </Row>
-                <MissionIndicatorCollection webSocket={this.props.webSocket} />
+                <Row>
+                    <Col xs={3}>
+                        <ToastNotification webSocket={this.props.webSocket} />
+                    </Col>
+                    <Col xs={6}>
+                        <MissionIndicatorCollection webSocket={this.props.webSocket} />
+                    </Col>
+                </Row>
             </Container>
         );
     }

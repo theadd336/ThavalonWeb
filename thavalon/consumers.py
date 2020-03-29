@@ -782,6 +782,43 @@ class GameConsumer(WebsocketConsumer):
         )
         self.send(response.serialize())
 
-    def use_ability(self, ability_message):
-        print("Ability used")
+    def use_ability(self, ability_message: Dict[str : Union[str, int]]) -> None:
+        """Takes ability data from the client and tries to activate an ability.
+        If successful, will broadcaast this as a toast.
+        
+        Parameters
+        ----------
+        ability_message : Dict[str: Union[str, int]]
+            Message from the client with ability data.
+        """
+        targetted_player = ability_message.get("player")
+        new_vote = ability_message.get("vote")
+        # Use abilitiy
+        ability_response = {"message": "Maeve has obscured the voting."}
+        self.broadcast_ability_toast(ability_response)
 
+    def broadcast_ability_toast(self, ability_response: Dict[str, str]) -> None:
+        """Tells all other GameConsumers that someone has used an ability.
+        
+        Parameters
+        ----------
+        ability_response : Dict[str, str]
+            The response from the game with ability related information.
+        """
+        ability_response["type"] = "send_toast_notification"
+        async_to_sync(self.channel_layer.group_send)(
+            self.lobby_group_name, ability_response
+        )
+
+    def send_toast_notification(self, ability_event: Dict[str, str]) -> None:
+        """Sends a toast notification to the client.
+        ***NOTE***: Unlike other sends, this MUST be called with an ability event.
+        
+        Parameters
+        ----------
+        ability_event : Dict[str, str]
+            Event dictionary containing the message for the toast notification.
+        """
+        message = ability_event.get("message")
+        response = responses.ToastNotificationResponse(message)
+        self.send(response.serialize())

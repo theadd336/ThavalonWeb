@@ -10,6 +10,7 @@ export class WebSocketManager {
     private _webSocket: WebSocket;
     private _onSuccessfulMessage: EventDispatcher<WebSocketManager, constants.IncomingMessage>;
     private _onAbilityTypeMessage: EventDispatcher<WebSocketManager, constants.IncomingMessage>;
+    private _onToastNotificationMessage: EventDispatcher<WebSocketManager, constants.IncomingMessage>;
     private _onErrorMessage: EventDispatcher<WebSocketManager, constants.IncomingMessage>
     get IsOpen(): boolean {
         return (this._webSocket.readyState === WebSocket.OPEN);
@@ -25,6 +26,10 @@ export class WebSocketManager {
 
     get onAbilityTypeMessage(): IEvent<WebSocketManager, constants.IncomingMessage> {
         return this._onAbilityTypeMessage.asEvent();
+    }
+
+    get onToastNotificationMessage(): IEvent<WebSocketManager, constants.IncomingMessage> {
+        return this._onToastNotificationMessage.asEvent();
     }
 
     //#region constructors
@@ -50,6 +55,7 @@ export class WebSocketManager {
         this._onSuccessfulMessage = new EventDispatcher<WebSocketManager, constants.IncomingMessage>();
         this._onErrorMessage = new EventDispatcher<WebSocketManager, constants.IncomingMessage>();
         this._onAbilityTypeMessage = new EventDispatcher<WebSocketManager, constants.IncomingMessage>();
+        this._onToastNotificationMessage = new EventDispatcher<WebSocketManager, constants.IncomingMessage>();
     }
     //#endregion
 
@@ -95,6 +101,8 @@ export class WebSocketManager {
             this.raiseErrorMessage(messageData);
         } else if (messageData.type === constants.IncomingMessageTypes.AbilityInformationResponse) {
             this.raiseAbilityMessage(messageData);
+        } else if (messageData.type === constants.IncomingMessageTypes.ToastNotification) {
+            this.raiseToastNotificationMessage(messageData);
         } else {
             this.raiseSuccessfulMessage(messageData);
         }
@@ -114,6 +122,10 @@ export class WebSocketManager {
 
     private raiseAbilityMessage(data: constants.IncomingMessage): void {
         this._onAbilityTypeMessage.dispatchAsync(this, data);
+    }
+
+    private raiseToastNotificationMessage(data: constants.IncomingMessage): void {
+        this._onToastNotificationMessage.dispatchAsync(this, data);
     }
 
     private isValidMessageFormat(messageData: any): messageData is constants.IncomingMessage {
