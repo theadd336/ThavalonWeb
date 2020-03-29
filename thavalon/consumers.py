@@ -778,9 +778,26 @@ class GameConsumer(WebsocketConsumer):
         _ : Any
             Unused
         """
-        is_maeve = self.game.get_ability_info(self.player_id)
+        ability_info = self.game.get_ability_info(self.player_id)
+
+        # Unpack the ability info dictionary if applicable, otherwise return.
+        can_use_ability = ability_info.get("can_use_ability")
+        if can_use_ability == False or can_use_ability is None:
+            return
+
+        description = ability_info.get("description")
+        caption = ability_info.get("caption")
+        needs_player_list = ability_info.get("needs_player_list")
+        needs_vote_options = ability_info.get("needs_vote_options")
+        ability_timeout = ability_info.get("ability_timeout")
+
         response = responses.AbilityInformationResponse(
-            "You are Maeve", "Obscure", True, False, False
+            description,
+            caption,
+            can_use_ability,
+            needs_player_list,
+            needs_vote_options,
+            ability_timeout,
         )
         self.send(response.serialize())
 
@@ -796,7 +813,13 @@ class GameConsumer(WebsocketConsumer):
         targetted_player = ability_message.get("player")
         new_vote = ability_message.get("vote")
         # Use abilitiy
-        ability_response = {"message": "Maeve has obscured the voting."}
+        try:
+            ability_response = self.game.set_ability_info(
+                self.player_id, targetted_player, new_vote
+            )
+        except ValueError as e:
+            # TODO: Handle this error message better.
+            return
         self.broadcast_ability_toast(ability_response)
 
     def broadcast_ability_toast(self, ability_response: Dict[str, str]) -> None:
