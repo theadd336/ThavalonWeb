@@ -572,7 +572,7 @@ class Game:
             - {Lancelot}
         ]
 
-    # TODO: Test next 3 functions
+    # TODO: Test rest of file
     def _check_maeve_can_use_ability(self):
         if self.maeve_player is None:
             return False
@@ -598,16 +598,16 @@ class Game:
             }
         return {"can_use_ability": False}
 
-    def set_ability_info(self, session_id: str, **kwargs) -> bool:
+    def set_ability_info(self, session_id: str, **kwargs) -> Dict[str, str]:
         if session_id not in self.session_id_to_player:
             raise ValueError("Given session id is not in game.")
         player = self.session_id_to_player[session_id]
         if self.maeve_player == player and self._check_maeve_can_use_ability():
             self.maeve_used_ability = True
-            return True
-        raise ValueError(
-            f"Player with session id {session_id} cannot use an ability at this time."
-        )
+            return {
+                "message": "Maeve has obscured the votes."
+            }
+        raise ValueError(f"Player with session id {session_id} cannot use an ability at this time.")
 
     # # TODO: Test
     # def handle_agravaine(self, session_id: str) -> bool:

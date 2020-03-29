@@ -1,9 +1,6 @@
 from .evil import Evil
 from ..role import Team
 
-_NUM_USES = 3
-
-
 class Oberon(Evil):
     def __init__(self, is_assassin=False):
         self.ability_count = 0
@@ -17,9 +14,3 @@ class Oberon(Evil):
             "each player voted on the proposal and instead have only the amount of upvotes and downvotes presented.",
             self.get_shared_description()
         ])
-
-    def use_ability(self) -> None:
-        if self.ability_count >= _NUM_USES:
-            raise ValueError(f"You have already used your ability max {_NUM_USES} times.")
-        self.used_ability = True
-        self.ability_count += 1
