@@ -767,5 +767,8 @@ class GameConsumer(WebsocketConsumer):
     def no_op(self, _):
         pass
 
+    async def send_ability_information(self, _) -> None:
+        ability_information = await self.game.placeholder(self.player_id)
+
     def use_ability(self):
         pass

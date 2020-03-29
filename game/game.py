@@ -572,6 +572,12 @@ class Game:
             - {Lancelot}
         ]
 
+    async def placeholder(self, player_id):
+        player = self.session_id_to_player[player_id]
+        if self.maeve_player == player:
+            return True
+        return False
+
     # # TODO: Test
     # def handle_agravaine(self, session_id: str) -> bool:
     #     if self.lobby_status != LobbyStatus.IN_PROGRESS:

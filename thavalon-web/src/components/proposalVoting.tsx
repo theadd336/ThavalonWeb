@@ -110,7 +110,7 @@ export class ProposalVoteTab extends TabComponent<ProposalVoteInfo> {
                 break;
         }
         return (
-            <Container>
+            <Container fluid={true}>
                 <Row>
                     <CommonInformationUI
                         isProposing={this.state.isProposing}
