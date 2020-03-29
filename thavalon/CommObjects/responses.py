@@ -373,3 +373,5 @@ class AbilityInformationResponse(Response):
         local_dict["needsPlayerList"] = self.needs_player_list
         local_dict["needsVoteOptions"] = self.needs_vote_options
         local_dict["abilityTimeout"] = self.ability_timeout
+        object_dict["data"] = local_dict
+        return object_dict
