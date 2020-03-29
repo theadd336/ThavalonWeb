@@ -31,6 +31,7 @@ _MISSION_NUM_TO_PROPOSAL_SIZE = {
 }
 
 _GAME_SIZE_TO_GOOD_COUNT = {1: 0, 2: 1, 3: 2, 4: 2, 5: 3, 6: 4, 7: 4, 8: 5, 9: 6, 10: 6}
+_GAME_SIZE_TO_MAEVE_USES = {1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4}
 
 _BASE_GOOD_ROLES = [Iseult, Merlin, Percival, Tristan]
 _BASE_EVIL_ROLES = [Maeve, Mordred, Morgana]
@@ -107,8 +108,15 @@ class Game:
         self.current_mission: List[str] = 0
         # count of cards played so far
         self.current_mission_count: int = 0
+
+        # properties for maeve
         # the player that is maeve, for ability purposes
         self.maeve_player: Optional[Player] = None
+        # if maeve used ability
+        self.maeve_used_ability = False
+        # number maeve uses in a game, set in start_game
+        self.maeve_uses = 0
+
         # the player that is agravaine, for ability purposes
         self.agravaine_player: Optional[Player] = None
 
@@ -217,6 +225,7 @@ class Game:
             # record certain players for later ability use
             if evil_role == Maeve:
                 self.maeve_player = player
+                self.maeve_uses = _GAME_SIZE_TO_MAEVE_USES[self.get_num_players()]
             if evil_role == Agravaine:
                 self.agravaine_player = player
             player.role = evil_role(
@@ -368,9 +377,9 @@ class Game:
 
         maeve_used = False
         # determine if there's a maeve that used ability, if so store it in local variable and reset for future rounds
-        if self.maeve_player is not None and self.maeve_player.role.used_ability:
+        if self.maeve_player is not None and self.maeve_used_ability:
             maeve_used = True
-            self.maeve_player.role.used_ability = False
+            self.maeve_used_ability = False
 
         # build up vote dictionary and clear votes for the future
         for player in self.session_id_to_player.values():
@@ -544,15 +553,6 @@ class Game:
             "proposal_info": self.get_proposal_info(),
         }
 
-    def use_ability(self, session_id: str) -> bool:
-        # check if the given player has an ability to use
-        player = self.session_id_to_player[session_id]
-        # for each player, if use_ability works, update the status
-        if player == self.maeve_player:
-            self.maeve_player.use_ability()
-        if player == self.agravaine_player:
-            self.agravaine_player.use_ability()
-
     def get_all_player_role_info(self) -> Dict[str, Dict[str, str]]:
         # also known as DoNotOpen, returns team name to dict of player name to role name
         result = {"GOOD": {}, "EVIL": {}}
@@ -572,11 +572,42 @@ class Game:
             - {Lancelot}
         ]
 
-    def placeholder(self, player_id):
-        player = self.session_id_to_player[player_id]
-        if self.maeve_player == player:
+    # TODO: Test next 3 functions
+    def _check_maeve_can_use_ability(self):
+        if self.maeve_player is None:
+            return False
+        if self.game_phase is not GamePhase.VOTE:
+            return False
+        if self.maeve_player.proposal_vote is not None:
+            return False
+        return self.maeve_uses != 0
+
+    # for getting info
+    # caption for ability, can use it, needs player list, needs vote options, ability timeout
+    # make function async, takes in player id
+    def get_ability_info(self, session_id: str) -> Dict[str, Any]:
+        if session_id not in self.session_id_to_player:
+            raise ValueError("Given session id is not in game.")
+        player = self.session_id_to_player[session_id]
+        if self.maeve_player == player and self._check_maeve_can_use_ability():
+            return {
+                "description": f"Up to {_GAME_SIZE_TO_MAEVE_USES[self.get_num_players()]} times per game"
+                ", you may obscure how everyone voted.",
+                "caption": "Obscure",
+                "can_use_ability": True,
+            }
+        return {"can_use_ability": False}
+
+    def set_ability_info(self, session_id: str) -> bool:
+        if session_id not in self.session_id_to_player:
+            raise ValueError("Given session id is not in game.")
+        player = self.session_id_to_player[session_id]
+        if self.maeve_player == player and self._check_maeve_can_use_ability():
+            self.maeve_used_ability = True
             return True
-        return False
+        raise ValueError(
+            f"Player with session id {session_id} cannot use an ability at this time."
+        )
 
     # # TODO: Test
     # def handle_agravaine(self, session_id: str) -> bool:

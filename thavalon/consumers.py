@@ -778,7 +778,7 @@ class GameConsumer(WebsocketConsumer):
         _ : Any
             Unused
         """
-        is_maeve = self.game.placeholder(self.player_id)
+        is_maeve = self.game.get_ability_info(self.player_id)
         response = responses.AbilityInformationResponse(
             "You are Maeve", "Obscure", True, False, False
         )

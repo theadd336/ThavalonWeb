@@ -344,8 +344,8 @@ class AbilityInformationResponse(Response):
         description: str,
         caption: str,
         can_use_ability: bool,
-        needs_player_list: bool,
-        needs_vote_options: bool,
+        needs_player_list: bool = False,
+        needs_vote_options: bool = False,
         ability_timeout: int = None,
     ):
         """Initializes the response object.
@@ -358,10 +358,10 @@ class AbilityInformationResponse(Response):
             Caption for the "Use Ability" button. If empty, "Use Ability" will be shown.
         can_use_ability : bool
             True if the ability can be used. False otherwise.
-        needs_player_list : bool
-            Does the ability need to allow selecting players.
-        needs_vote_options : bool
-            Does the ability need to allow selecting votes.
+        needs_player_list : bool, optional
+            Does the ability need to allow selecting players, by default False.
+        needs_vote_options : bool, optional.
+            Does the ability need to allow selecting votes, by default False.
         ability_timeout : int, optional
         Timeout for how long the ability should be allowed to be used, by default None
         """
