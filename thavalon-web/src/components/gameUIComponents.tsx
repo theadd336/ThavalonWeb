@@ -39,14 +39,7 @@ export class GameBoard extends React.Component<WebSocketProp>
                         <RoleCaption webSocket={this.props.webSocket} />
                     </Col>
                 </Row>
-                <Row>
-                    <Col xs={3}>
-                        <ToastNotification webSocket={this.props.webSocket} />
-                    </Col>
-                    <Col xs={6}>
-                        <MissionIndicatorCollection webSocket={this.props.webSocket} />
-                    </Col>
-                </Row>
+                <MissionIndicatorCollection webSocket={this.props.webSocket} />
             </Container>
         );
     }
@@ -92,6 +85,9 @@ export class GameInformationCollection extends React.Component<WebSocketProp> {
             <Container
                 className="pt-3"
                 fluid>
+                <Row className="pb-3 pl-3 mr-auto">
+                    <ToastNotification webSocket={this.props.webSocket} />
+                </Row>
                 <Row>
                     <Col>
                         <GameTabCollection webSocket={this.props.webSocket} />

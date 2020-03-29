@@ -57,9 +57,9 @@ export class ToastNotification extends React.Component<WebSocketProp, ToastNotif
 
     render(): JSX.Element {
         return (
-            <>
+            <div className="toastCollectionStyle">
                 {this.state.currentToasts}
-            </>
+            </div>
         );
     }
 
@@ -80,14 +80,13 @@ export class ToastNotification extends React.Component<WebSocketProp, ToastNotif
     }
 
     private async createNewToast(toastData: ToastMessage): Promise<void> {
-        const uniqueID = this._toastID;
+        const uniqueID = this._toastID.toString();
         const toast = (
             <Toast
-                key={this._toastID}
-                show={true}
+                key={uniqueID}
                 onClose={() => this.removeToastFromState(uniqueID)}>
                 <Toast.Header>
-                    <strong>Ability Used!</strong>
+                    <strong className="mr-auto">Ability Used!</strong>
                 </Toast.Header>
                 <Toast.Body>
                     {toastData.message}
@@ -100,8 +99,9 @@ export class ToastNotification extends React.Component<WebSocketProp, ToastNotif
         this.setState({ currentToasts: currentToasts });
     }
 
-    private removeToastFromState(toastIDToRemove: number): void {
+    private removeToastFromState(toastIDToRemove: string): void {
         const currentToasts = [];
+        console.log("Removing toast " + toastIDToRemove);
         for (const toast of this.state.currentToasts) {
             if (toast.key !== toastIDToRemove) {
                 currentToasts.push(toast);

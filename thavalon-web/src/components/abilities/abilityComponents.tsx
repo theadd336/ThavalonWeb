@@ -149,7 +149,9 @@ export class AbilityUI extends React.Component<AbilityUIProps, AbilityUIState> {
                 500
             );
         }
-        this.setState(messageData);
+        const newState = messageData as AbilityUIState;
+        newState.hasUsedAbility = false;
+        this.setState(newState);
     }
 
     /**

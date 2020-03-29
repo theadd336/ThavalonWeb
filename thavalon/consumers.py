@@ -342,7 +342,7 @@ class GameConsumer(WebsocketConsumer):
         # All required information is present, so extract remaining info from the dictionary.
         vote_info = proposal_info.get("proposal_vote_info")
         was_maeved = proposal_info.get("vote_maeved")
-        last_proposal_number = self.game.current_proposal_num - 1
+        last_proposal_number = self.game.current_proposal_num
         if last_proposal_number < 1:
             last_proposal_number = 1
 

@@ -48,7 +48,7 @@ export class VoteHistoryTab extends TabComponent<VoteHistoryState> {
         const voteHistoryList = this.createVoteHistoryList(voteHistoryArray);
         const voteHistoryInfo = this.createVoteHistoryInfo(voteHistoryArray);
         return (
-            <Tab.Container 
+            <Tab.Container
                 id="vote-history"
                 defaultActiveKey={"#link" + voteHistoryArray.length}>
                 <Row>
@@ -74,10 +74,10 @@ export class VoteHistoryTab extends TabComponent<VoteHistoryState> {
         for (const voteResult of voteHistory) {
             count++;
             voteHistoryList.push(
-                <ListGroup.Item 
-                    action 
+                <ListGroup.Item
+                    action
                     href={"#link" + count}>
-                    {`Mission ${voteResult.missionNumber + 1}: Proposal ${voteResult.proposalNumber + 1}`}
+                    {`Mission ${ voteResult.missionNumber + 1 }: Proposal ${ voteResult.proposalNumber }`}
                 </ListGroup.Item>
             );
         }
@@ -115,7 +115,7 @@ export class VoteHistoryTab extends TabComponent<VoteHistoryState> {
      * Creates a string array of the form "PlayerName: Vote"
      * @param voteInformation Object with player names as keys and their votes as values.
      */
-    private voteResultsToNamesAndVotes(voteInformation: {[key: string]: Vote | number}): JSX.Element[] {
+    private voteResultsToNamesAndVotes(voteInformation: { [key: string]: Vote | number }): JSX.Element[] {
         const playersAndVotes = [];
         let voteString = "";
         for (const playerName in voteInformation) {
@@ -148,7 +148,7 @@ export class VoteHistoryTab extends TabComponent<VoteHistoryState> {
         const data = message.data as VoteResultMessage;
         const currentHistory = this.state.voteHistory;
         currentHistory.push(data);
-        this.setState({voteHistory: currentHistory});
+        this.setState({ voteHistory: currentHistory });
     }
     //#endregion
 }
