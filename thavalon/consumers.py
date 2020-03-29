@@ -782,7 +782,7 @@ class GameConsumer(WebsocketConsumer):
         )
         self.send(response.serialize())
 
-    def use_ability(self, ability_message: Dict[str : Union[str, int]]) -> None:
+    def use_ability(self, ability_message: Dict[str, Union[str, int]]) -> None:
         """Takes ability data from the client and tries to activate an ability.
         If successful, will broadcaast this as a toast.
         
