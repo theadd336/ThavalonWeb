@@ -598,7 +598,7 @@ class Game:
             }
         return {"can_use_ability": False}
 
-    def set_ability_info(self, session_id: str) -> bool:
+    def set_ability_info(self, session_id: str, **kwargs) -> bool:
         if session_id not in self.session_id_to_player:
             raise ValueError("Given session id is not in game.")
         player = self.session_id_to_player[session_id]
