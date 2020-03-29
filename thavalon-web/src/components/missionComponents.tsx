@@ -13,6 +13,7 @@ interface MissionTabState {
     playersOnMission: string[]
     isOnMission: boolean
     playedCard?: Card
+    errorMessage?: string
 }
 
 interface SubmitMissionCardMessage {
@@ -85,6 +86,7 @@ export class MissionTab extends TabComponent<MissionTabState> {
         });
         return (
             <Container>
+                <span className="text-danger">{this.state.errorMessage}</span>
                 <Row>
                     {playersOnMissionSentence}
                 </Row>
@@ -177,8 +179,12 @@ export class MissionTab extends TabComponent<MissionTabState> {
         if (message.type !== IncomingMessageTypes.MissionInformation) {
             return;
         }
-        alert(message.errorMessage);
+        const newState = {
+            playedCard: undefined,
+            errorMessage: message.errorMessage
+        }
 
+        this.setState(newState);
     }
 
     private updateGamePhase(gamePhaseMessage: GamePhaseChangeMessage): void {
