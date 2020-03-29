@@ -326,3 +326,50 @@ class GamePhaseChangeResponse(Response):
     def _send_core(self, object_dict):
         object_dict["data"] = {"gamePhase": self.game_phase}
         return object_dict
+
+
+class AbilityInformationResponse(Response):
+    """Serializable class representing ability information."""
+    def __init__(
+        self,
+        description: str,
+        caption: str,
+        can_use_ability: bool,
+        needs_player_list: bool,
+        needs_vote_options: bool,
+        ability_timeout: int = None):
+
+    """Initializes the response object with message parameters.
+    
+    Parameters
+    ----------
+    description : str
+        Description of the ability
+    caption : str
+        Caption for the "Use Ability" button. If empty, "Use Ability" will be shown.
+    can_use_ability : bool
+        True if the ability can be used. False otherwise.
+    needs_player_list : bool
+        Does the ability need to allow selecting players.
+    needs_vote_options : bool
+        Does the ability need to allow selecting votes.
+    ability_timeout : int, optional
+       Timeout for how long the ability should be allowed to be used, by default None"""
+
+        super().__init__(OutgoingMessageTypes.AbilityInformationResponse.value, True)
+        self.description = description
+        self.caption = caption
+        self.can_use_ability = can_use_ability
+        self.needs_player_list = needs_player_list
+        self.needs_vote_options = needs_vote_options
+        self.ability_timeout = ability_timeout
+    
+    def _send_core(self, object_dict: Dict[str, Any]):
+        local_dict = dict()
+        local_dict["description"] = self.description
+        local_dict["caption"] = self.caption
+        local_dict["canUseAbility"] = self.can_use_ability
+        local_dict["needsPlayerList"] = self.needs_player_list
+        local_dict["needsVoteOptions"] = self.needs_vote_options
+        local_dict["abilityTimeout"] = self.ability_timeout
+

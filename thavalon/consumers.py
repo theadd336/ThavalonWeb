@@ -188,7 +188,7 @@ class GameConsumer(WebsocketConsumer):
             IncomingMessageTypes.PlayerOrder.value: self.send_player_order,
             IncomingMessageTypes.ProposalVoteInformationRequest.value: self.send_proposal_vote_info,
             IncomingMessageTypes.PlayCard.value: self.play_card,
-            IncomingMessageTypes.AbilityInformationRequest.value: self.no_op,
+            IncomingMessageTypes.AbilityInformationRequest.value: self.send_ability_information,
             IncomingMessageTypes.UseAbility.value: self.use_ability,
         }
 
@@ -763,12 +763,25 @@ class GameConsumer(WebsocketConsumer):
         game_phase = self.game.game_phase.value
         response = responses.GamePhaseChangeResponse(game_phase)
         self.send(response.serialize())
+        self.send_ability_information(None)
 
     def no_op(self, _):
         pass
 
-    async def send_ability_information(self, _) -> None:
-        ability_information = await self.game.placeholder(self.player_id)
+    def send_ability_information(self, _: Any) -> None:
+        """Sends ability related information to the client.
+        
+        Parameters
+        ----------
+        _ : Any
+            Unused
+        """
+        is_maeve = self.game.placeholder(self.player_id)
+        response = responses.AbilityInformationResponse(
+            "You are Maeve", "Obscure", True, False, False
+        )
+        self.send(response.serialize())
 
-    def use_ability(self):
-        pass
+    def use_ability(self, ability_message):
+        print("Ability used")
+

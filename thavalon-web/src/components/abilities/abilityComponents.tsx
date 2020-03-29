@@ -19,6 +19,7 @@ interface AbilityUIProps extends WebSocketProp {
  */
 interface AbilityUIState {
     description: string;
+    caption: string;
     canUseAbility: boolean;
     hasUsedAbility: boolean;
     needsPlayerList: boolean;
@@ -31,6 +32,7 @@ interface AbilityUIState {
  */
 interface AbilityInformationMessage {
     description: string;
+    caption: string;
     canUseAbility: boolean;
     needsPlayerList: boolean;
     needsVoteOptions: boolean;
@@ -38,6 +40,7 @@ interface AbilityInformationMessage {
 }
 
 interface AdditionalAbilityProps {
+    caption: string;
     playerOrder: string[];
     needsPlayerList: boolean;
     needsVoteOptions: boolean;
@@ -61,6 +64,7 @@ export class AbilityUI extends React.Component<AbilityUIProps, AbilityUIState> {
         super(props);
         this.state = {
             description: "",
+            caption: "Use Ability",
             canUseAbility: false,
             hasUsedAbility: false,
             needsPlayerList: false,
@@ -76,7 +80,7 @@ export class AbilityUI extends React.Component<AbilityUIProps, AbilityUIState> {
      * Renders the component with applicable information.
      */
     render(): JSX.Element | null {
-        const { description, canUseAbility, hasUsedAbility, abilityTimeout, needsVoteOptions, needsPlayerList } = this.state;
+        const { description, caption, canUseAbility, hasUsedAbility, abilityTimeout, needsVoteOptions, needsPlayerList } = this.state;
         let additionalInformation = "";
         let additionalComponent: JSX.Element
 
@@ -89,6 +93,7 @@ export class AbilityUI extends React.Component<AbilityUIProps, AbilityUIState> {
         } else {
             additionalComponent = (
                 <AdditionalAbilityComponent
+                    caption={caption}
                     playerOrder={this.props.playerOrder}
                     needsPlayerList={needsPlayerList}
                     needsVoteOptions={needsVoteOptions}
@@ -212,7 +217,7 @@ class AdditionalAbilityComponent extends React.Component<AdditionalAbilityProps,
         }
 
         return (
-            <Container>
+            <Container fluid>
                 <Row>
                     <Col>
                         {playerList}
@@ -225,7 +230,7 @@ class AdditionalAbilityComponent extends React.Component<AdditionalAbilityProps,
                     <Button
                         type="button"
                         onClick={() => this.props.callback(this.state.player, this.state.vote)}>
-                        Use Ability
+                        {this.props.caption}
                     </Button>
                 </Row>
             </Container>
