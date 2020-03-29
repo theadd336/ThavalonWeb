@@ -162,7 +162,7 @@ export class MissionTab extends TabComponent<MissionTabState> {
             playedCard: card
         }
         this.sendMessage(message);
-        this.setState({ playedCard: card });
+        this.forceUpdate();
     }
 
     protected receiveSuccessfulMessage(_: object, message: IncomingMessage): void {
@@ -171,6 +171,14 @@ export class MissionTab extends TabComponent<MissionTabState> {
         } else if (message.type === IncomingMessageTypes.GamePhaseChange) {
             this.updateGamePhase(message.data as GamePhaseChangeMessage)
         }
+    }
+
+    protected receiveErrorMessage(_: object, message: IncomingMessage): void {
+        if (message.type !== IncomingMessageTypes.MissionInformation) {
+            return;
+        }
+        alert(message.errorMessage);
+
     }
 
     private updateGamePhase(gamePhaseMessage: GamePhaseChangeMessage): void {

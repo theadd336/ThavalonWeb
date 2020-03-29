@@ -292,9 +292,16 @@ class MoveToVoteResponse(Response):
 
 class MissionInfoResponse(Response):
     def __init__(
-        self, game_phase: int, players_on_mission: List[str], isOnMission: bool
+        self,
+        game_phase: int,
+        players_on_mission: List[str],
+        isOnMission: bool,
+        success=True,
+        error_message="",
     ):
-        super().__init__(OutgoingMessageTypes.MissionInformation.value, True)
+        super().__init__(
+            OutgoingMessageTypes.MissionInformation.value, success, error_message
+        )
         self.game_phase = game_phase
         self.players_on_mission = players_on_mission
         self.isOnMission = isOnMission

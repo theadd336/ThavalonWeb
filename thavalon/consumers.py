@@ -688,8 +688,10 @@ class GameConsumer(WebsocketConsumer):
                 self.player_id, MissionCard(card_played)
             )
         except ValueError as e:
-            # TODO: Handle this error better.
-            print(e)
+            error_response = responses.MissionInfoResponse(
+                GamePhase.MISSION.value, [], True, success=False, error_message=str(e)
+            )
+            self.send(error_response.serialize())
             return
 
         # If the mission phase has ended, tell all consumers that fact.
