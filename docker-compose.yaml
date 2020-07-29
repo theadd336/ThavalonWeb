@@ -1,0 +1,13 @@
+---
+version: '3'
+
+services:
+    api:
+        container_name: thavalon-api
+        build:
+            context: .
+            dockerfile: Dockerfile.local
+        ports:
+        - "127.0.0.1:6543:6543"
+        volumes:
+        - .:/app
