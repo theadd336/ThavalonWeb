@@ -16,11 +16,6 @@ pub struct Game {
     players: Players,
     info: HashMap<PlayerId, String>,
     proposal_order: Vec<PlayerId>,
-
-    /// State machine for game progression
-    state: GameState,
-
-    /// Convenience reference to the GameSpec
     spec: &'static GameSpec
 }
 
@@ -34,7 +29,7 @@ impl Game {
 
         names.shuffle(&mut rng);
         let mut players = Players::new();
-        for (id, (role, name)) in good_roles.into_iter().chain(evil_roles.into_iter()).cloned().zip(names.into_iter()).enumerate() {
+        for (id, (role, name)) in good_roles.chain(evil_roles).cloned().zip(names.into_iter()).enumerate() {
             players.add_player(Player {
                 id,
                 role,
@@ -55,7 +50,6 @@ impl Game {
             players,
             info,
             proposal_order,
-            state: GameState::Pregame,
             spec,
         }
     }
@@ -73,7 +67,7 @@ pub struct Player {
 }
 
 /// A collection of players, indexed in various useful ways.
-struct Players {
+pub struct Players {
     players: HashMap<PlayerId, Player>,
     roles: HashMap<Role, PlayerId>,
     good_players: Vec<PlayerId>,
@@ -164,13 +158,3 @@ static FIVE_PLAYER: GameSpec = GameSpec {
     ],
     good_players: 3,
 };
-
-
-enum GameState {
-    Pregame,
-    Proposing,
-    Voting,
-    Mission,
-    Assassination,
-    Postgame
-}
