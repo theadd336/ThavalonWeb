@@ -9,7 +9,7 @@ use tokio::stream::StreamMap;
 
 use super::{Game, PlayerId};
 
-struct GameRunner {
+pub struct GameRunner {
     game: Game,
     
     /// Receivers for messages from players
@@ -20,7 +20,24 @@ struct GameRunner {
 }
 
 impl GameRunner {
-    async fn run(&mut self) {
+    pub fn new(game: Game) -> (GameRunner, HashMap<PlayerId, (mpsc::Sender<PlayerMessage>, mpsc::Receiver<GameMessage>)>) {
+        let mut player_rx = StreamMap::new();
+        let mut player_tx = HashMap::new();
+        let mut handles = HashMap::new();
+        for player in game.player_info.keys() {
+            let (ptx, prx) = mpsc::channel(10);
+            player_rx.insert(*player, prx);
+
+            let (gtx, grx) = mpsc::channel(10);
+            player_tx.insert(*player, gtx);
+
+            handles.insert(*player, (ptx, grx));
+        }
+
+        (GameRunner { game, player_rx, player_tx }, handles)
+    }
+
+    pub async fn run(&mut self) {
         info!("Starting game");
 
         for info in self.game.player_info.values() {
