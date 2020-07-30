@@ -5,18 +5,16 @@ use std::collections::HashMap;
 use rand::prelude::*;
 
 pub mod runner;
-mod model;
+mod role;
 
-pub use self::model::*;
+pub use self::role::*;
 
 /// Key for identifying a player in the game. Cheaper to copy and move around than a String
 pub type PlayerId = usize;
 
 pub struct Game {
-    /// Static information about each player
-    player_info: HashMap<PlayerId, PlayerInfo>,
-
-    /// Proposal / seating order
+    players: Players,
+    info: HashMap<PlayerId, String>,
     proposal_order: Vec<PlayerId>,
 
     /// State machine for game progression
@@ -27,48 +25,39 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn roll(mut players: Vec<String>) -> Game {
-        let spec = GameSpec::for_players(players.len());
+    pub fn roll(mut names: Vec<String>) -> Game {
+        let spec = GameSpec::for_players(names.len());
         let mut rng = thread_rng();
 
         let good_roles = spec.good_roles.choose_multiple(&mut rng, spec.good_players);
-        let evil_roles = spec.evil_roles.choose_multiple(&mut rng, players.len() - spec.good_players);
+        let evil_roles = spec.evil_roles.choose_multiple(&mut rng, names.len() - spec.good_players);
 
-        players.shuffle(&mut rng);
-        let mut infos = HashMap::with_capacity(players.len());
-        let mut iter = players.into_iter().enumerate();
-        
-        for good_role in good_roles.into_iter() {
-            let (player_id, name) = iter.next().unwrap();
-            infos.insert(player_id, PlayerInfo {
-                name,
-                role: *good_role,
-                information: String::new()
+        names.shuffle(&mut rng);
+        let mut players = Players::new();
+        for (id, (role, name)) in good_roles.into_iter().chain(evil_roles.into_iter()).cloned().zip(names.into_iter()).enumerate() {
+            players.add_player(Player {
+                id,
+                role,
+                name
             });
         }
 
-        for evil_role in evil_roles.into_iter() {
-            let (player_id, name) = iter.next().unwrap();
-            infos.insert(player_id, PlayerInfo {
-                name,
-                role: *evil_role,
-                information: String::new()
-            });
+        let mut info = HashMap::with_capacity(players.len());
+        for player in players.iter() {
+            info.insert(player.id, player.role.generate_info(&mut rng, player.id, &players));
         }
 
-        let mut proposal_order = infos.keys().cloned().collect::<Vec<_>>();
+
+        let mut proposal_order = info.keys().cloned().collect::<Vec<_>>();
         proposal_order.shuffle(&mut rng);
 
         Game {
-            player_info: infos,
+            players,
+            info,
             proposal_order,
             state: GameState::Pregame,
             spec,
         }
-    }
-
-    pub fn player_info(&self, id: PlayerId) -> &PlayerInfo {
-        &self.player_info[&id]
     }
 
     pub fn proposal_order(&self) -> &[PlayerId] {
@@ -77,12 +66,105 @@ impl Game {
 }
 
 /// Fixed information about a player, decided at startup
-pub struct PlayerInfo {
+pub struct Player {
+    pub id: PlayerId,
     pub name: String,
     pub role: Role,
-    /// Role-based information
-    pub information: String,
 }
+
+/// A collection of players, indexed in various useful ways.
+struct Players {
+    players: HashMap<PlayerId, Player>,
+    roles: HashMap<Role, PlayerId>,
+    good_players: Vec<PlayerId>,
+    evil_players: Vec<PlayerId>
+}
+
+impl Players {
+    fn new() -> Players {
+        Players {
+            players: HashMap::new(),
+            roles: HashMap::new(),
+            good_players: Vec::new(),
+            evil_players: Vec::new()
+        }
+    }
+
+    fn add_player(&mut self, player: Player) {
+        self.roles.insert(player.role, player.id);
+        if player.role.is_good() {
+            self.good_players.push(player.id);
+        } else {
+            self.evil_players.push(player.id);
+        }
+        self.players.insert(player.id, player);
+    }
+
+    fn get(&self, id: PlayerId) -> &Player {
+        &self.players[&id]
+    }
+
+    fn by_role(&self, role: Role) -> Option<&Player> {
+        self.roles.get(&role).map(|id| self.get(*id))
+    }
+
+    fn good_players(&self) -> &[PlayerId] {
+        self.good_players.as_slice()
+    }
+
+    fn evil_players(&self) -> &[PlayerId] {
+        self.evil_players.as_slice()
+    }
+
+    fn iter(&self) -> impl Iterator<Item=&Player> {
+        self.players.values()
+    }
+
+    fn len(&self) -> usize {
+        self.players.len()
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum Card {
+    Success,
+    Fail,
+    Reverse,
+}
+
+/// Game rules determined by the number of players
+#[derive(Debug, Clone)]
+pub struct GameSpec {
+    /// The number of players on each mission
+    pub mission_sizes: [usize; 5],
+    /// Allowed good roles in the game
+    pub good_roles: &'static [Role],
+    /// Allowed evil roles in the game
+    pub evil_roles: &'static [Role],
+    /// The number of players on the good team
+    pub good_players: usize,
+}
+
+impl GameSpec {
+    pub fn for_players(players: usize) -> &'static GameSpec {
+        match players {
+            5 => &FIVE_PLAYER,
+            _ => panic!("{}-player games not supported", players)
+        }
+    }
+}
+
+static FIVE_PLAYER: GameSpec = GameSpec {
+    mission_sizes: [2, 3, 2, 3, 3],
+    good_roles: &[
+        Role::Merlin, Role::Lancelot, Role::Percival, Role::Tristan, Role::Iseult,
+    ],
+    evil_roles: &[
+        Role::Mordred, Role::Morgana, Role::Maelegant
+    ],
+    good_players: 3,
+};
+
 
 enum GameState {
     Pregame,
