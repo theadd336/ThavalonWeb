@@ -1,6 +1,7 @@
 //! THavalon game logic
 
 use std::collections::HashMap;
+use std::ops::Index;
 
 use rand::prelude::*;
 
@@ -41,7 +42,6 @@ impl Game {
         for player in players.iter() {
             info.insert(player.id, player.role.generate_info(&mut rng, player.id, &players));
         }
-
 
         let mut proposal_order = info.keys().cloned().collect::<Vec<_>>();
         proposal_order.shuffle(&mut rng);
@@ -94,12 +94,12 @@ impl Players {
         self.players.insert(player.id, player);
     }
 
-    fn get(&self, id: PlayerId) -> &Player {
-        &self.players[&id]
+    fn by_role(&self, role: Role) -> Option<&Player> {
+        self.roles.get(&role).map(|id| &self[*id])
     }
 
-    fn by_role(&self, role: Role) -> Option<&Player> {
-        self.roles.get(&role).map(|id| self.get(*id))
+    fn has_role(&self, role: Role) -> bool {
+        self.roles.contains_key(&role)
     }
 
     fn good_players(&self) -> &[PlayerId] {
@@ -116,6 +116,14 @@ impl Players {
 
     fn len(&self) -> usize {
         self.players.len()
+    }
+}
+
+impl Index<PlayerId> for Players {
+    type Output = Player;
+
+    fn index(&self, player_id: usize) -> &Self::Output {
+        &self.players[&player_id]
     }
 }
 

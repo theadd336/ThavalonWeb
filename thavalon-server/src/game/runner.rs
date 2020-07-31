@@ -48,7 +48,7 @@ impl GameRunner {
         info!("Starting game");
 
         for player in self.game.players.iter() {
-            info!("{} is {:?}", player.name, player.role);
+            info!("{} is {:?}\n{}", player.name, player.role, self.game.info[&player.id]);
         }
 
         loop {
