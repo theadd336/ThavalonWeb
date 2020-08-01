@@ -29,7 +29,7 @@ type PlayerChannels = (mpsc::Sender<Action>, mpsc::Receiver<Message>);
 impl GameRunner {
     pub fn launch(players: Vec<(PlayerId, String)>) -> HashMap<PlayerId, PlayerChannels> {
         let game = Game::roll(players);
-        let (runner, channels) = GameRunner::new(game);
+        let (mut runner, channels) = GameRunner::new(game);
         tokio::spawn(async move {
             runner.run().await
         });
