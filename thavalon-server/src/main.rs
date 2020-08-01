@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use fern::colors::{Color, ColoredLevelConfig};
 use tokio::stream::StreamExt;
 
