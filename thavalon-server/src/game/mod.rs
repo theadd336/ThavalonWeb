@@ -5,9 +5,9 @@ use std::ops::Index;
 
 use rand::prelude::*;
 
-pub mod runner;
 mod role;
 mod state;
+pub mod runner;
 
 pub use self::role::*;
 pub use self::runner::{GameRunner, ControlRequest, ControlResponse};
@@ -19,7 +19,7 @@ pub struct Game {
     players: Players,
     info: HashMap<PlayerId, String>,
     proposal_order: Vec<PlayerId>,
-    spec: &'static GameSpec
+    spec: &'static GameSpec,
 }
 
 impl Game {
@@ -27,23 +27,23 @@ impl Game {
         let spec = GameSpec::for_players(names.len());
         let mut rng = thread_rng();
 
-
         let good_roles = spec.good_roles.choose_multiple(&mut rng, spec.good_players);
-        let evil_roles = spec.evil_roles.choose_multiple(&mut rng, names.len() - spec.good_players);
+        let evil_roles = spec
+            .evil_roles
+            .choose_multiple(&mut rng, names.len() - spec.good_players);
 
         names.shuffle(&mut rng);
         let mut players = Players::new();
         for (role, (id, name)) in good_roles.chain(evil_roles).cloned().zip(names.into_iter()) {
-            players.add_player(Player {
-                id,
-                role,
-                name
-            });
+            players.add_player(Player { id, role, name });
         }
 
         let mut info = HashMap::with_capacity(players.len());
         for player in players.iter() {
-            info.insert(player.id, player.role.generate_info(&mut rng, player.id, &players));
+            info.insert(
+                player.id,
+                player.role.generate_info(&mut rng, player.id, &players),
+            );
         }
 
         let mut proposal_order = info.keys().cloned().collect::<Vec<_>>();
@@ -89,7 +89,7 @@ pub struct Players {
     players: HashMap<PlayerId, Player>,
     roles: HashMap<Role, PlayerId>,
     good_players: Vec<PlayerId>,
-    evil_players: Vec<PlayerId>
+    evil_players: Vec<PlayerId>,
 }
 
 impl Players {
@@ -98,7 +98,7 @@ impl Players {
             players: HashMap::new(),
             roles: HashMap::new(),
             good_players: Vec::new(),
-            evil_players: Vec::new()
+            evil_players: Vec::new(),
         }
     }
 
@@ -128,7 +128,7 @@ impl Players {
         self.evil_players.as_slice()
     }
 
-    fn iter(&self) -> impl Iterator<Item=&Player> {
+    fn iter(&self) -> impl Iterator<Item = &Player> {
         self.players.values()
     }
 
@@ -169,7 +169,7 @@ impl GameSpec {
     pub fn for_players(players: usize) -> &'static GameSpec {
         match players {
             5 => &FIVE_PLAYER,
-            _ => panic!("{}-player games not supported", players)
+            _ => panic!("{}-player games not supported", players),
         }
     }
 
@@ -181,10 +181,12 @@ impl GameSpec {
 static FIVE_PLAYER: GameSpec = GameSpec {
     mission_sizes: [2, 3, 2, 3, 3],
     good_roles: &[
-        Role::Merlin, Role::Lancelot, Role::Percival, Role::Tristan, Role::Iseult,
+        Role::Merlin,
+        Role::Lancelot,
+        Role::Percival,
+        Role::Tristan,
+        Role::Iseult,
     ],
-    evil_roles: &[
-        Role::Mordred, Role::Morgana, Role::Maelegant
-    ],
+    evil_roles: &[Role::Mordred, Role::Morgana, Role::Maelegant],
     good_players: 3,
 };

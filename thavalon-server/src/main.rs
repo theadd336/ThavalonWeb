@@ -3,7 +3,9 @@
 use fern::colors::{Color, ColoredLevelConfig};
 use tokio::stream::StreamExt;
 
+mod connections;
 mod game;
+mod lobbies;
 
 use self::game::{GameRunner, ControlRequest};
 
@@ -49,5 +51,5 @@ async fn main() {
     game_tx.send(ControlRequest::StartGame).await.unwrap();
     game_rx.next().await.unwrap();
     
-    println!("Hello, world!");
+    connections::serve_connections().await;
 }
