@@ -13,7 +13,9 @@ use super::{Game, PlayerId, Card};
 use super::role::Role;
 use super::state::{GameState, Effect};
 
+/// Task for running a THavalon game
 pub struct GameRunner {
+    // Channels for setup / game state management unrelated to gameplay
     control_rx: mpsc::Receiver<ControlRequest>,
     control_tx: mpsc::Sender<ControlResponse>,
     
@@ -22,10 +24,6 @@ pub struct GameRunner {
 
     /// Senders for each player 
     message_senders: HashMap<PlayerId, mpsc::Sender<Message>>,
-
-    // Current game state. This is an Option because, while processing an action, we move the state out of GameRunner.
-    // It's illegal to leave the state field invalid, so we replace it with None instead.
-    //state: Option<GameState>,
 }
 
 type PlayerChannels = (mpsc::Sender<Action>, mpsc::Receiver<Message>);
@@ -66,6 +64,7 @@ impl GameRunner {
                     info!("{} joined as player #{}", name, id);
                     players.push((id, name));
 
+                    // Each player needs 2 channels: 1 to send Actions and one to receive Messages
                     let (action_tx, action_rx) = mpsc::channel(10);
                     self.actions.insert(id, action_rx);
 

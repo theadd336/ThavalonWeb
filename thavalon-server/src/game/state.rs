@@ -6,6 +6,9 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
+use itertools;
+use log::debug;
+
 use super::{Game, PlayerId};
 use super::runner::{Action, Message};
 
@@ -40,6 +43,7 @@ impl GameState {
             proposal: 0,
             proposer: first_proposer,
         });
+        debug!("Starting game. {} and {} are proposing first", first_proposer, game.proposal_order[game.size() - 1]);
         (state, effects)
     }
 
@@ -62,6 +66,7 @@ impl GameState {
                     (GameState::Proposing(prop), vec![effect])
                 } else {
                     // TODO: check no duplicate players
+                    debug!("{} proposed {} for mission {}", proposer, itertools::join(&players, ", "), prop.mission);
                     let voting = GameState::Voting(Voting::from_proposal(prop, players.clone()));
                     (voting, vec![Effect::Broadcast(Message::CommenceVoting { proposal: players })])
                 }
@@ -77,6 +82,7 @@ impl GameState {
                     Entry::Occupied(_) => (GameState::Voting(vote), vec![Effect::error_to(player, "You already voted on this mission")]),
                     Entry::Vacant(entry) => {
                         entry.insert(upvote);
+                        debug!("{} {} for proposal", player, if upvote { "upvoted" } else { "downvoted" });
                         if vote.votes.len() == game.size() {
                             let mut upvotes = Vec::new();
                             let mut downvotes = Vec::new();
@@ -98,8 +104,10 @@ impl GameState {
                             };
 
                             if sent {
+                                debug!("Sending {} on mission {} with {} upvotes", itertools::join(&vote.players, ", "), vote.mission, upvotes.len());
                                 (GameState::Mission, vec![Effect::Broadcast(voting_results)])
                             } else {
+                                debug!("Did not send the proposal");
                                 let next_proposer = game.next_proposer(vote.proposer);
                                 let next_state = GameState::Proposing(Proposing {
                                     mission: vote.mission,
