@@ -1,8 +1,9 @@
 use fern::colors::{Color, ColoredLevelConfig};
+use tokio::stream::StreamExt;
 
 mod game;
 
-use self::game::GameRunner;
+use self::game::{GameRunner, ControlRequest};
 
 fn setup_logger() -> Result<(), fern::InitError> {
     let colors = ColoredLevelConfig::new()
@@ -30,14 +31,21 @@ fn setup_logger() -> Result<(), fern::InitError> {
 async fn main() {
     setup_logger().expect("Could not set up logging");
 
-    let channels = GameRunner::launch(vec![
+    let (mut game_tx, mut game_rx) = GameRunner::spawn();
+    let players = vec![
         (10, "Ben".to_string()),
         (20, "Paul".to_string()),
         (30, "Jared".to_string()),
         (40, "Andrew".to_string()),
         (50, "Galen".to_string())
-    ]);
-    // do stuff with channels
-
+    ];
+    let mut responses = vec![];
+    for (id, name) in players.into_iter() {
+        game_tx.send(ControlRequest::AddPlayer { id, name }).await.unwrap();
+        responses.push(game_rx.next().await.unwrap());
+    }
+    game_tx.send(ControlRequest::StartGame).await.unwrap();
+    game_rx.next().await.unwrap();
+    
     println!("Hello, world!");
 }

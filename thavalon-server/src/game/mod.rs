@@ -10,7 +10,7 @@ mod role;
 mod state;
 
 pub use self::role::*;
-pub use self::runner::GameRunner;
+pub use self::runner::{GameRunner, ControlRequest, ControlResponse};
 
 /// Key for identifying a player in the game. Cheaper to copy and move around than a String
 pub type PlayerId = usize;
