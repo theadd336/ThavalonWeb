@@ -1,6 +1,8 @@
 use fern::colors::{Color, ColoredLevelConfig};
 
+mod connections;
 mod game;
+mod lobbies;
 
 use self::game::GameRunner;
 
@@ -29,15 +31,5 @@ fn setup_logger() -> Result<(), fern::InitError> {
 #[tokio::main]
 async fn main() {
     setup_logger().expect("Could not set up logging");
-
-    let channels = GameRunner::launch(vec![
-        (10, "Ben".to_string()),
-        (20, "Paul".to_string()),
-        (30, "Jared".to_string()),
-        (40, "Andrew".to_string()),
-        (50, "Galen".to_string())
-    ]);
-    // do stuff with channels
-
-    println!("Hello, world!");
+    connections::serve_connections().await;
 }
