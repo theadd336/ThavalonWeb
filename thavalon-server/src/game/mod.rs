@@ -59,6 +59,21 @@ impl Game {
     pub fn proposal_order(&self) -> &[PlayerId] {
         self.proposal_order.as_slice()
     }
+
+    /// Find the next player in proposal order after the given one.
+    pub fn next_proposer(&self, player: PlayerId) -> PlayerId {
+        let index = self.proposal_order.iter().position(|p| *p == player).unwrap();
+        if index == self.proposal_order.len() - 1 {
+            self.proposal_order[0]
+        } else {
+            self.proposal_order[index + 1]
+        }
+    }
+
+    /// The number of players in the game
+    pub fn size(&self) -> usize {
+        self.proposal_order.len()
+    }
 }
 
 /// Fixed information about a player, decided at startup
@@ -155,6 +170,10 @@ impl GameSpec {
             5 => &FIVE_PLAYER,
             _ => panic!("{}-player games not supported", players)
         }
+    }
+
+    pub fn mission_size(&self, mission: usize) -> usize {
+        self.mission_sizes[mission - 1]
     }
 }
 
