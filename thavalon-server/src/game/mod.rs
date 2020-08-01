@@ -7,6 +7,7 @@ use rand::prelude::*;
 
 pub mod runner;
 mod role;
+mod state;
 
 pub use self::role::*;
 pub use self::runner::GameRunner;
