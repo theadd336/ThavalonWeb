@@ -1,4 +1,4 @@
-use fern::colors::{ColoredLevelConfig, Color};
+use fern::colors::{Color, ColoredLevelConfig};
 
 mod game;
 
@@ -6,7 +6,6 @@ fn setup_logger() -> Result<(), fern::InitError> {
     let colors = ColoredLevelConfig::new()
         .info(Color::Green)
         .debug(Color::Cyan);
-    
     fern::Dispatch::new()
         .format(move |out, message, record| {
             out.finish(format_args!(
@@ -29,11 +28,19 @@ fn setup_logger() -> Result<(), fern::InitError> {
 async fn main() {
     setup_logger().expect("Could not set up logging");
 
-    let game = game::Game::roll(vec!["Ben".to_string(), "Paul".to_string(), "Jared".to_string(), "Andrew".to_string(), "Galen".to_string()]);
+    let game = game::Game::roll(vec![
+        "Ben".to_string(),
+        "Paul".to_string(),
+        "Jared".to_string(),
+        "Andrew".to_string(),
+        "Galen".to_string(),
+    ]);
     let (mut runner, _) = game::runner::GameRunner::new(game);
     tokio::spawn(async move {
         runner.run().await;
-    }).await.unwrap();
+    })
+    .await
+    .unwrap();
 
     println!("Hello, world!");
 }
