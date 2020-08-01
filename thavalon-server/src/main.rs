@@ -2,6 +2,8 @@ use fern::colors::{Color, ColoredLevelConfig};
 
 mod game;
 
+use self::game::GameRunner;
+
 fn setup_logger() -> Result<(), fern::InitError> {
     let colors = ColoredLevelConfig::new()
         .info(Color::Green)
@@ -28,19 +30,14 @@ fn setup_logger() -> Result<(), fern::InitError> {
 async fn main() {
     setup_logger().expect("Could not set up logging");
 
-    let game = game::Game::roll(vec![
-        "Ben".to_string(),
-        "Paul".to_string(),
-        "Jared".to_string(),
-        "Andrew".to_string(),
-        "Galen".to_string(),
+    let channels = GameRunner::launch(vec![
+        (10, "Ben".to_string()),
+        (20, "Paul".to_string()),
+        (30, "Jared".to_string()),
+        (40, "Andrew".to_string()),
+        (50, "Galen".to_string())
     ]);
-    let (mut runner, _) = game::runner::GameRunner::new(game);
-    tokio::spawn(async move {
-        runner.run().await;
-    })
-    .await
-    .unwrap();
+    // do stuff with channels
 
     println!("Hello, world!");
 }

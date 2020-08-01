@@ -27,6 +27,15 @@ pub struct GameRunner {
 type PlayerChannels = (mpsc::Sender<Action>, mpsc::Receiver<Message>);
 
 impl GameRunner {
+    pub fn launch(players: Vec<(PlayerId, String)>) -> HashMap<PlayerId, PlayerChannels> {
+        let game = Game::roll(players);
+        let (runner, channels) = GameRunner::new(game);
+        tokio::spawn(async move {
+            runner.run().await
+        });
+        channels
+    }
+
     pub fn new(game: Game) -> (GameRunner, HashMap<PlayerId, PlayerChannels>) {
         let mut actions = StreamMap::new();
         let mut message_senders = HashMap::new();
@@ -60,10 +69,12 @@ impl GameRunner {
                 },
                 None => {
                     warn!("All players disconnected!");
-                    return;
+                    break;
                 }
             }
         }
+
+        info!("Game ended");
     }
 
     /// Handles a single action by updating the GameState and handling any side-effects of the state transition.
@@ -156,16 +167,25 @@ impl GameState {
                     (GameState::Proposing(prop), effect)
                 } else {
                     // TODO: check no duplicate players
-                    let voting = GameState::Voting(Voting {
-                        mission: prop.mission,
-                        proposal: prop.proposal,
-                        proposer: prop.proposer,
-                        players: players.clone()
-                    });
+                    let voting = GameState::Voting(Voting::from_proposal(prop, players.clone()));
                     (voting, Effect::Broadcast(Message::CommenceVoting { proposal: players }))
                 }
             },
             st => (st, Effect::error_to(proposer, "You can't propose right now"))
+        }
+    }
+
+    fn on_vote(self, game: &Game, player: PlayerId, upvote: bool) -> (GameState, Effect) {
+        match self {
+            GameState::Voting(mut vote) => {
+                if vote.votes.contains_key(&player) {
+                    (GameState::Voting(vote), Effect::error_to(player, "You already voted on this mission"))
+                } else {
+                    vote.votes.insert(player, upvote);
+                    unimplemented!();
+                }
+            },
+            st => (st, Effect::error_to(player, "There's nothing to vote on"))
         }
     }
 }
@@ -184,7 +204,23 @@ struct Voting {
     mission: usize,
     proposal: usize,
     proposer: PlayerId,
-    players: Vec<PlayerId>
+    players: Vec<PlayerId>,
+
+    /// Tracks how each player voted. true = upvote, false = downvote
+    // TODO: questing beast
+    votes: HashMap<PlayerId, bool>,
+}
+
+impl Voting {
+    fn from_proposal(prop: Proposing, players: Vec<PlayerId>) -> Voting {
+        Voting {
+            mission: prop.mission,
+            proposal: prop.proposal,
+            proposer: prop.proposer,
+            players,
+            votes: HashMap::new()
+        }
+    }
 }
 
 #[derive(Error, Debug)]

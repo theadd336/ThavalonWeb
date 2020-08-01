@@ -9,6 +9,7 @@ pub mod runner;
 mod role;
 
 pub use self::role::*;
+pub use self::runner::GameRunner;
 
 /// Key for identifying a player in the game. Cheaper to copy and move around than a String
 pub type PlayerId = usize;
@@ -21,16 +22,17 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn roll(mut names: Vec<String>) -> Game {
+    pub fn roll(mut names: Vec<(PlayerId, String)>) -> Game {
         let spec = GameSpec::for_players(names.len());
         let mut rng = thread_rng();
+
 
         let good_roles = spec.good_roles.choose_multiple(&mut rng, spec.good_players);
         let evil_roles = spec.evil_roles.choose_multiple(&mut rng, names.len() - spec.good_players);
 
         names.shuffle(&mut rng);
         let mut players = Players::new();
-        for (id, (role, name)) in good_roles.chain(evil_roles).cloned().zip(names.into_iter()).enumerate() {
+        for (role, (id, name)) in good_roles.chain(evil_roles).cloned().zip(names.into_iter()) {
             players.add_player(Player {
                 id,
                 role,
