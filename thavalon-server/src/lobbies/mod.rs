@@ -1,3 +1,7 @@
+//! Module containing structs and functions for lobby-related activities.
+//! Handles lobby creation and destruction, game creation, lobby statuses, and logging.
+//! This module may change drastically.
+
 use crate::game::{GameRunner, PlayerId};
 use lazy_static::lazy_static;
 use log::{error, info, warn};
@@ -9,15 +13,20 @@ use uuid::Uuid;
 mod errors;
 
 lazy_static! {
+    /// Instance of a thread-safe HashMap used for managing lobbies.
     static ref LOBBY_MANAGER: RwLock<HashMap<String, Lobby>> = RwLock::new(HashMap::new());
 }
 
+//#region Structs and Enums
+/// Enum representing various lobby statuses
 enum LobbyStatus {
     Open,
     InProgress,
     Done,
 }
 
+/// Represents a single lobby. A lobby will have a unique game, status, and players.
+/// Creation time is used to track how long the lobby has been around and delete it if it is stale.
 struct Lobby {
     game: Option<GameRunner>,
     status: LobbyStatus,
@@ -38,6 +47,10 @@ impl Lobby {
     }
 }
 
+//#endregion
+
+//#region Public Functions
+/// Creates a new lobby for the game.
 pub async fn create_new_lobby() -> Result<String, errors::LobbyError> {
     let lobbies = &mut LOBBY_MANAGER.write().unwrap();
     let lobby_id = Uuid::new_v4().to_string()[..6].to_string();
@@ -46,11 +59,15 @@ pub async fn create_new_lobby() -> Result<String, errors::LobbyError> {
     return Ok(lobby_id);
 }
 
+/// Checks if a given lobby exists.
 pub async fn does_lobby_exist(lobby_id: &String) -> bool {
     return LOBBY_MANAGER.read().unwrap().contains_key(lobby_id);
 }
 
+/// Instructs the lobby to start the game and changes statuses accordingly.
 pub async fn start_game(lobby_id: &str) {}
+
+//#endregion
 
 //#region Unit Tests
 #[cfg(test)]

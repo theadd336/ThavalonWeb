@@ -1,3 +1,7 @@
+//! Module handling all connections to clients, including REST and Web Sockets.
+//! The module will handle requests and interface between the clients and game/lobby as needed.
+
+//#region Modules and Use Statements
 mod paths;
 mod rest_handlers;
 mod websockets;
@@ -7,7 +11,11 @@ use std::convert::Infallible;
 use std::sync::{Arc, Mutex};
 use warp::{self, Filter, Rejection, Reply};
 use websockets::PlayerClients;
+//#endregion
 
+/// Main entry point. Serves all warp connections and paths.
+/// This function does not return unless warp crashes (bad),
+/// or the server is being shut down.
 pub async fn serve_connections() {
     let create_new_lobby = warp::path(CREATE_NEW_LOBBY_PATH)
         .and(warp::post())
@@ -24,6 +32,7 @@ pub async fn serve_connections() {
     warp::serve(all_routes).run(([0, 0, 0, 0], 8001)).await;
 }
 
+/// Moves a new reference to the connected_players list into the WS register filter.
 fn with_clients(
     connected_players: PlayerClients,
 ) -> impl Filter<Extract = (PlayerClients,), Error = Infallible> + Clone {
