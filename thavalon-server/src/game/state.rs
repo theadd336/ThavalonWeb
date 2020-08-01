@@ -21,6 +21,29 @@ pub enum GameState {
 }
 
 impl GameState {
+    /// Start the game. Can only be called from the pre-game state
+    pub fn on_start_game(self, game: &Game) -> (GameState, Vec<Effect>) {
+        if self != GameState::Pregame {
+            // TODO: indicate the error
+            return (self, vec![]);
+        }
+
+        let effects = game.players.iter().map(|player| {
+            let info = &game.info[&player.id];
+            Effect::Send(player.id, Message::RoleInformation { role: player.role, information: info.clone() })
+        }).collect();
+
+        // Last 2 players in proposal order propose the first mission
+        let first_proposer = game.proposal_order[game.size() - 2];
+        let state = GameState::Proposing(Proposing {
+            mission: 1,
+            proposal: 0,
+            proposer: first_proposer,
+        });
+        (state, effects)
+    }
+
+    /// Update the game state based on a player action
     pub fn on_action(self, game: &Game, from: PlayerId, action: Action) -> (GameState, Vec<Effect>) {
         match action {
             Action::Propose { players } => self.on_proposal(game, from, players),

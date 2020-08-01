@@ -10,6 +10,7 @@ use tokio::sync::mpsc;
 use tokio::stream::{StreamMap, StreamExt};
 
 use super::{Game, PlayerId, Card};
+use super::role::Role;
 use super::state::{GameState, Effect};
 
 pub struct GameRunner {
@@ -96,22 +97,15 @@ impl GameRunner {
             info!("{} is {:?}\n{}", player.name, player.role, game.info[&player.id]);
         }
 
-        let mut state = GameState::Pregame;
+        let (mut state, effects) = GameState::Pregame.on_start_game(&game);
+        self.apply_effects(effects).await;
 
         loop {
             match self.actions.next().await {
                 Some((player, action)) => {
                     let (next_state, effects) = state.on_action(&game, player, action);
                     state = next_state;
-                    for effect in effects.into_iter() {
-                        let result = match effect {
-                            Effect::Send(to, message) => self.send(to, message).await,
-                            Effect::Broadcast(message) => self.broadcast(message).await,            
-                        };
-                        if let Err(err) = result {
-                            error!("Handling effect for action failed: {}", err);
-                        }
-                    }
+                    self.apply_effects(effects).await;
                 },
                 None => {
                     warn!("All players disconnected!");
@@ -121,6 +115,18 @@ impl GameRunner {
         }
 
         info!("Game ended");
+    }
+
+    async fn apply_effects(&mut self, effects: Vec<Effect>) {
+        for effect in effects.into_iter() {
+            let result = match effect {
+                Effect::Send(to, message) => self.send(to, message).await,
+                Effect::Broadcast(message) => self.broadcast(message).await,            
+            };
+            if let Err(err) = result {
+                error!("Handling effect failed: {}", err);
+            }
+        }
     }
 
     /// Send a Message to a single player
@@ -173,15 +179,26 @@ pub enum Action {
 /// A message from the game to a player
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Message {
+    /// Error message, usually when a player does something wrong
     Error(String),
 
+    /// Sends the player their role and information
+    RoleInformation { role: Role, information: String },
+
+    /// Announces that a new player is proposing
     NextProposal { player: PlayerId },
+
+    /// Announcing that it's time to vote for a proposal
     CommenceVoting { proposal: Vec<PlayerId> },
+
+    /// Announces the results of a vote
     VotingResults {
         upvotes: Vec<PlayerId>,
         downvotes: Vec<PlayerId>,
         sent: bool,
     },
+
+    /// Announces the results of a mission going
     MissionResults {
         successes: usize,
         fails: usize,
