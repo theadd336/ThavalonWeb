@@ -15,6 +15,12 @@ pub use self::runner::{GameRunner, ControlRequest, ControlResponse};
 /// Key for identifying a player in the game. Cheaper to copy and move around than a String
 pub type PlayerId = usize;
 
+/// A mission number (from 1 to 5)
+pub type MissionNumber = u8;
+
+/// A proposal number (starts at 0)
+pub type ProposalNumber = u8;
+
 pub struct Game {
     players: Players,
     info: HashMap<PlayerId, String>,
@@ -27,10 +33,10 @@ impl Game {
         let spec = GameSpec::for_players(names.len());
         let mut rng = thread_rng();
 
-        let good_roles = spec.good_roles.choose_multiple(&mut rng, spec.good_players);
+        let good_roles = spec.good_roles.choose_multiple(&mut rng, spec.good_players());
         let evil_roles = spec
             .evil_roles
-            .choose_multiple(&mut rng, names.len() - spec.good_players);
+            .choose_multiple(&mut rng, spec.evil_players());
 
         names.shuffle(&mut rng);
         let mut players = Players::new();
@@ -155,6 +161,8 @@ pub enum Card {
 /// Game rules determined by the number of players
 #[derive(Debug, Clone)]
 pub struct GameSpec {
+    /// Number of players in the game
+    pub players: u8,
     /// The number of players on each mission
     pub mission_sizes: [usize; 5],
     /// Allowed good roles in the game
@@ -162,7 +170,7 @@ pub struct GameSpec {
     /// Allowed evil roles in the game
     pub evil_roles: &'static [Role],
     /// The number of players on the good team
-    pub good_players: usize,
+    pub good_players: u8,
 }
 
 impl GameSpec {
@@ -173,12 +181,21 @@ impl GameSpec {
         }
     }
 
-    pub fn mission_size(&self, mission: usize) -> usize {
-        self.mission_sizes[mission - 1]
+    pub fn mission_size(&self, mission: MissionNumber) -> usize {
+        self.mission_sizes[mission as usize - 1]
+    }
+
+    pub fn good_players(&self) -> usize {
+        self.good_players as usize
+    }
+
+    pub fn evil_players(&self) -> usize {
+        (self.players - self.good_players) as usize
     }
 }
 
 static FIVE_PLAYER: GameSpec = GameSpec {
+    players: 5,
     mission_sizes: [2, 3, 2, 3, 3],
     good_roles: &[
         Role::Merlin,

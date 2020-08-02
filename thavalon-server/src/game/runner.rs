@@ -1,6 +1,6 @@
 //! Asynchronous engine for running THavalon games
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use log::{info, warn, error};
 use futures::future::{join_all, TryFutureExt};
@@ -9,7 +9,7 @@ use thiserror::Error;
 use tokio::sync::mpsc;
 use tokio::stream::{StreamMap, StreamExt};
 
-use super::{Game, PlayerId, Card};
+use super::{Game, PlayerId, Card, MissionNumber, ProposalNumber};
 use super::role::Role;
 use super::state::{GameState, Effect};
 
@@ -170,7 +170,7 @@ pub enum ControlResponse {
 /// Something the player tries to do
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Action {
-    Propose { players: Vec<PlayerId> },
+    Propose { players: HashSet<PlayerId> },
     Vote { upvote: bool },
     Play { card: Card }
 }
@@ -185,10 +185,18 @@ pub enum Message {
     RoleInformation { role: Role, information: String },
 
     /// Announces that a new player is proposing
-    NextProposal { player: PlayerId },
+    NextProposal { proposer: PlayerId, mission: MissionNumber, proposal: ProposalNumber, },
 
-    /// Announcing that it's time to vote for a proposal
-    CommenceVoting { proposal: Vec<PlayerId> },
+    /// Announces that a player made a proposal
+    ProposalMade {
+        proposer: PlayerId,
+        mission: MissionNumber,
+        proposal: ProposalNumber,
+        players: HashSet<PlayerId>
+    },
+
+    /// Announces that players should submit votes for the latest proposal.
+    CommenceVoting,
 
     /// Announces the results of a vote
     VotingResults {
