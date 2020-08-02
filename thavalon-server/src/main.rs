@@ -1,10 +1,13 @@
+#![allow(dead_code)]
+
 use fern::colors::{Color, ColoredLevelConfig};
+use tokio::stream::StreamExt;
 
 mod connections;
 mod game;
 mod lobbies;
 
-use self::game::GameRunner;
+use self::game::{GameRunner, ControlRequest};
 
 fn setup_logger() -> Result<(), fern::InitError> {
     let colors = ColoredLevelConfig::new()

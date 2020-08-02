@@ -3,15 +3,19 @@
 use std::collections::HashMap;
 
 use log::{info, warn, error};
+use futures::future::{join_all, TryFutureExt};
 use thiserror::Error;
 
 use tokio::sync::mpsc;
 use tokio::stream::{StreamMap, StreamExt};
 
 use super::{Game, PlayerId, Card};
+use super::role::Role;
+use super::state::{GameState, Effect};
 
 pub struct GameRunner {
-    game: Game,
+    control_rx: mpsc::Receiver<ControlRequest>,
+    control_tx: mpsc::Sender<ControlResponse>,
     
     /// Receivers for messages from players
     actions: StreamMap<PlayerId, mpsc::Receiver<Action>>,
@@ -19,53 +23,89 @@ pub struct GameRunner {
     /// Senders for each player 
     message_senders: HashMap<PlayerId, mpsc::Sender<Message>>,
 
-    /// Current game state. This is an Option because, while processing an action, we move the state out of GameRunner.
-    /// It's illegal to leave the state field invalid, so we replace it with None instead.
-    state: Option<GameState>,
+    // Current game state. This is an Option because, while processing an action, we move the state out of GameRunner.
+    // It's illegal to leave the state field invalid, so we replace it with None instead.
+    //state: Option<GameState>,
 }
 
 type PlayerChannels = (mpsc::Sender<Action>, mpsc::Receiver<Message>);
 
 impl GameRunner {
-    pub fn launch(players: Vec<(PlayerId, String)>) -> HashMap<PlayerId, PlayerChannels> {
-        let game = Game::roll(players);
-        let (mut runner, channels) = GameRunner::new(game);
+    /// Create a new GameRunner, returning it and its control channels
+    pub fn new() -> (GameRunner, mpsc::Sender<ControlRequest>, mpsc::Receiver<ControlResponse>) {
+        let (req_tx, req_rx) = mpsc::channel(1);
+        let (resp_tx, resp_rx) = mpsc::channel(1);
+
+        let runner = GameRunner {
+            control_rx: req_rx,
+            control_tx: resp_tx,
+
+            actions: StreamMap::new(),
+            message_senders: HashMap::new()
+        };
+        (runner, req_tx, resp_rx)
+    }
+
+    /// Asynchronously spawn a GameRunner, returning its control channels
+    pub fn spawn() -> (mpsc::Sender<ControlRequest>, mpsc::Receiver<ControlResponse>) {
+        let (mut game, req, resp) = GameRunner::new();
         tokio::spawn(async move {
-            runner.run().await
+            game.run().await;
         });
-        channels
+        (req, resp)
     }
 
-    pub fn new(game: Game) -> (GameRunner, HashMap<PlayerId, PlayerChannels>) {
-        let mut actions = StreamMap::new();
-        let mut message_senders = HashMap::new();
-        let mut handles = HashMap::new();
-        for player in game.players.iter() {
-            let (action_tx, action_rx) = mpsc::channel(10);
-            actions.insert(player.id, action_rx);
-
-            let (message_tx, message_rx) = mpsc::channel(10);
-            message_senders.insert(player.id, message_tx);
-
-            handles.insert(player.id, (action_tx, message_rx));
-        }
-
-        (GameRunner { game, actions, message_senders, state: Some(GameState::Pregame) }, handles)
-    }
-
+    /// Main game loop. Does not return until the game is over or a fatal error occurs.
     pub async fn run(&mut self) {
-        info!("Starting game");
+        info!("Waiting for players to join...");
 
-        for player in self.game.players.iter() {
-            info!("{} is {:?}\n{}", player.name, player.role, self.game.info[&player.id]);
+        let mut players = vec![];
+        loop {
+            match self.control_rx.next().await {
+                Some(ControlRequest::AddPlayer { id, name }) => {
+                    info!("{} joined as player #{}", name, id);
+                    players.push((id, name));
+
+                    let (action_tx, action_rx) = mpsc::channel(10);
+                    self.actions.insert(id, action_rx);
+
+                    let (message_tx, message_rx) = mpsc::channel(10);
+                    self.message_senders.insert(id, message_tx);
+
+                    if let Err(err) = self.control_tx.send(ControlResponse::PlayerAdded { id, actions: action_tx, messages: message_rx }).await {
+                        players.pop();
+                        self.actions.remove(&id);
+                        self.message_senders.remove(&id);
+                        error!("Could not send PlayerAdded notification for {}, removing player: {}", id, err);
+                    }
+                },
+                Some(ControlRequest::StartGame) => break,
+                None => {
+                    error!("Control channel closed");
+                    return;
+                }
+            }
         }
+
+        info!("Starting game!");
+        let game = Game::roll(players);
+        if let Err(err) = self.control_tx.send(ControlResponse::GameStarted { num_players: game.size() }).await {
+            error!("Could not send GameStarted notification: {}", err);
+        }
+
+        for player in game.players.iter() {
+            info!("{} is {:?}\n{}", player.name, player.role, game.info[&player.id]);
+        }
+
+        let (mut state, effects) = GameState::Pregame.on_start_game(&game);
+        self.apply_effects(effects).await;
 
         loop {
             match self.actions.next().await {
                 Some((player, action)) => {
-                    if let Err(e) = self.on_action(player, action).await {
-                        error!("Handling action failed: {}", e);
-                    }
+                    let (next_state, effects) = state.on_action(&game, player, action);
+                    state = next_state;
+                    self.apply_effects(effects).await;
                 },
                 None => {
                     warn!("All players disconnected!");
@@ -77,23 +117,56 @@ impl GameRunner {
         info!("Game ended");
     }
 
-    /// Handles a single action by updating the GameState and handling any side-effects of the state transition.
-    async fn on_action(&mut self, from: PlayerId, action: Action) -> Result<(), GameError> {
-        let (next_state, effect) = self.state.take().expect("Missing state").on_action(&self.game, from, action);
-        self.state = Some(next_state);
-        match effect {
-            Effect::Send(to, message) => self.send(to, message).await,
-            Effect::Broadcast(_) => unimplemented!(),
+    async fn apply_effects(&mut self, effects: Vec<Effect>) {
+        for effect in effects.into_iter() {
+            let result = match effect {
+                Effect::Send(to, message) => self.send(to, message).await,
+                Effect::Broadcast(message) => self.broadcast(message).await,            
+            };
+            if let Err(err) = result {
+                error!("Handling effect failed: {}", err);
+            }
         }
     }
 
+    /// Send a Message to a single player
     async fn send(&mut self, to: PlayerId, message: Message) -> Result<(), GameError> {
         match self.message_senders.get_mut(&to) {
             Some(tx) => tx.send(message).await.map_err(|_| GameError::PlayerUnavailable { id: to }),
             None => Err(GameError::PlayerUnavailable { id: to })
         }
     }
+
+    /// Send a message to every player
+    async fn broadcast(&mut self, message: Message) -> Result<(), GameError> {
+        // This uses join_all to send messages in parallel, then collects the Vec<Result> into a single Result
+        join_all(self.message_senders.iter_mut().map(|(&id, tx)| {
+            tx.send(message.clone()).map_err(move |_| GameError::PlayerUnavailable { id })
+        })).await.into_iter().collect()
+    }
 }
+
+/// Control request for the game runner (not gameplay-related, but for game setup/management)
+#[derive(Debug)]
+pub enum ControlRequest {
+    /// Adds a player to the game
+    AddPlayer { id: PlayerId, name: String },
+
+    /// Signals for the game to start. Players cannot be added after this point.
+    StartGame
+}
+
+/// Response to a control request
+#[derive(Debug)]
+pub enum ControlResponse {
+    /// Response to a player being added, containing gameplay-related communication channels for that player.
+    PlayerAdded { id: PlayerId, actions: mpsc::Sender<Action>, messages: mpsc::Receiver<Message> },
+
+    /// Confirmation that the game has started.
+    GameStarted { num_players: usize }
+}
+
+// Game-related messages
 
 /// Something the player tries to do
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -106,15 +179,26 @@ pub enum Action {
 /// A message from the game to a player
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Message {
+    /// Error message, usually when a player does something wrong
     Error(String),
 
+    /// Sends the player their role and information
+    RoleInformation { role: Role, information: String },
+
+    /// Announces that a new player is proposing
     NextProposal { player: PlayerId },
+
+    /// Announcing that it's time to vote for a proposal
     CommenceVoting { proposal: Vec<PlayerId> },
+
+    /// Announces the results of a vote
     VotingResults {
         upvotes: Vec<PlayerId>,
         downvotes: Vec<PlayerId>,
         sent: bool,
     },
+
+    /// Announces the results of a mission going
     MissionResults {
         successes: usize,
         fails: usize,
@@ -123,108 +207,9 @@ pub enum Message {
     }
 }
 
-// GameState uses this state machine pattern: https://www.reddit.com/r/rust/comments/b32eca/state_machine_implementation_questions_or_to_mut/eix2hxr/
-// Each transition consumes the current state and returns the new state and a side-effect. Consumption semantics are nice for state machines in Rust
-// (see https://hoverbear.org/blog/rust-state-machine-pattern). Returning an Effect lets us send updates back to the players without having to worry
-// about errors putting the state machine in an invalid state. Without this, it's hard to return a Result that doesn't leave us stateless on error.
-
-enum Effect {
-    Broadcast(Message),
-    Send(PlayerId, Message)
-}
-
-impl Effect {
-    /// Effect for sending `player` an error message.
-    fn error_to<S: Into<String>>(player: PlayerId, error: S) -> Effect {
-        Effect::Send(player, Message::Error(error.into()))
-    }
-}
-
-enum GameState {
-    Pregame,
-    Proposing(Proposing),
-    Voting(Voting),
-    Mission,
-    Assassination,
-    Postgame
-}
-
-impl GameState {
-    fn on_action(self, game: &Game, from: PlayerId, action: Action) -> (GameState, Effect) {
-        match action {
-            Action::Propose { players } => self.on_proposal(game, from, players),
-            _ => unimplemented!()
-        }
-    }
-
-    fn on_proposal(self, game: &Game, proposer: PlayerId, players: Vec<PlayerId>) -> (GameState, Effect) {
-        match self {
-            GameState::Proposing(prop) if prop.proposer != proposer => (GameState::Proposing(prop), Effect::error_to(proposer, "It's not your proposal")),
-            GameState::Proposing(prop) => {
-                let expected_size = game.spec.mission_sizes[prop.mission];
-                if players.len() != expected_size {
-                    let effect = Effect::error_to(proposer, format!("You proposed {} players, but mission {} needs {}", players.len(), prop.mission, expected_size));
-                    (GameState::Proposing(prop), effect)
-                } else {
-                    // TODO: check no duplicate players
-                    let voting = GameState::Voting(Voting::from_proposal(prop, players.clone()));
-                    (voting, Effect::Broadcast(Message::CommenceVoting { proposal: players }))
-                }
-            },
-            st => (st, Effect::error_to(proposer, "You can't propose right now"))
-        }
-    }
-
-    fn on_vote(self, game: &Game, player: PlayerId, upvote: bool) -> (GameState, Effect) {
-        match self {
-            GameState::Voting(mut vote) => {
-                if vote.votes.contains_key(&player) {
-                    (GameState::Voting(vote), Effect::error_to(player, "You already voted on this mission"))
-                } else {
-                    vote.votes.insert(player, upvote);
-                    unimplemented!();
-                }
-            },
-            st => (st, Effect::error_to(player, "There's nothing to vote on"))
-        }
-    }
-}
-
-/// Contents of GameState::Proposing
-struct Proposing {
-    /// Which mission this is for
-    mission: usize,
-    /// Which proposal number this is
-    proposal: usize,
-    /// Who's proposing the mission
-    proposer: PlayerId,
-}
-
-struct Voting {
-    mission: usize,
-    proposal: usize,
-    proposer: PlayerId,
-    players: Vec<PlayerId>,
-
-    /// Tracks how each player voted. true = upvote, false = downvote
-    // TODO: questing beast
-    votes: HashMap<PlayerId, bool>,
-}
-
-impl Voting {
-    fn from_proposal(prop: Proposing, players: Vec<PlayerId>) -> Voting {
-        Voting {
-            mission: prop.mission,
-            proposal: prop.proposal,
-            proposer: prop.proposer,
-            players,
-            votes: HashMap::new()
-        }
-    }
-}
-
 #[derive(Error, Debug)]
 pub enum GameError {
     #[error("Can't reach player {}", id)]
     PlayerUnavailable { id: PlayerId }
 }
+
