@@ -21,6 +21,7 @@ pub type MissionNumber = u8;
 /// A proposal number (starts at 0)
 pub type ProposalNumber = u8;
 
+#[derive(Debug, Clone)]
 pub struct Game {
     players: Players,
     info: HashMap<PlayerId, String>,
@@ -88,6 +89,7 @@ impl Game {
 }
 
 /// Fixed information about a player, decided at startup
+#[derive(Debug, Clone)]
 pub struct Player {
     pub id: PlayerId,
     pub name: String,
@@ -95,6 +97,7 @@ pub struct Player {
 }
 
 /// A collection of players, indexed in various useful ways.
+#[derive(Debug, Clone)]
 pub struct Players {
     players: HashMap<PlayerId, Player>,
     roles: HashMap<Role, PlayerId>,

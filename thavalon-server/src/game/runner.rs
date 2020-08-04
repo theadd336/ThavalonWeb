@@ -96,13 +96,13 @@ impl GameRunner {
             info!("{} is {:?}\n{}", player.name, player.role, game.info[&player.id]);
         }
 
-        let (mut state, effects) = GameState::Pregame.on_start_game(&game);
+        let (mut state, effects) = GameState::new(game).on_start_game();
         self.apply_effects(effects).await;
 
         loop {
             match self.actions.next().await {
                 Some((player, action)) => {
-                    let (next_state, effects) = state.on_action(&game, player, action);
+                    let (next_state, effects) = state.on_action(player, action);
                     state = next_state;
                     self.apply_effects(effects).await;
                 },

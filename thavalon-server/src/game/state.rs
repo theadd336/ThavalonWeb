@@ -10,136 +10,195 @@ use std::fmt;
 use itertools::Itertools;
 use log::debug;
 
-use super::{Game, PlayerId, MissionNumber, ProposalNumber};
+use super::{Game, PlayerId, Card, MissionNumber, ProposalNumber};
 use super::runner::{Action, Message};
 
-/// State machine for THavalon games
-#[derive(Debug, Eq, PartialEq)]
-pub enum GameState {
-    Pregame,
-    Proposing(Proposing),
-    Voting(Voting),
-    Mission,
-    Assassination,
-    Postgame
+/// State machine wrapper for THavalon games. Holds information needed throughout the game.ProposalNumber
+#[derive(Debug, Clone)]
+pub struct GameState {
+    game: Game,
+    phase: GamePhase,
 }
 
-// Idea: nested state machines, one for the overall game and one for each mission
-// cuts down on mission # tracking a bit?
-// Also an idea: make GameState own Game, instead of GameRunner
+#[derive(Debug, Clone, Eq, PartialEq)]
+enum GamePhase {
+    Pregame,
+    OnMission(Mission),
+    Assassination,
+    Postgame,
+}
 
 impl GameState {
+    pub fn new(game: Game) -> GameState {
+        GameState { game, phase: GamePhase::Pregame }
+    }
+
     /// Start the game. Can only be called from the pre-game state
-    pub fn on_start_game(self, game: &Game) -> (GameState, Vec<Effect>) {
-        if self != GameState::Pregame {
+    pub fn on_start_game(self) -> (GameState, Vec<Effect>) {
+        if self.phase != GamePhase::Pregame {
             // TODO: indicate the error
             return (self, vec![]);
         }
 
-        let effects = game.players.iter().map(|player| {
-            let info = &game.info[&player.id];
+        let mut effects: Vec<_> = self.game.players.iter().map(|player| {
+            let info = &self.game.info[&player.id];
             Effect::Send(player.id, Message::RoleInformation { role: player.role, information: info.clone() })
         }).collect();
 
         // Last 2 players in proposal order propose the first mission
-        let first_proposer = game.proposal_order[game.size() - 2];
-        let state = GameState::Proposing(Proposing {
+        let first = self.game.proposal_order[self.game.size() - 2];
+        let second = self.game.proposal_order[self.game.size() - 1];
+        let next = GameState {
+            game: self.game,
+            phase: GamePhase::OnMission(Mission::new(1, first))
+        };
+
+
+        effects.push(Effect::Broadcast(Message::NextProposal {
+            proposer: first,
             mission: 1,
-            proposal: 0,
-            proposer: first_proposer,
-            prev_proposals: vec![]
-        });
-        debug!("Starting game. {} and {} are proposing first", first_proposer, game.proposal_order[game.size() - 1]);
-        (state, effects)
+            proposal: 0
+        }));
+
+        debug!("Starting game. {} and {} are proposing first", first, second);
+        (next, effects)
     }
 
     /// Update the game state based on a player action
-    pub fn on_action(self, game: &Game, from: PlayerId, action: Action) -> (GameState, Vec<Effect>) {
+    pub fn on_action(self,from: PlayerId, action: Action) -> (GameState, Vec<Effect>) {
         match action {
-            Action::Propose { players } => self.on_proposal(game, from, players),
-            Action::Vote { upvote } => self.on_vote(game, from, upvote),
+            Action::Propose { players } => self.on_proposal(from, players),
+            Action::Vote { upvote } => self.on_vote(from, upvote),
             _ => unimplemented!()
         }
     }
 
-    /// Handles a player making a mission proposal.
-    fn on_proposal(self, game: &Game, proposer: PlayerId, players: HashSet<PlayerId>) -> (GameState, Vec<Effect>) {
-        match self {
-            GameState::Proposing(prop) if prop.proposer != proposer => (GameState::Proposing(prop), vec![Effect::error_to(proposer, "It's not your proposal")]),
-            GameState::Proposing(prop) => {
-                if !prop.is_valid(game, &players) {
-                    debug!("{} made an invalid proposal of {}", proposer, players.iter().join(", "));
-                    (GameState::Proposing(prop), vec![Effect::error_to(proposer, "Not a valid proposal")])
-                } else {
-                    debug!("{} proposed {} for mission {}", proposer, players.iter().join(", "), prop.mission);
-
-                    // Mission 1 is a special case where players see both proposals before voting
-                    if prop.mission == 1 && prop.proposal == 0 {
-                        let this_proposal = prop.make_proposal(players.clone());
-                        let mut proposals = prop.prev_proposals;
-                        proposals.push(this_proposal);
-                        let next_proposer = game.next_proposer(proposer);
-
-                        let next_state = GameState::Proposing(Proposing {
-                            mission: 1,
-                            proposer: next_proposer,
-                            proposal: 1,
-                            prev_proposals: proposals,
-                        });
-
-                        let effects = vec![
-                            Effect::Broadcast(Message::ProposalMade {
-                                proposer,
-                                mission: 1,
-                                proposal: 0,
-                                players,
-                            }),
-                            Effect::Broadcast(Message::NextProposal {
-                                proposer: next_proposer,
-                                mission: 1,
-                                proposal: 1
-                            })
-                        ];
-                        (next_state, effects)
-                    } else {
-                        let effects = vec![
-                            Effect::Broadcast(Message::ProposalMade {
-                                proposer: prop.proposer,
-                                mission: prop.mission,
-                                proposal: prop.proposal,
-                                players: players.clone()
-                            }),
-                            Effect::Broadcast(Message::CommenceVoting),
-                        ];
-                        let voting = Voting::from_proposing(prop, players);
-                        debug!("Voting on {}", voting.voting_proposal());
-                        let next_state = GameState::Voting(voting);
-                        (next_state, effects)
-                    }
-                }
+    fn on_proposal(self, proposer: PlayerId, players: HashSet<PlayerId>) -> (GameState, Vec<Effect>) {
+        let GameState { game, phase } = self;
+        match phase {
+            GamePhase::OnMission(mission) => {
+                let (next, effects) = mission.on_proposal(&game, proposer, players);
+                (GameState { game, phase: GamePhase::OnMission(next) }, effects)
             },
-            st => (st, vec![Effect::error_to(proposer, "You can't propose right now")])
+            _ => (GameState { game, phase }, vec![Effect::error_to(proposer, "You can't propose a mission right now")]),
         }
     }
 
-    fn on_vote(self, game: &Game, player: PlayerId, upvote: bool) -> (GameState, Vec<Effect>) {
-        match self {
-            GameState::Voting(mut vote) => {
-                match vote.votes.entry(player) {
-                    Entry::Occupied(_) => (GameState::Voting(vote), vec![Effect::error_to(player, "You already voted on this mission")]),
+    fn on_vote(self, voter: PlayerId, upvote: bool) -> (GameState, Vec<Effect>) {
+        let GameState { game, phase } = self;
+        match phase {
+            GamePhase::OnMission(mission) => {
+                let (next, effects) = mission.on_vote(&game, voter, upvote);
+                (GameState { game, phase: GamePhase::OnMission(next) }, effects)
+            },
+            _ => (GameState { game, phase }, vec![Effect::error_to(voter, "You can't vote a mission right now")]),
+        }
+    }
+}
+
+/// State machine wrapper for individual missions in a game. This holds shared information needed for every mission state.
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Mission {
+    /// What mission number this is
+    number: MissionNumber,
+    /// Accumulator for submitted proposals
+    proposals: Vec<Proposal>,
+    /// Current mission state
+    state: MissionState,
+}
+
+/// State machine for individual missions. Missions start out in the `Proposing` state, and alternate between `Proposing` and `Voting` until a mission
+/// proposal passes or is forced to go. The mission then enters the `Going` state while players on the mission play their cards. Finally, it enters the
+/// `Complete` state.
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum MissionState {
+    Proposing { proposer: PlayerId },
+    Voting { votes: HashMap<PlayerId, bool> },
+    Going { sent_proposal: usize, cards: HashMap<PlayerId, Card> },
+    // Will probably need an intermediate state when waiting for Agravaine declarations.
+    Complete { success: bool }
+}
+
+impl Mission {
+    /// Creates a new mission at its first proposal.
+    pub fn new(number: MissionNumber, first_proposer: PlayerId) -> Mission {
+        Mission {
+            number,
+            proposals: vec![],
+            state: MissionState::Proposing { proposer: first_proposer }
+        }
+    }
+
+    /// Callback for proposals made on this mission
+    pub fn on_proposal(mut self, game: &Game, proposer: PlayerId, players: HashSet<PlayerId>) -> (Mission, Vec<Effect>) {
+        match self.state {
+            MissionState::Proposing { proposer: expected_proposer } if expected_proposer != proposer => {
+                debug!("{} tried to propose out of turn", proposer);
+                (self.with_state(MissionState::Proposing { proposer: expected_proposer }), vec![Effect::error_to(proposer, "It's not your proposal")])
+            },
+            MissionState::Proposing { .. } => {
+                if players.len() != game.spec.mission_size(self.number) {
+                    debug!("{} made an invalid proposal", proposer);
+                    (self, vec![Effect::error_to(proposer, "Not a valid proposa;")])
+                } else {
+                    debug!("{} proposed {}", proposer, players.iter().format(", "));
+
+                    let mut effects = vec![
+                        Effect::Broadcast(Message::ProposalMade {
+                            proposer,
+                            mission: self.number,
+                            proposal: self.proposals.len() as ProposalNumber,
+                            players: players.clone()
+                        })
+                    ];
+
+                    self.proposals.push(Proposal {
+                        proposer,
+                        players
+                    });
+
+                    // Mission 1 is a special case where players see both proposals before voting
+                    let next_state = if self.number == 1 && self.proposals.len() == 1 {
+                        let next_proposer = game.next_proposer(proposer);
+                        effects.push(Effect::Broadcast(Message::NextProposal {
+                            mission: self.number,
+                            proposer: next_proposer,
+                            proposal: self.proposals.len() as ProposalNumber
+                        }));
+                        MissionState::Proposing { proposer: next_proposer }
+                    } else {
+                        effects.push(Effect::Broadcast(Message::CommenceVoting));
+                        MissionState::Voting { votes: HashMap::new() }
+                    };
+
+                    (self.with_state(next_state), effects)
+                }
+            },
+            _ => (self, vec![Effect::error_to(proposer, "You can't propose a mission right now")])
+        }
+    }
+
+    pub fn on_vote(self, game: &Game, player: PlayerId, upvote: bool) -> (Mission, Vec<Effect>) {
+        match self.state {
+            MissionState::Voting { mut votes } => {
+                debug_assert!(!self.proposals.is_empty(), "Should not be voting with no proposals");
+                match votes.entry(player) {
+                    Entry::Occupied(_) => (Mission { number: self.number, proposals: self.proposals, state: MissionState::Voting { votes } }, vec![Effect::error_to(player, "You already voted on this mission")]),
                     Entry::Vacant(entry) => {
                         entry.insert(upvote);
-                        debug!("{} {} the proposal", player, if upvote { "upvoted" } else { "downvoted" });
-                        if vote.votes.len() == game.size() {
+                        debug!("{} voted {} the proposal", player, if upvote { "for" } else { "against" });
+
+                        if votes.len() == game.size() {
                             let mut upvotes = Vec::new();
                             let mut downvotes = Vec::new();
-                            for (&player, &vote) in vote.votes.iter() {
+                            for (&player, &vote) in votes.iter() {
                                 if vote {
                                     upvotes.push(player);
                                 } else {
                                     downvotes.push(player);
                                 }
                             }
+
                             // Sort for stable output order (mostly for tests)
                             upvotes.sort();
                             downvotes.sort();
@@ -150,130 +209,72 @@ impl GameState {
                                 sent
                             };
 
-                            if sent {
-                                debug!("Sending {}", vote.voting_proposal());
-                                (GameState::Mission, vec![Effect::Broadcast(voting_results)])
-                            } else if vote.mission() == 1 {
-                                let sent_proposal = vote.proposals.get(1).expect("Invalid state: voted on mission 1 with only one proposal");
-                                debug!("Sending {}", sent_proposal);
-                                (GameState::Mission, vec![Effect::Broadcast(voting_results)])
+                            // Voting on mission 1 always sends a mission
+                            if self.number == 1 {
+                                debug_assert!(self.proposals.len() == 2, "Should not be voting on mission 1 without both proposals");
+                                let sent_proposal = if sent { 0 } else { 1 };
+                                debug!("Sending {}", &self.proposals[sent_proposal]);
+                                let next = Mission {
+                                    number: self.number,
+                                    proposals: self.proposals,
+                                    state: MissionState::Going { sent_proposal, cards: HashMap::new() }
+                                };
+                                (next, vec![Effect::Broadcast(voting_results)])
+                            } else if sent {
+                                let sent_proposal = self.proposals.len() - 1;
+                                debug!("Sending {}", &self.proposals[sent_proposal]);
+                                let next = Mission {
+                                    number: self.number,
+                                    proposals: self.proposals,
+                                    state: MissionState::Going { sent_proposal, cards: HashMap::new() }
+                                };
+                                (next, vec![Effect::Broadcast(voting_results)])
                             } else {
-                                let failed_proposal = vote.voting_proposal();
-                                debug!("Did not send {}", failed_proposal);
-                                let next_proposer = game.next_proposer(failed_proposal.proposer);
-                                let mission = failed_proposal.mission;
-                                let proposal = failed_proposal.proposal + 1; // TODO: force (needs to be handled in proposals state)
-
-                                let next_state = GameState::Proposing(Proposing {
-                                    mission,
-                                    proposal,
-                                    proposer: next_proposer,
-                                    prev_proposals: vote.proposals,
-                                });
+                                debug!("Did not send {}", self.proposals.last().unwrap());
+                                let next_proposer = game.next_proposer(self.proposals.last().unwrap().proposer);
                                 let effects = vec![
                                     Effect::Broadcast(voting_results),
                                     Effect::Broadcast(Message::NextProposal {
                                         proposer: next_proposer,
-                                        mission,
-                                        proposal,
+                                        mission: self.number,
+                                        proposal: self.proposals.len() as ProposalNumber
                                     })
                                 ];
-                                (next_state, effects)
+                                let next = Mission {
+                                    number: self.number,
+                                    proposals: self.proposals,
+                                    state: MissionState::Proposing { proposer: next_proposer }
+                                };
+                                (next, effects)
                             }
                         } else {
-                            // notify them that we got their vote?
-                            (GameState::Voting(vote), vec![])
+                            (Mission { number: self.number, proposals: self.proposals, state: MissionState::Voting { votes }}, vec![])
                         }
                     }
                 }
             },
-            st => (st, vec![Effect::error_to(player, "There's nothing to vote on")])
+            _ => (self, vec![Effect::error_to(player, "You can't vote on a mission right now")])
+        }
+    }
+
+    fn with_state(self, next_state: MissionState) -> Mission {
+        Mission {
+            number: self.number,
+            proposals: self.proposals,
+            state: next_state
         }
     }
 }
 
-/// The Proposing state.
-#[derive(Debug, Eq, PartialEq, Clone)]
-pub struct Proposing {
-    /// Which mission this is for
-    mission: MissionNumber,
-    /// Which proposal number this is
-    proposal: ProposalNumber,
-    /// Who's proposing the mission
-    proposer: PlayerId,
-
-    /// Previous proposals this round
-    prev_proposals: Vec<Proposal>,
-}
-
-impl Proposing {
-    /// Checks if `players` is a valid proposal
-    fn is_valid(&self, game: &Game, players: &HashSet<PlayerId>) -> bool {
-        players.len() == game.spec.mission_size(self.mission)
-    }
-
-    /// Creates a Proposal given a valid set of proposed players
-    fn make_proposal(&self, players: HashSet<PlayerId>) -> Proposal {
-        Proposal {
-            mission: self.mission,
-            proposer: self.proposer,
-            proposal: self.proposal,
-            players,
-        }
-    }
-}
-
-/// Contents of GameState::Voting
-#[derive(Debug, Eq, PartialEq, Clone)]
-pub struct Voting {
-    /// All proposals so far this round. In almost all cases, the proposal being voted on is the last one. The exception is mission 1, where
-    /// an upvote is a vote for the _first_ proposal of the round.
-    proposals: Vec<Proposal>,
-
-    /// Tracks how each player voted. true = upvote, false = downvote
-    // TODO: questing beast
-    votes: HashMap<PlayerId, bool>,
-}
-
-impl Voting {
-    fn from_proposing(prop: Proposing, players: HashSet<PlayerId>) -> Voting {
-        let proposal = prop.make_proposal(players);
-        let mut proposals = prop.prev_proposals;
-        proposals.push(proposal);
-        Voting {
-            proposals,
-            votes: HashMap::new()
-        }
-    }
-
-    /// The mission we're voting on a proposal for
-    fn mission(&self) -> MissionNumber {
-        self.proposals.first().expect("Cannot be in Voting state with no proposals").mission
-    }
-
-    /// The proposal being voted on (the one sent if there are enough upvotes)
-    fn voting_proposal(&self) -> &Proposal {
-        if self.mission() == 1 {
-            &self.proposals[0]
-        } else {
-            self.proposals.last().expect("Cannot be in Voting state with no proposals")
-        }
-    }
-}
-
-/// A mission proposal
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Clone ,Eq, PartialEq)]
 pub struct Proposal {
-    mission: MissionNumber,
-    proposal: ProposalNumber,
     proposer: PlayerId,
     players: HashSet<PlayerId>
 }
 
 impl fmt::Display for Proposal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Player {}'s proposal on mission {} (proposal #{}): ", self.proposer, self.mission, self.proposal)?;
-        write!(f, "{}", self.players.iter().format(", "))
+        write!(f, "{}'s proposal of {}", self.proposer, self.players.iter().format(", "))
     }
 }
 
