@@ -23,7 +23,7 @@ impl Role {
         use Role::*;
         match self {
             Merlin | Lancelot | Percival | Tristan | Iseult => true,
-            Mordred | Morgana | Maelegant => false
+            Mordred | Morgana | Maelegant => false,
         }
     }
 
@@ -34,14 +34,14 @@ impl Role {
     pub fn is_lover(self) -> bool {
         match self {
             Role::Tristan | Role::Iseult => true,
-            _ => false
+            _ => false,
         }
     }
 
     pub fn is_assasinatable(self) -> bool {
         match self {
             Role::Merlin | Role::Tristan | Role::Iseult => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -54,14 +54,16 @@ impl Role {
             Role::Merlin => {
                 let _ = writeln!(&mut info, "You see these players as evil:");
                 for player in players.iter() {
-                    if player.role == Role::Lancelot || (player.role.is_evil() && player.role != Role::Mordred) {
+                    if player.role == Role::Lancelot
+                        || (player.role.is_evil() && player.role != Role::Mordred)
+                    {
                         let _ = writeln!(&mut info, "* {}", player.name);
                     }
                 }
-            },
+            }
             Role::Lancelot => {
                 let _ = writeln!(&mut info, "You may play Reverse cards on missions.");
-            },
+            }
             Role::Percival => {
                 let _ = writeln!(&mut info, "You see these players as Merlin or Morgana:");
                 for player in players.iter() {
@@ -69,16 +71,19 @@ impl Role {
                         let _ = writeln!(&mut info, "* {}", player.name);
                     }
                 }
-            },
+            }
             Role::Tristan | Role::Iseult => {
-                let _ = writeln!(&mut info, "You may or may not see your lover at some point I guess?");
-            },
+                let _ = writeln!(
+                    &mut info,
+                    "You may or may not see your lover at some point I guess?"
+                );
+            }
             Role::Mordred => {
                 let _ = writeln!(&mut info, "You are hidden from all Good information roles.");
-            },
+            }
             Role::Morgana => {
                 let _ = writeln!(&mut info, "You appear like Merlin to Percival.");
-            },
+            }
             Role::Maelegant => {
                 let _ = writeln!(&mut info, "You may play Reverse cards on missions.");
             }
