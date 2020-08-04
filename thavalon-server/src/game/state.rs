@@ -112,7 +112,7 @@ impl GameState {
                             Effect::Broadcast(Message::CommenceVoting),
                         ];
                         let voting = Voting::from_proposing(prop, players);
-                        debug!("Voting on {}", voting.proposal);
+                        debug!("Voting on {}", voting.voting_proposal());
                         let next_state = GameState::Voting(voting);
                         (next_state, effects)
                     }
@@ -151,21 +151,24 @@ impl GameState {
                             };
 
                             if sent {
-                                debug!("Sending {}", vote.proposal);
+                                debug!("Sending {}", vote.voting_proposal());
+                                (GameState::Mission, vec![Effect::Broadcast(voting_results)])
+                            } else if vote.mission() == 1 {
+                                let sent_proposal = vote.proposals.get(1).expect("Invalid state: voted on mission 1 with only one proposal");
+                                debug!("Sending {}", sent_proposal);
                                 (GameState::Mission, vec![Effect::Broadcast(voting_results)])
                             } else {
-                                debug!("Did not send {}", vote.proposal);
-                                let next_proposer = game.next_proposer(vote.proposal.proposer);
-                                let mission = vote.proposal.mission;
-                                let proposal = vote.proposal.proposal + 1; // TODO: force
-                                let mut proposals = vote.prev_proposals;
-                                proposals.push(vote.proposal);
+                                let failed_proposal = vote.voting_proposal();
+                                debug!("Did not send {}", failed_proposal);
+                                let next_proposer = game.next_proposer(failed_proposal.proposer);
+                                let mission = failed_proposal.mission;
+                                let proposal = failed_proposal.proposal + 1; // TODO: force (needs to be handled in proposals state)
 
                                 let next_state = GameState::Proposing(Proposing {
                                     mission,
                                     proposal,
                                     proposer: next_proposer,
-                                    prev_proposals: proposals,
+                                    prev_proposals: vote.proposals,
                                 });
                                 let effects = vec![
                                     Effect::Broadcast(voting_results),
@@ -223,10 +226,9 @@ impl Proposing {
 /// Contents of GameState::Voting
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Voting {
-    proposal: Proposal,
-
-    /// Previous proposals in the round, not including the one being voted on. Only really necessary for mission 1
-    prev_proposals: Vec<Proposal>,
+    /// All proposals so far this round. In almost all cases, the proposal being voted on is the last one. The exception is mission 1, where
+    /// an upvote is a vote for the _first_ proposal of the round.
+    proposals: Vec<Proposal>,
 
     /// Tracks how each player voted. true = upvote, false = downvote
     // TODO: questing beast
@@ -235,10 +237,26 @@ pub struct Voting {
 
 impl Voting {
     fn from_proposing(prop: Proposing, players: HashSet<PlayerId>) -> Voting {
+        let proposal = prop.make_proposal(players);
+        let mut proposals = prop.prev_proposals;
+        proposals.push(proposal);
         Voting {
-            proposal: prop.make_proposal(players),
-            prev_proposals: prop.prev_proposals,
+            proposals,
             votes: HashMap::new()
+        }
+    }
+
+    /// The mission we're voting on a proposal for
+    fn mission(&self) -> MissionNumber {
+        self.proposals.first().expect("Cannot be in Voting state with no proposals").mission
+    }
+
+    /// The proposal being voted on (the one sent if there are enough upvotes)
+    fn voting_proposal(&self) -> &Proposal {
+        if self.mission() == 1 {
+            &self.proposals[0]
+        } else {
+            self.proposals.last().expect("Cannot be in Voting state with no proposals")
         }
     }
 }
@@ -349,23 +367,23 @@ mod tests {
     #[test]
     fn test_good_proposal() {
         let game = fresh_game();
-        let prev_proposals = vec![Proposal { mission: 2, proposal: 1, proposer: 4, players: hashset![4, 3] }];
+        let first_proposal = Proposal { mission: 2, proposal: 1, proposer: 4, players: hashset![4, 3] };
         let state = GameState::Proposing(Proposing {
             mission: 2,
             proposal: 2,
             proposer: 5,
-            prev_proposals: prev_proposals.clone(),
+            prev_proposals: vec![first_proposal.clone()],
         });
         let (next_state, effects) = state.on_proposal(&game, 5, hashset![5, 1, 2]);
         assert_eq!(next_state, GameState::Voting(Voting {
-            proposal: Proposal {
+            votes: HashMap::new(),
+            proposals: vec![first_proposal, Proposal {
                 mission: 2,
                 proposal: 2,
                 proposer: 5,
                 players: hashset![5, 1, 2]
-            },
-            votes: HashMap::new(),
-            prev_proposals
+
+            }]
         }));
         assert_eq!(effects, vec![
             Effect::Broadcast(Message::ProposalMade { mission: 2, proposal: 2, proposer: 5, players: hashset![5, 1, 2] }),
@@ -377,14 +395,13 @@ mod tests {
     fn test_double_vote() {
         let game = fresh_game();
         let voting = Voting {
-            proposal: Proposal {
+            proposals: vec![Proposal {
                 mission: 1,
                 proposal: 2,
                 proposer: 3,
                 players: hashset![3, 2],
-            },
+            }],
             votes: hashmap![3 => true],
-            prev_proposals: vec![]
         };
         let state = GameState::Voting(voting.clone());
         let (next_state, effects) = state.on_vote(&game, 3, false);
@@ -402,17 +419,15 @@ mod tests {
             players: hashset![3, 2]
         };
         let state = GameState::Voting(Voting {
-            proposal: proposal.clone(),
+            proposals: vec![proposal.clone()],
             votes: hashmap![
                 3 => true
             ],
-            prev_proposals: vec![]
         });
         let (next_state, effects) = state.on_vote(&game, 4, true);
         assert_eq!(next_state, GameState::Voting(Voting {
-            proposal,
+            proposals: vec![proposal],
             votes: hashmap![3 => true, 4 => true],
-            prev_proposals: vec![]
         }));
         assert_eq!(effects, vec![]);
     }
@@ -421,19 +436,18 @@ mod tests {
     fn test_passing_vote() {
         let game = fresh_game();
         let state = GameState::Voting(Voting {
-            proposal: Proposal {
+            proposals: vec![Proposal {
                 mission: 1,
                 proposal: 2,
                 proposer: 3,
                 players: hashset![3, 2]
-            },
+            }],
             votes: hashmap![
                 1 => false,
                 2 => true,
                 3 => true,
                 4 => false
             ],
-            prev_proposals: vec![]
         });
         let (next_state, effects) = state.on_vote(&game, 5, true);
         assert_eq!(next_state, GameState::Mission);
@@ -454,14 +468,13 @@ mod tests {
             players: hashset![3, 2]
         };
         let state = GameState::Voting(Voting {
-            proposal: failed_proposal.clone(),
+            proposals: vec![failed_proposal.clone()],
             votes: hashmap![
                 1 => false,
                 2 => true,
                 3 => true,
                 4 => false
             ],
-            prev_proposals: vec![]
         });
         let (next_state, effects) = state.on_vote(&game, 5, false);
         assert_eq!(next_state, GameState::Proposing(Proposing {
