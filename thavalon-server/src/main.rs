@@ -34,22 +34,5 @@ fn setup_logger() -> Result<(), fern::InitError> {
 #[tokio::main]
 async fn main() {
     setup_logger().expect("Could not set up logging");
-
-    let (mut game_tx, mut game_rx) = GameRunner::spawn();
-    let players = vec![
-        (10, "Ben".to_string()),
-        (20, "Paul".to_string()),
-        (30, "Jared".to_string()),
-        (40, "Andrew".to_string()),
-        (50, "Galen".to_string())
-    ];
-    let mut responses = vec![];
-    for (id, name) in players.into_iter() {
-        game_tx.send(ControlRequest::AddPlayer { id, name }).await.unwrap();
-        responses.push(game_rx.next().await.unwrap());
-    }
-    game_tx.send(ControlRequest::StartGame).await.unwrap();
-    game_rx.next().await.unwrap();
-    
     connections::serve_connections().await;
 }

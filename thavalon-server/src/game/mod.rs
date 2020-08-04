@@ -6,11 +6,11 @@ use std::ops::Index;
 use rand::prelude::*;
 
 mod role;
+mod runner;
 mod state;
-pub mod runner;
 
 pub use self::role::*;
-pub use self::runner::{GameRunner, ControlRequest, ControlResponse};
+pub use self::runner::{ControlRequest, ControlResponse, GameRunner};
 
 /// Key for identifying a player in the game. Cheaper to copy and move around than a String
 pub type PlayerId = usize;
@@ -69,7 +69,11 @@ impl Game {
 
     /// Find the next player in proposal order after the given one.
     pub fn next_proposer(&self, player: PlayerId) -> PlayerId {
-        let index = self.proposal_order.iter().position(|p| *p == player).unwrap();
+        let index = self
+            .proposal_order
+            .iter()
+            .position(|p| *p == player)
+            .unwrap();
         if index == self.proposal_order.len() - 1 {
             self.proposal_order[0]
         } else {

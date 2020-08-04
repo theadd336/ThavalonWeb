@@ -20,6 +20,12 @@ pub async fn serve_connections() {
     let create_new_lobby = warp::path(CREATE_NEW_LOBBY_PATH)
         .and(warp::post())
         .and_then(rest_handlers::try_create_new_lobby);
+
+    let join_lobby = warp::path(JOIN_LOBBY_PATH)
+        .and(warp::post())
+        .and(warp::path::param())
+        .and(warp::path::param())
+        .and_then(rest_handlers::try_join_lobby);
     // let connected_players: websockets::PlayerClients = Arc::new(Mutex::new(HashMap::new()));
 
     // let register = warp::path(WS_REGISTER_PATH);
@@ -28,7 +34,8 @@ pub async fn serve_connections() {
     //     .and(warp::body::json())
     //     .and(with_clients(connected_players.clone()))
     //     .and_then(websockets::handler);
-    let all_routes = warp::path("api").and(create_new_lobby);
+    let all_routes = create_new_lobby.or(join_lobby);
+    let all_routes = warp::path("api").and(all_routes);
     warp::serve(all_routes).run(([0, 0, 0, 0], 8001)).await;
 }
 
