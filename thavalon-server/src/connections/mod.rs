@@ -35,7 +35,9 @@ pub async fn serve_connections() {
     //     .and(with_clients(connected_players.clone()))
     //     .and_then(websockets::handler);
     let all_routes = create_new_lobby.or(join_lobby);
-    let all_routes = warp::path("api").and(all_routes);
+    let all_routes = warp::path("api")
+        .and(all_routes)
+        .with(warp::cors().allow_any_origin());
     warp::serve(all_routes).run(([0, 0, 0, 0], 8001)).await;
 }
 
