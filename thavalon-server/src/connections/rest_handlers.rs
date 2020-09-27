@@ -2,11 +2,12 @@
 
 use crate::game::PlayerId;
 use crate::lobbies;
-use crypto::digest::Digest;
-use crypto::sha1::Sha1;
 use log::{error, info, warn};
 use serde::Serialize;
 use serde_json;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use uuid::Uuid;
 use warp::{reject, reject::Reject, Rejection, Reply};
 
 //#region Structs and Implementations
@@ -82,13 +83,18 @@ pub async fn try_create_new_lobby() -> Result<impl Reply, Rejection> {
 
 /// Tries to add a player to a lobby. Will send back the player ID and the websocket path if success.
 pub async fn try_join_lobby(
+    connected_players: Arc<Mutex<HashMap<String, (String, PlayerId)>>>,
     lobby_id: String,
     player_name: String,
 ) -> Result<impl Reply, Rejection> {
     info!("Attempting to join lobby {}.", lobby_id);
     match lobbies::add_player(&lobby_id, &player_name).await {
         Ok(player_id) => {
-            let websocket_path = create_ws_path(lobby_id, &player_id).await;
+            let websocket_path = Uuid::new_v4().to_string();
+            connected_players
+                .lock()
+                .unwrap()
+                .insert(websocket_path.clone(), (lobby_id, player_id));
             info!(
                 "Sending player ID {} and websocket path {} to the client.",
                 player_id, websocket_path
@@ -103,11 +109,4 @@ pub async fn try_join_lobby(
             return Err(reject::custom(response));
         }
     }
-}
-
-async fn create_ws_path(lobby_id: String, player_id: &PlayerId) -> String {
-    let id_string = lobby_id + &String::from("^") + &player_id.to_string();
-    let mut hasher = Sha1::new();
-    hasher.input_str(&id_string);
-    return hasher.result_str();
 }
