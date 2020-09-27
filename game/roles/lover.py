@@ -8,6 +8,11 @@ class Lover(Role):
         super().__init__(self.role_name, Team.GOOD)
 
     def get_description(self) -> str:
+        if len(self.players_seen) == 0:
+            return "\n".join([
+                f"You are {self.role_name} [GOOD].\n",
+                "You do not have a lover in this game."
+            ])
         return "\n".join([
             f"You are {self.role_name} [GOOD].\n",
             "The person you see is also Good and is aware that you are Good.",

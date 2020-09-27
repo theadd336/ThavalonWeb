@@ -9,11 +9,14 @@ def test_use_ability_fails():
         maelegant.use_ability()
 
 
-def test_get_description():
-    maelegant = Maelegant()
+@pytest.mark.parametrize("is_assassin", [True, False])
+def test_get_description(is_assassin):
+    maelegant = Maelegant(is_assassin=is_assassin)
     maelegant.add_seen_player(morgana)
     expected = "You are Maelegant [EVIL].\n\nYou may play Reversal cards while on missions.\nLike other Evil " \
                "characters, you know who else is Evil (except Colgrevance).\n\nMorgana is Evil."
+    if is_assassin:
+        expected += "\n\nYou are the assassin!"
     assert maelegant.get_description() == expected
 
 

@@ -1,5 +1,6 @@
 .idea/*
 .idea/workspace.xml
+.vscode/*
 # Created by https://www.gitignore.io/api/python
 # Edit at https://www.gitignore.io/?templates=python
 
@@ -111,4 +112,8 @@ dmypy.json
 # End of https://www.gitignore.io/api/python
 
 .idea
+.vscode
 venv
+node_modules
+package-lock.json
+ThavalonWeb/settings.py
