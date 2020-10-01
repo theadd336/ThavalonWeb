@@ -413,6 +413,8 @@ impl Effect {
     }
 }
 
+/*
+
 #[cfg(test)]
 mod tests {
     use super::super::*;
@@ -653,3 +655,5 @@ mod tests {
         );
     }
 }
+
+*/

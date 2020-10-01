@@ -217,6 +217,9 @@ pub enum Message {
 #[derive(Error, Debug)]
 pub enum GameError {
     #[error("Can't reach player {}", id)]
-    PlayerUnavailable { id: PlayerId }
+    PlayerUnavailable { id: PlayerId },
+
+    #[error("All players have disconnected")]
+    AllDisconnected,
 }
 

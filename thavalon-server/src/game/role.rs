@@ -2,7 +2,7 @@ use std::fmt::{self, Write};
 
 use rand::prelude::*;
 
-use super::{PlayerId, Players};
+use super::{PlayerId, Players, Card};
 
 /// A THavalon role
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -42,6 +42,14 @@ impl Role {
         match self {
             Role::Merlin | Role::Tristan | Role::Iseult => true,
             _ => false,
+        }
+    }
+
+    pub fn can_play(self, card: Card) -> bool {
+        match card {
+            Card::Success => true,
+            Card::Reverse => matches!(self, Role::Lancelot | Role::Maelegant),
+            Card::Fail => self.is_evil()
         }
     }
 

@@ -1,6 +1,7 @@
 //! THavalon game logic
 
 use std::collections::HashMap;
+use std::fmt;
 use std::ops::Index;
 
 use rand::prelude::*;
@@ -8,6 +9,9 @@ use rand::prelude::*;
 mod role;
 mod runner;
 mod state;
+
+mod interactions;
+mod engine;
 
 pub use self::role::*;
 pub use self::runner::{ControlRequest, ControlResponse, GameRunner};
@@ -80,6 +84,10 @@ impl Game {
         } else {
             self.proposal_order[index + 1]
         }
+    }
+
+    pub fn name(&self, player: usize) -> &str {
+        self.players[player].name.as_ref()
     }
 
     /// The number of players in the game
@@ -165,6 +173,16 @@ pub enum Card {
     Reverse,
 }
 
+impl fmt::Display for Card {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(match self {
+            Card::Success => "Success",
+            Card::Fail => "Fail",
+            Card::Reverse => "Reverse"
+        })
+    }
+}
+
 /// Game rules determined by the number of players
 #[derive(Debug, Clone)]
 pub struct GameSpec {
@@ -178,6 +196,8 @@ pub struct GameSpec {
     pub evil_roles: &'static [Role],
     /// The number of players on the good team
     pub good_players: u8,
+    /// True if mission 4 requires at least two failures
+    double_fail_mission_four: bool,
 }
 
 impl GameSpec {
@@ -199,6 +219,15 @@ impl GameSpec {
     pub fn evil_players(&self) -> usize {
         (self.players - self.good_players) as usize
     }
+
+    /// The number of proposals in a round (after the first, which only has two)
+    pub fn proposals(&self) -> usize {
+        self.evil_players() + 1
+    }
+
+    pub fn double_fail_mission_four(&self) -> bool {
+        self.double_fail_mission_four
+    }
 }
 
 static FIVE_PLAYER: GameSpec = GameSpec {
@@ -213,4 +242,5 @@ static FIVE_PLAYER: GameSpec = GameSpec {
     ],
     evil_roles: &[Role::Mordred, Role::Morgana, Role::Maelegant],
     good_players: 3,
+    double_fail_mission_four: false,
 };
