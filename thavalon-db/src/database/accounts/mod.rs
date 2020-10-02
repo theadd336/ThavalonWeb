@@ -126,6 +126,35 @@ pub async fn load_user_by_email(email: &String) -> Result<DatabaseAccount, Accou
     }
 }
 
+/// Updates a user to match the given DatabaseAccount.
+/// Will blow out the old user and match to the new one.
+///
+/// # Arguments
+///
+/// * `user` - The user to update.
+///
+/// # Returns
+///
+/// * None on success. Error on failure.
+pub async fn update_user(user: &DatabaseAccount) -> Result<(), AccountError> {
+    log::info!("Attempting to update user {}.", user.email);
+
+    let collection = get_db_client().await.collection(USER_COLLECTION);
+    let filter = doc! {"email": user.email.clone()};
+    let user_doc = bson::to_document(user).expect("Failed to serialize user to BSON.");
+    match collection
+        .find_one_and_replace(filter, user_doc, None)
+        .await
+    {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            log::error!("Failed to find and replace user {}.", user.email);
+            log::error!("{:?}", e);
+            Err(AccountError::UnknownError)
+        }
+    }
+}
+
 /// Checks if a given username exists in the database already
 ///
 /// # Arguments

@@ -4,9 +4,7 @@ use crate::validation::{self, DBAdminPreAuth, ValidationError};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use warp::{
-    http::StatusCode,
     reject::{self, Reject},
-    reply::{self, Response},
     Rejection, Reply,
 };
 
@@ -195,4 +193,42 @@ pub async fn delete_user(user: ThavalonUser) -> Result<impl Reply, Rejection> {
         }
     }
     Ok(warp::reply())
+}
+
+/// Updates a user with new information from the client.
+/// This will blow out the old user info with the new user.
+///
+/// # Arguments
+///
+/// * `user` - The user to update
+///
+/// # Returns
+///
+/// Status 200 reply on success, Rejection on failure.
+pub async fn update_user(user: ThavalonUser) -> Result<impl Reply, Rejection> {
+    log::info!("Attempting to update user {} in the database.", user.email);
+    let password = user.password.clone();
+    let mut user: DatabaseAccount = user.into();
+    if password != String::from("") {
+        user.hash = match validation::hash_password(&password).await {
+            Ok(hash) => hash,
+            Err(e) => {
+                log::warn!("Failed to hash password. Update will be skipped.");
+                log::warn!("{:?}", e);
+                if e == ValidationError::HashError {
+                    return Err(reject::custom(FatalHashingError));
+                }
+                return Err(reject::custom(PasswordInsecureRejection));
+            }
+        };
+    }
+
+    match database::update_user(&user).await {
+        Ok(_) => Ok(warp::reply()),
+        Err(e) => {
+            log::warn!("Update to user {} failed.", user.email);
+            log::warn!("{:?}", e);
+            Err(reject::custom(NoAccountRejection))
+        }
+    }
 }
