@@ -1,0 +1,7 @@
+FROM rust:1.46
+
+WORKDIR /app
+
+COPY scripts/ .
+
+CMD [ "cargo", "run" ]
