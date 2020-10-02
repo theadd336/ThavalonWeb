@@ -2,27 +2,27 @@
 
 use std::collections::{HashMap, HashSet};
 
-use log::{info, warn, error};
 use futures::future::{join_all, TryFutureExt};
+use log::{error, info, warn};
 use thiserror::Error;
 
+use tokio::stream::{StreamExt, StreamMap};
 use tokio::sync::mpsc;
-use tokio::stream::{StreamMap, StreamExt};
 
-use super::{Game, PlayerId, Card, MissionNumber, ProposalNumber};
 use super::role::Role;
-use super::state::{GameState, Effect};
+use super::state::{Effect, GameState};
+use super::{Card, Game, MissionNumber, PlayerId, ProposalNumber};
 
 /// Task for running a THavalon game
 pub struct GameRunner {
     // Channels for setup / game state management unrelated to gameplay
     control_rx: mpsc::Receiver<ControlRequest>,
     control_tx: mpsc::Sender<ControlResponse>,
-    
+
     /// Receivers for messages from players
     actions: StreamMap<PlayerId, mpsc::Receiver<Action>>,
 
-    /// Senders for each player 
+    /// Senders for each player
     message_senders: HashMap<PlayerId, mpsc::Sender<Message>>,
 }
 
@@ -30,7 +30,11 @@ type PlayerChannels = (mpsc::Sender<Action>, mpsc::Receiver<Message>);
 
 impl GameRunner {
     /// Create a new GameRunner, returning it and its control channels
-    pub fn new() -> (GameRunner, mpsc::Sender<ControlRequest>, mpsc::Receiver<ControlResponse>) {
+    pub fn new() -> (
+        GameRunner,
+        mpsc::Sender<ControlRequest>,
+        mpsc::Receiver<ControlResponse>,
+    ) {
         let (req_tx, req_rx) = mpsc::channel(1);
         let (resp_tx, resp_rx) = mpsc::channel(1);
 
@@ -39,13 +43,16 @@ impl GameRunner {
             control_tx: resp_tx,
 
             actions: StreamMap::new(),
-            message_senders: HashMap::new()
+            message_senders: HashMap::new(),
         };
         (runner, req_tx, resp_rx)
     }
 
     /// Asynchronously spawn a GameRunner, returning its control channels
-    pub fn spawn() -> (mpsc::Sender<ControlRequest>, mpsc::Receiver<ControlResponse>) {
+    pub fn spawn() -> (
+        mpsc::Sender<ControlRequest>,
+        mpsc::Receiver<ControlResponse>,
+    ) {
         let (mut game, req, resp) = GameRunner::new();
         tokio::spawn(async move {
             game.run().await;
@@ -71,13 +78,24 @@ impl GameRunner {
                     let (message_tx, message_rx) = mpsc::channel(10);
                     self.message_senders.insert(id, message_tx);
 
-                    if let Err(err) = self.control_tx.send(ControlResponse::PlayerAdded { id, actions: action_tx, messages: message_rx }).await {
+                    if let Err(err) = self
+                        .control_tx
+                        .send(ControlResponse::PlayerAdded {
+                            id,
+                            actions: action_tx,
+                            messages: message_rx,
+                        })
+                        .await
+                    {
                         players.pop();
                         self.actions.remove(&id);
                         self.message_senders.remove(&id);
-                        error!("Could not send PlayerAdded notification for {}, removing player: {}", id, err);
+                        error!(
+                            "Could not send PlayerAdded notification for {}, removing player: {}",
+                            id, err
+                        );
                     }
-                },
+                }
                 Some(ControlRequest::StartGame) => break,
                 None => {
                     error!("Control channel closed");
@@ -88,12 +106,21 @@ impl GameRunner {
 
         info!("Starting game!");
         let game = Game::roll(players);
-        if let Err(err) = self.control_tx.send(ControlResponse::GameStarted { num_players: game.size() }).await {
+        if let Err(err) = self
+            .control_tx
+            .send(ControlResponse::GameStarted {
+                num_players: game.size(),
+            })
+            .await
+        {
             error!("Could not send GameStarted notification: {}", err);
         }
 
         for player in game.players.iter() {
-            info!("{} is {:?}\n{}", player.name, player.role, game.info[&player.id]);
+            info!(
+                "{} is {:?}\n{}",
+                player.name, player.role, game.info[&player.id]
+            );
         }
 
         let (mut state, effects) = GameState::new(game).on_start_game();
@@ -105,7 +132,7 @@ impl GameRunner {
                     let (next_state, effects) = state.on_action(player, action);
                     state = next_state;
                     self.apply_effects(effects).await;
-                },
+                }
                 None => {
                     warn!("All players disconnected!");
                     break;
@@ -120,7 +147,7 @@ impl GameRunner {
         for effect in effects.into_iter() {
             let result = match effect {
                 Effect::Send(to, message) => self.send(to, message).await,
-                Effect::Broadcast(message) => self.broadcast(message).await,            
+                Effect::Broadcast(message) => self.broadcast(message).await,
             };
             if let Err(err) = result {
                 error!("Handling effect failed: {}", err);
@@ -131,8 +158,11 @@ impl GameRunner {
     /// Send a Message to a single player
     async fn send(&mut self, to: PlayerId, message: Message) -> Result<(), GameError> {
         match self.message_senders.get_mut(&to) {
-            Some(tx) => tx.send(message).await.map_err(|_| GameError::PlayerUnavailable { id: to }),
-            None => Err(GameError::PlayerUnavailable { id: to })
+            Some(tx) => tx
+                .send(message)
+                .await
+                .map_err(|_| GameError::PlayerUnavailable { id: to }),
+            None => Err(GameError::PlayerUnavailable { id: to }),
         }
     }
 
@@ -140,8 +170,12 @@ impl GameRunner {
     async fn broadcast(&mut self, message: Message) -> Result<(), GameError> {
         // This uses join_all to send messages in parallel, then collects the Vec<Result> into a single Result
         join_all(self.message_senders.iter_mut().map(|(&id, tx)| {
-            tx.send(message.clone()).map_err(move |_| GameError::PlayerUnavailable { id })
-        })).await.into_iter().collect()
+            tx.send(message.clone())
+                .map_err(move |_| GameError::PlayerUnavailable { id })
+        }))
+        .await
+        .into_iter()
+        .collect()
     }
 }
 
@@ -152,17 +186,21 @@ pub enum ControlRequest {
     AddPlayer { id: PlayerId, name: String },
 
     /// Signals for the game to start. Players cannot be added after this point.
-    StartGame
+    StartGame,
 }
 
 /// Response to a control request
 #[derive(Debug)]
 pub enum ControlResponse {
     /// Response to a player being added, containing gameplay-related communication channels for that player.
-    PlayerAdded { id: PlayerId, actions: mpsc::Sender<Action>, messages: mpsc::Receiver<Message> },
+    PlayerAdded {
+        id: PlayerId,
+        actions: mpsc::Sender<Action>,
+        messages: mpsc::Receiver<Message>,
+    },
 
     /// Confirmation that the game has started.
-    GameStarted { num_players: usize }
+    GameStarted { num_players: usize },
 }
 
 // Game-related messages
@@ -172,7 +210,8 @@ pub enum ControlResponse {
 pub enum Action {
     Propose { players: HashSet<PlayerId> },
     Vote { upvote: bool },
-    Play { card: Card }
+    Play { card: Card },
+    Declare,
 }
 
 /// A message from the game to a player
@@ -185,14 +224,18 @@ pub enum Message {
     RoleInformation { role: Role, information: String },
 
     /// Announces that a new player is proposing
-    NextProposal { proposer: PlayerId, mission: MissionNumber, proposal: ProposalNumber, },
+    NextProposal {
+        proposer: PlayerId,
+        mission: MissionNumber,
+        proposal: ProposalNumber,
+    },
 
     /// Announces that a player made a proposal
     ProposalMade {
         proposer: PlayerId,
         mission: MissionNumber,
         proposal: ProposalNumber,
-        players: HashSet<PlayerId>
+        players: HashSet<PlayerId>,
     },
 
     /// Announces that players should submit votes for the latest proposal.
@@ -210,8 +253,8 @@ pub enum Message {
         successes: usize,
         fails: usize,
         reverses: usize,
-        passed: bool
-    }
+        passed: bool,
+    },
 }
 
 #[derive(Error, Debug)]
@@ -222,4 +265,3 @@ pub enum GameError {
     #[error("All players have disconnected")]
     AllDisconnected,
 }
-

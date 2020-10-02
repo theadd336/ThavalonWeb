@@ -2,7 +2,7 @@ use std::fmt::{self, Write};
 
 use rand::prelude::*;
 
-use super::{PlayerId, Players, Card};
+use super::{Card, PlayerId, Players};
 
 /// A THavalon role
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -16,6 +16,7 @@ pub enum Role {
     Mordred,
     Morgana,
     Maelegant,
+    Agravaine,
 }
 
 impl Role {
@@ -23,7 +24,7 @@ impl Role {
         use Role::*;
         match self {
             Merlin | Lancelot | Percival | Tristan | Iseult => true,
-            Mordred | Morgana | Maelegant => false,
+            Mordred | Morgana | Maelegant | Agravaine => false,
         }
     }
 
@@ -46,10 +47,15 @@ impl Role {
     }
 
     pub fn can_play(self, card: Card) -> bool {
-        match card {
-            Card::Success => true,
-            Card::Reverse => matches!(self, Role::Lancelot | Role::Maelegant),
-            Card::Fail => self.is_evil()
+        // The life of an Agravaine is a simple one
+        if self == Role::Agravaine {
+            card == Card::Fail
+        } else {
+            match card {
+                Card::Success => true,
+                Card::Reverse => matches!(self, Role::Lancelot | Role::Maelegant),
+                Card::Fail => self.is_evil(),
+            }
         }
     }
 
@@ -94,6 +100,9 @@ impl Role {
             }
             Role::Maelegant => {
                 let _ = writeln!(&mut info, "You may play Reverse cards on missions.");
+            }
+            Role::Agravaine => {
+                let _ = writeln!(&mut info, "You may declare to fail a mission you were on that would have otherwise succeeded.");
             }
         }
 

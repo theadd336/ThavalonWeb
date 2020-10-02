@@ -10,8 +10,8 @@ mod role;
 mod runner;
 mod state;
 
-mod interactions;
 mod engine;
+mod interactions;
 
 pub use self::role::*;
 pub use self::runner::{ControlRequest, ControlResponse, GameRunner};
@@ -38,7 +38,9 @@ impl Game {
         let spec = GameSpec::for_players(names.len());
         let mut rng = thread_rng();
 
-        let good_roles = spec.good_roles.choose_multiple(&mut rng, spec.good_players());
+        let good_roles = spec
+            .good_roles
+            .choose_multiple(&mut rng, spec.good_players());
         let evil_roles = spec
             .evil_roles
             .choose_multiple(&mut rng, spec.evil_players());
@@ -178,7 +180,7 @@ impl fmt::Display for Card {
         f.write_str(match self {
             Card::Success => "Success",
             Card::Fail => "Fail",
-            Card::Reverse => "Reverse"
+            Card::Reverse => "Reverse",
         })
     }
 }
