@@ -12,7 +12,7 @@ use super::{Game, GameSpec, Card, PlayerId};
 use super::interactions::Interactions;
 use super::runner::{GameError, Message, Action};
 
-/// Holder for shared game engine state. This captures that we generally need an immutable borrow of Game and a mutable borrow of GameState.
+/// Holder for shared game engine state. This captures that we generally need an immutable borrow of Game and a mutable borrow of Interactions.
 struct GameEngine<'a, I: Interactions> {
     game: &'a Game,
     interactions: &'a mut I,
@@ -40,6 +40,13 @@ struct VotingResults {
 
 async fn run_game<I: Interactions>(game: &Game, interactions: &mut I) -> Result<(), GameError> {
     let mut ge = GameEngine::new(game, interactions);
+
+    for player in ge.game.players.iter() {
+        ge.interactions.send_to(player.id, Message::RoleInformation {
+            role: player.role,
+            information: game.info[&player.id].clone(),
+        }).await?;
+    }
 
     let first_proposer = ge.proposers.next().unwrap();
     let second_proposer = ge.proposers.next().unwrap();
@@ -391,4 +398,40 @@ mod test {
             Message::ProposalMade { proposer: 2, mission: 1, proposal: 1, players: hashset![2, 4] }
         ]);
     }
+
+    #[test]
+    fn test_voting_sent() {
+        let mut interactions = TestInteractions::new();
+        let game = make_game();
+        let mut engine = GameEngine::new(&game, &mut interactions);
+
+        engine.interactions.extend_actions(vec![
+            (2, Action::Vote { upvote: true }),
+            (3, Action::Vote { upvote: false }),
+            (1, Action::Vote { upvote: true }),
+            (2, Action::Vote { upvote: false }),
+            (4, Action::Vote { upvote: false }),
+            (5, Action::Vote { upvote: true })
+        ]);
+
+        let results = block_on(engine.vote()).unwrap();
+        assert!(results.sent);
+        assert_eq!(results.upvotes().collect::<HashSet<_>>(), hashset![2, 1, 5]);
+        assert_eq!(results.downvotes().collect::<HashSet<_>>(), hashset![3, 4]);
+
+        assert_eq!(interactions.messages_for(2).collect::<Vec<_>>(), vec![
+            &Message::Error("You already voted".to_string())
+        ]);
+
+        assert_eq!(interactions.broadcasts()[0], Message::CommenceVoting);
+        if let Message::VotingResults { upvotes, downvotes, sent } = interactions.broadcasts()[1].clone() {
+            assert!(sent);
+            assert_eq!(upvotes.into_iter().collect::<HashSet<_>>(), hashset![2, 1, 5]);
+            assert_eq!(downvotes.into_iter().collect::<HashSet<_>>(), hashset![3, 4]);
+        } else {
+            panic!("Expected a VotingResults message");
+        }
+    }
+
+    // TODO: ties
 }
