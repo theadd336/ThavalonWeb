@@ -1,8 +1,5 @@
-FROM rust:1.44
+FROM rust:1.46
 
-WORKDIR /usr/src/thavalon
-COPY . .
+WORKDIR /app
 
-RUN cargo install --path thavalon-server/
-
-CMD ["thavalon-server"]
+CMD [ "cargo", "run" ]

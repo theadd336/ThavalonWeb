@@ -1,4 +1,4 @@
 .PHONY: all
 
 all:
-    docker-compose up
+	docker-compose up
