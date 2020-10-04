@@ -112,13 +112,13 @@ pub async fn load_db_admin(username: &String) -> Result<DBAdmin, DBAdminError> {
 //     }
 // }
 
-/// Checks if a given username exists in the database already
-async fn does_user_exist(db_admin: &DBAdmin) -> bool {
-    match load_db_admin(&db_admin.username).await {
-        Ok(_) => true,
-        Err(_) => false,
-    }
-}
+// /// Checks if a given username exists in the database already
+// async fn does_user_exist(db_admin: &DBAdmin) -> bool {
+//     match load_db_admin(&db_admin.username).await {
+//         Ok(_) => true,
+//         Err(_) => false,
+//     }
+// }
 
 // #[cfg(test)]
 // mod tests {

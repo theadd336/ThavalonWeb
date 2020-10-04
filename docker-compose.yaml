@@ -16,19 +16,27 @@ services:
             - ./mongo-volume:/data/db
         ports:
             - "127.0.0.1:27017-27019:27017-27019"
-        expose:
-            - "27017-27019"
     
-    thavalon-db:
-        container_name: thavalon-db
+    # thavalon-db:
+    #     container_name: thavalon-db
+    #     build:
+    #         context: ./thavalon-db
+    #         dockerfile: Dockerfile.local
+    #     ports:
+    #         - "127.0.0.1:6543:6543"
+    #     volumes:
+    #         - ./thavalon-db:/app
+    #     depends_on: 
+    #         - database
+    
+    thavalon-api:
+        container_name: thavalon-api
         build:
-            context: .
+            context: ./thavalon-server
             dockerfile: Dockerfile.local
         ports:
-            - "127.0.0.1:6543:6543"
+            - "127.0.0.1:8001:8001"
         volumes:
-            - ./thavalon-db:/app
-        expose:
-            - "6543"
-        depends_on: 
-            - database
+            - ./thavalon-server:/app
+        expose: 
+            - "8001"

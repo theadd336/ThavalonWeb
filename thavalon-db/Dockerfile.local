@@ -2,6 +2,6 @@ FROM rust:1.46
 
 WORKDIR /app
 
-COPY scripts/ .
+COPY Cargo.toml .
 
 CMD [ "cargo", "run" ]
