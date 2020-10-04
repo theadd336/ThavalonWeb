@@ -13,15 +13,6 @@
     "@testing-library/react": "^9.4.1",
     "@testing-library/user-event": "^7.2.1",
     "@types/jest": "^24.9.1",
-<<<<<<< HEAD
-    "@types/node": "^12.12.62",
-    "@types/react": "^16.9.49",
-    "@types/react-dom": "^16.9.8",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
-    "react-scripts": "3.4.3",
-    "typescript": "^3.7.5"
-=======
     "@types/jquery": "^3.3.33",
     "@types/node": "^12.12.28",
     "@types/react": "^16.9.22",
@@ -48,7 +39,6 @@
     "styled-components": "^5.2.0",
     "typescript": "^3.8.2",
     "ws": "^7.2.1"
->>>>>>> 93892a862d0c75c1bacc6fe00c685cc5e1fe369a
   },
   "scripts": {
     "start": "react-scripts start",
