@@ -58,7 +58,9 @@ function Login(props: LoginProps) {
                     name="password"
                     ref={register({required: true})} />
                 {errors.password && <span className="error_msg">Password required.</span>}
+                <br />
                 <Link to="/register">Create Account?</Link>
+                <br />
                 <input type="submit" />
             </form>
         </ReactModal>
