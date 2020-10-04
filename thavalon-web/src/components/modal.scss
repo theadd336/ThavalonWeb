@@ -1,0 +1,60 @@
+.Modal {
+    position: absolute;
+    top: 20%;
+    left: 30%;
+    right: 30%;
+    bottom: 20%;
+    border: 1px solid #000000;
+    overflow: auto;
+    border-radius: 10px;
+    outline: none;
+    padding: 20px;
+    background-color: #ffffff;
+    opacity: 100%;
+
+    @media only screen and (max-width: 600px) {
+        top: 40px;
+        left: 40px;
+        right: 40px;
+        bottom: 40px;    
+    }    
+}
+
+.Overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, .5);
+}
+
+.error_msg {
+    color: red;
+    font-size: 13px;
+    font-style: italic;
+    style: inline-block;
+}
+
+/* const modalStyles = {
+    overlay: {
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 50%)'
+    }, 
+    content: {
+        top: '20%',
+        left: '30%',
+        right: '30%',
+        bottom: '20%',
+        border: '1px solid #000000',
+        overflow: 'auto',
+        borderRadius: '10px',
+        outline: 'none',
+        padding: '20px',
+        backgroundColor: '#ffffff',
+        opacity: '100%'    
+      }  
+}; */
