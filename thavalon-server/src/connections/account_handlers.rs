@@ -1,9 +1,14 @@
 //! Rest handlers for account-based calls
-use super::validation::{self, ValidationError};
+use super::validation::{self, TokenStore, ValidationError};
 use crate::database::{self, account_errors::AccountError, DatabaseAccount};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use warp::{
+    http::{
+        response::{Builder, Response},
+        StatusCode,
+    },
+    hyper::Body,
     reject::{self, Reject},
     Rejection, Reply,
 };
@@ -81,7 +86,10 @@ impl Reject for UnknownErrorRejection {}
 /// # Returns
 ///
 /// * Success reply on success, a variety of rejections otherwise.
-pub async fn handle_add_user(new_user: ThavalonUser) -> Result<impl Reply, Rejection> {
+pub async fn handle_add_user(
+    new_user: ThavalonUser,
+    token_store: TokenStore,
+) -> Result<impl Reply, Rejection> {
     log::info!("Attempting to add new user: {}.", new_user.email);
     let hash = match validation::hash_password(&new_user.password).await {
         Ok(hash) => hash,
@@ -103,8 +111,22 @@ pub async fn handle_add_user(new_user: ThavalonUser) -> Result<impl Reply, Rejec
         return Err(reject::custom(DuplicateAccountRejection));
     }
     log::info!("Successfully added {} to the database.", db_user.email);
-    let jwt = validation::create_JWT(&db_user.email).await;
-    Ok(warp::reply::json(&jwt))
+    let (jwt, refresh_token) = validation::create_JWT(&db_user.email, token_store).await;
+    let builder = Builder::new();
+    Ok(builder
+        .header(
+            "Authentication",
+            serde_json::to_string(&jwt).expect("Could not serialize JWT."),
+        )
+        .header(
+            "Set-Cookie",
+            format!(
+                "refreshToken={}; Expires={}; Secure; HttpOnly; SameSite=Strict",
+                refresh_token.token, refresh_token.expires_at
+            ),
+        )
+        .status(StatusCode::CREATED)
+        .body(""))
 }
 
 /// Authenticates a user by email and sends back the full user data to the game server.
@@ -202,4 +224,47 @@ pub async fn update_user(user: ThavalonUser) -> Result<impl Reply, Rejection> {
             Err(reject::custom(NoAccountRejection))
         }
     }
+}
+
+/// Validates a given refresh token and returns a new JWT and refresh token if valid.
+///
+/// # Arguments
+///
+/// * `refresh_token` - Current refresh token to validate
+/// * `token_store` - A store of active tokens
+///
+/// # Returns
+///
+/// * Reply with cookie and JWT on success. Rejection otherwise.
+pub async fn validate_refresh_token(
+    refresh_token: String,
+    token_store: TokenStore,
+) -> Result<impl Reply, Rejection> {
+    log::info!("Handling request to refresh a token.");
+    let (jwt, refresh_token) =
+        match validation::validate_refresh_token(refresh_token, token_store.clone()).await {
+            Ok(sec_tuple) => sec_tuple,
+            Err(e) => {
+                log::info!("Refresh token is not valid. Rejecting request.");
+                return Err(reject::custom(ValidationRejection));
+            }
+        };
+
+    log::info!("Refresh token validated. Sending new token to client.");
+    let builder = Builder::new();
+    let response = builder
+        .header(
+            "Authentication",
+            serde_json::to_string(&jwt).expect("Could not serialize JWT."),
+        )
+        .header(
+            "Set-Cookie",
+            format!(
+                "refreshToken={}; Expires={}; Secure; HttpOnly; SameSite=Strict",
+                refresh_token.token, refresh_token.expires_at
+            ),
+        )
+        .status(StatusCode::OK)
+        .body("");
+    Ok(response)
 }
