@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import {Switch, Route} from 'react-router-dom';
 import Login from './components/Login';
 import Logout from './components/Logout';
+import Register from './components/Register';
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -25,6 +26,9 @@ function App() {
         </Route>
         <Route path="/logout">
           <Logout setLoggedIn={() => setLoggedIn(false)} />
+        </Route>
+        <Route path="/register">
+          <Register />
         </Route>
       </Switch>
     </div>

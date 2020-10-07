@@ -2,52 +2,41 @@ import React, {useEffect, useState} from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
 import { Link, Redirect } from 'react-router-dom';
+import styled from 'styled-components';
 import { log_in } from '../utils/account_utils';
 import "./modal.scss";
-type LoginProps = {
-    setLoggedIn: any
-};
 
 ReactModal.setAppElement("#root");
 
-function Login(props: LoginProps) {
+function Login() {
     const [modalIsOpen, setModalIsOpen] = useState(true);
     const {register, handleSubmit, errors} = useForm();
     function closeModal() {
         setModalIsOpen(false);
     }
 
-    function OnError(data: any, event: any) {
+    function onError(data: any, event: any) {
         console.log(data);
         console.log("ERROR");
-
-        // prevent page from reloading
         event.preventDefault();
     }
 
-    function OnSubmit(data: any, event: any) {
+    function onSubmit(data: any, event: any) {
         console.log("SUBMIT");
         console.log(data);
-
-        // try logging in, if it works update page to reflect that
-        let loggedIn = log_in();
-        useEffect(() => props.setLoggedIn(log_in()));
-
-        // prevent page from reloading
         event.preventDefault();
     }
 
-    // log in without throwing a warning by using useEffect
     return (
         <ReactModal
             isOpen={modalIsOpen}
             onRequestClose={closeModal}
-            contentLabel="Login Modal"
+            contentLabel="Register Modal"
             className="Modal"
             overlayClassName="Overlay"
         >
-            <h2>Log In</h2>
-            <form onSubmit={handleSubmit(OnSubmit, OnError)}>
+            <h2>Register</h2>
+            <form onSubmit={handleSubmit(onSubmit, onError)}>
                 <input
                     type="text"
                     placeholder="Email"
@@ -65,9 +54,14 @@ function Login(props: LoginProps) {
                     ref={register({required: true})} />
                 {errors.password && <span className="errorMsg">Password required.</span>}
                 <br />
-                <Link to="/register" className="formLink">Create Account?</Link>
+                <input
+                    type="text"
+                    placeholder="Confirm Password"
+                    name="confirmPassword"
+                    ref={register({required: true})} />
+                {errors.confirmPassword && <span className="errorMsg">Password required.</span>}
                 <br />
-                <input type="submit" value="Log In" />
+                <input type="submit" value="Register" />
             </form>
         </ReactModal>
     )
