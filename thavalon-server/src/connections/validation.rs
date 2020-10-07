@@ -228,19 +228,23 @@ pub async fn validate_refresh_token(
     token_store: TokenStore,
 ) -> Result<(JWTResponse, RefreshTokenInfo), ValidationError> {
     log::info!("Attempting to validate refresh token {}.", refresh_token);
-    let mut token_store_locked = token_store
-        .lock()
-        .expect("Could not lock token store for validation.");
 
-    let token_info = match token_store_locked.remove(&refresh_token) {
-        Some(info) => info,
-        None => {
-            log::info!("Could not validate this request.");
-            return Err(ValidationError::Unauthorized);
-        }
-    };
-    log::info!("Refresh token exists in DB. Validating expiration time.");
+    let mut token_info: Option<RefreshTokenInfo> = None;
+    {
+        let mut token_store_locked = token_store
+            .lock()
+            .expect("Could not lock token store for validation.");
 
+        token_info = match token_store_locked.remove(&refresh_token) {
+            Some(info) => Some(info),
+            None => {
+                log::info!("Could not validate this request.");
+                return Err(ValidationError::Unauthorized);
+            }
+        };
+        log::info!("Refresh token exists in DB. Validating expiration time.");
+    }
+    let token_info = token_info.unwrap();
     let time = Utc::now().timestamp();
     if time > token_info.expires_at {
         log::info!(
