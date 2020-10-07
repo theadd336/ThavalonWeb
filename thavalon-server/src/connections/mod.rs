@@ -68,9 +68,25 @@ pub async fn serve_connections() {
     let post_routes = warp::post().and(add_user_route.or(login_route));
     let delete_routes = warp::delete().and(delete_user_route);
     let put_routes = warp::put().and(update_user_route);
+
+    let cors = warp::cors()
+        .allow_any_origin()
+        .allow_headers(vec![
+            "User-Agent",
+            "Sec-Fetch-Mode",
+            "Referer",
+            "Origin",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers",
+            "content-type",
+            "Authorization",
+        ])
+        .allow_methods(vec!["POST", "GET"]);
+
     let all_routes = warp::path(API_BASE_PATH)
         .and(get_routes.or(post_routes).or(delete_routes).or(put_routes))
-        .recover(recover_errors);
+        .recover(recover_errors)
+        .with(cors);
     warp::serve(all_routes).run(([0, 0, 0, 0], 8001)).await;
 }
 
