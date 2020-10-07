@@ -242,7 +242,7 @@ pub async fn validate_refresh_token(
 ) -> Result<impl Reply, Rejection> {
     log::info!("Handling request to refresh a token.");
     let (jwt, refresh_token) =
-        match validation::validate_refresh_token(refresh_token, token_store.clone()).await {
+        match validation::validate_refresh_token(refresh_token, token_store).await {
             Ok(sec_tuple) => sec_tuple,
             Err(e) => {
                 log::info!("Refresh token is not valid. Rejecting request.");

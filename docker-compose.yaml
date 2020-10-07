@@ -28,18 +28,3 @@ services:
             - ./thavalon-server:/app
         expose: 
             - "8001"
-    
-    thavalon-webapp:
-        container_name: thavalon-webapp
-        build:
-            context: ./thavalon-webapp
-            dockerfile: Dockerfile.local
-        ports:
-            - "127.0.0.1:3000:3000"
-        volumes:
-            - "/app/node_modules"
-            - ./thavalon-webapp:/app
-        expose:
-            - "3000"
-        depends_on: 
-            - thavalon-api
