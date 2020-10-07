@@ -1,13 +1,30 @@
 ---
 version: '3'
 
+volumes:
+    mongo-volume: {}
+
 services:
-    api:
+    database:
+        image: mongo:4.4
+        container_name: mongo
+        environment: 
+            - MONGO_INITDB_DATABASE=master # database name
+            - MONGO_INITDB_ROOT_USERNAME=admin # root username
+            - MONGO_INITDB_ROOT_PASSWORD=secret # root password
+        volumes: 
+            - ./mongo-volume:/data/db
+        ports:
+            - "127.0.0.1:27017-27019:27017-27019"
+    
+    thavalon-api:
         container_name: thavalon-api
         build:
-            context: .
+            context: ./thavalon-server
             dockerfile: Dockerfile.local
         ports:
-        - "127.0.0.1:6543:6543"
+            - "127.0.0.1:8001:8001"
         volumes:
-        - .:/app
+            - ./thavalon-server:/app
+        expose: 
+            - "8001"
