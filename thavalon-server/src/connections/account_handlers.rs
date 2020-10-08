@@ -16,6 +16,7 @@ use warp::{
 /// Canonical representation of a Thavalon user.
 /// This struct is safe to send from the database, as it does not contain a password hash.
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ThavalonUser {
     pub email: String,
     pub password: String,
