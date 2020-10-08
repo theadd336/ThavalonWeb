@@ -280,7 +280,7 @@ async fn create_validated_response(
         .header(
             "Set-Cookie",
             format!(
-                "refreshToken={}; Expires={}; Secure; HttpOnly; SameSite=Strict",
+                "refreshToken={}; Expires={}; Secure; HttpOnly; SameSite=None",
                 refresh_token.token, refresh_token.expires_at
             ),
         )

@@ -85,7 +85,12 @@ pub async fn serve_connections() {
         .and(get_routes.or(post_routes).or(delete_routes).or(put_routes))
         .recover(errors::recover_errors)
         .with(cors);
-    warp::serve(all_routes).run(([0, 0, 0, 0], 8001)).await;
+    warp::serve(all_routes)
+        .tls()
+        .cert_path("./thavalon_cert.crt")
+        .key_path("./thavalon_key.key")
+        .run(([0, 0, 0, 0], 8001))
+        .await;
 }
 
 /// Authorizes a request for downstream endpoints.
