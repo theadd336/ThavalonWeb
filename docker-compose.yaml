@@ -2,7 +2,7 @@
 version: '3'
 
 volumes:
-    mongo-volume: {}
+    mongodata:
 
 services:
     database:
@@ -13,7 +13,7 @@ services:
             - MONGO_INITDB_ROOT_USERNAME=admin # root username
             - MONGO_INITDB_ROOT_PASSWORD=secret # root password
         volumes: 
-            - ./mongo-volume:/data/db
+            - mongodata:/data/db
         ports:
             - "127.0.0.1:27017-27019:27017-27019"
     

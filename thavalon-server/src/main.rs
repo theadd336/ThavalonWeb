@@ -25,7 +25,7 @@ fn setup_logger() -> Result<(), fern::InitError> {
         })
         .level(log::LevelFilter::Debug)
         .level_for("hyper", log::LevelFilter::Info)
-        .level_for("warp", log::LevelFilter::Info)
+        .level_for("warp", log::LevelFilter::Debug)
         .chain(std::io::stdout())
         .apply()?;
 

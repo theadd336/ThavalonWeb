@@ -4,6 +4,7 @@ import { Switch, Route } from 'react-router-dom';
 import Login from './components/Login';
 import Logout from './components/Logout';
 import Register from './components/Register';
+import { say_hello } from './utils/account_utils';
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -20,6 +21,7 @@ function App() {
         </Route>
         <Route path="/rules">
           <h1>Rules</h1>
+          {say_hello()}
         </Route>
         <Route path="/login">
           <Login setLoggedIn={() => setLoggedIn(true)} />

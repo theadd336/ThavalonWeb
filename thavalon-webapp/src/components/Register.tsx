@@ -1,10 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
-import { Link, Redirect } from 'react-router-dom';
-import styled from 'styled-components';
-import { log_in } from '../utils/account_utils';
 import "./modal.scss";
+import { register_user } from '../utils/account_utils';
 
 ReactModal.setAppElement("#root");
 
@@ -22,8 +20,8 @@ function Login() {
     }
 
     function onSubmit(data: any, event: any) {
-        console.log("SUBMIT");
-        console.log(data);
+        console.log("registering user with data: " + data);
+        register_user(data.name, data.email, data.password);
         event.preventDefault();
     }
 
@@ -35,8 +33,16 @@ function Login() {
             className="Modal"
             overlayClassName="Overlay"
         >
-            <h2>Register</h2>
+            <h2 className="modalHeader">Register</h2>
             <form onSubmit={handleSubmit(onSubmit, onError)}>
+                <input
+                    type="text"
+                    placeholder="Name"
+                    name="name"
+                    ref={register({required: true})}
+                    />
+                {errors.name && <span className="errorMsg">Name required.</span>}
+                <br />
                 <input
                     type="text"
                     placeholder="Email"

@@ -2,7 +2,8 @@ import React, {useEffect, useState} from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
 import { Link, Redirect } from 'react-router-dom';
-import { log_in } from '../utils/account_utils';
+import { log_in, say_hello } from '../utils/account_utils';
+
 import "./modal.scss";
 type LoginProps = {
     setLoggedIn: any
@@ -46,7 +47,7 @@ function Login(props: LoginProps) {
             className="Modal"
             overlayClassName="Overlay"
         >
-            <h2>Log In</h2>
+            <h2 className="modalHeader">Log In</h2>
             <form onSubmit={handleSubmit(OnSubmit, OnError)}>
                 <input
                     type="text"
