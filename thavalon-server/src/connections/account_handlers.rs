@@ -174,13 +174,14 @@ pub async fn delete_user(user: ThavalonUser) -> Result<impl Reply, Rejection> {
         log::info!("Error while removing the user from the database.");
         log::info!("{:?}", e);
 
-        if e == AccountError::UserDoesNotExist {
-            return Err(reject::custom(NoAccountRejection));
-        } else {
+        if e == AccountError::UnknownError {
             return Err(reject::custom(UnknownErrorRejection));
         }
     }
-    Ok(warp::reply())
+    Ok(warp::reply::with_status(
+        warp::reply(),
+        StatusCode::NO_CONTENT,
+    ))
 }
 
 /// Updates a user with new information from the client.
