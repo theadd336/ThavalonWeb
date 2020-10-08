@@ -1,5 +1,5 @@
 //! Rest handlers for account-based calls
-use super::validation::{self, TokenStore, ValidationError};
+use super::validation::{self, JWTResponse, RefreshTokenInfo, TokenStore, ValidationError};
 use crate::database::{self, account_errors::AccountError, DatabaseAccount};
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -112,21 +112,9 @@ pub async fn handle_add_user(
     }
     log::info!("Successfully added {} to the database.", db_user.email);
     let (jwt, refresh_token) = validation::create_JWT(&db_user.email, token_store).await;
-    let builder = Builder::new();
-    Ok(builder
-        .header(
-            "Authentication",
-            serde_json::to_string(&jwt).expect("Could not serialize JWT."),
-        )
-        .header(
-            "Set-Cookie",
-            format!(
-                "refreshToken={}; Expires={}; Secure; HttpOnly; SameSite=Strict",
-                refresh_token.token, refresh_token.expires_at
-            ),
-        )
-        .status(StatusCode::CREATED)
-        .body(""))
+    let response =
+        create_validated_response(jwt, refresh_token, StatusCode::CREATED, "".to_string()).await;
+    Ok(response)
 }
 
 /// Authenticates a user by email and sends back the full user data to the game server.
@@ -138,7 +126,10 @@ pub async fn handle_add_user(
 /// # Returns
 ///
 /// * Reply containing full user info on success. Password rejection otherwise.
-pub async fn handle_user_login(user: ThavalonUser) -> Result<impl Reply, Rejection> {
+pub async fn handle_user_login(
+    user: ThavalonUser,
+    token_store: TokenStore,
+) -> Result<impl Reply, Rejection> {
     log::info!("Attempting to log user {} in.", user.email);
     let hashed_user = match database::load_user_by_email(&user.email).await {
         Ok(user) => user,
@@ -157,7 +148,11 @@ pub async fn handle_user_login(user: ThavalonUser) -> Result<impl Reply, Rejecti
 
     let authed_user: ThavalonUser = hashed_user.into();
     log::info!("User {} logged in successfully.", authed_user.email);
-    Ok(serde_json::to_string(&authed_user).expect("Could not serialize authenticated user."))
+    let (jwt, refresh_token) = validation::create_JWT(&authed_user.email, token_store).await;
+    let body =
+        serde_json::to_string(&authed_user).expect("Could not serialize authenticated user.");
+    let response = create_validated_response(jwt, refresh_token, StatusCode::OK, body).await;
+    Ok(response)
 }
 
 /// Deletes a user and all associated information from the database.
@@ -251,8 +246,31 @@ pub async fn validate_refresh_token(
         };
 
     log::info!("Refresh token validated. Sending new token to client.");
-    let builder = Builder::new();
-    let response = builder
+    let response =
+        create_validated_response(jwt, refresh_token, StatusCode::OK, "".to_string()).await;
+    Ok(response)
+}
+
+/// Creates a warp response with an authorization header for a JWT, a refresh
+/// token as a cookie, and a caller-specified status and body.
+///
+/// # Arguments
+///
+/// * `jwt` - The javascript web token to send in the authorization header
+/// * `refresh_token` - A valid refresh token sent as an HttpOnly cookie
+/// * `status_code` - An HTTP status code to send.
+/// * `body` - The body of the HTTP response, as a string.
+///
+/// # Returns
+///
+/// * Response implementing `warp::Reply`
+async fn create_validated_response(
+    jwt: JWTResponse,
+    refresh_token: RefreshTokenInfo,
+    status_code: StatusCode,
+    body: String,
+) -> impl Reply {
+    Builder::new()
         .header(
             "Authentication",
             serde_json::to_string(&jwt).expect("Could not serialize JWT."),
@@ -264,7 +282,6 @@ pub async fn validate_refresh_token(
                 refresh_token.token, refresh_token.expires_at
             ),
         )
-        .status(StatusCode::OK)
-        .body("");
-    Ok(response)
+        .status(status_code)
+        .body(body)
 }

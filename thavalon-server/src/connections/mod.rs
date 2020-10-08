@@ -49,6 +49,7 @@ pub async fn serve_connections() {
 
     let login_route = warp::path!("auth" / "login")
         .and(body::json())
+        .and(with_token_store(token_store.clone()))
         .and_then(account_handlers::handle_user_login);
 
     let refresh_jwt_route = warp::path!("auth" / "refresh")
@@ -70,7 +71,7 @@ pub async fn serve_connections() {
     let put_routes = warp::put().and(update_user_route);
 
     let cors = warp::cors()
-        .allow_any_origin()
+        .allow_origin("localhost:3000")
         .allow_headers(vec![
             "User-Agent",
             "Sec-Fetch-Mode",
