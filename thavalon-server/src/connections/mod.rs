@@ -3,6 +3,7 @@
 
 //#region Modules and Use Statements
 mod account_handlers;
+mod errors;
 mod validation;
 use account_handlers::ThavalonUser;
 use serde::Serialize;
@@ -24,12 +25,6 @@ const API_BASE_PATH: &str = "api";
 #[derive(Debug, PartialEq)]
 struct InvalidTokenRejection;
 impl Reject for InvalidTokenRejection {}
-
-#[derive(Serialize)]
-struct ServerError {
-    error_code: u16,
-    error_message: String,
-}
 
 /// Main entry point. Serves all warp connections and paths.
 /// This function does not return unless warp crashes (bad),
@@ -72,7 +67,7 @@ pub async fn serve_connections() {
 
     let cors = warp::cors()
         .allow_origin("https://localhost:3000")
-        .allow_origin("http://localhost:3000")
+        .allow_origin("http://localhost:3000") // This must be removed before getting to production
         .allow_headers(vec![
             "User-Agent",
             "Sec-Fetch-Mode",
@@ -87,27 +82,9 @@ pub async fn serve_connections() {
 
     let all_routes = warp::path(API_BASE_PATH)
         .and(get_routes.or(post_routes).or(delete_routes).or(put_routes))
-        .recover(recover_errors)
+        .recover(errors::recover_errors)
         .with(cors);
     warp::serve(all_routes).run(([0, 0, 0, 0], 8001)).await;
-}
-
-/// Recovers any custom rejections and returns a response to the client.
-///
-/// # Arguments
-///
-/// * `err` - The rejection caused by an upstream failure.
-async fn recover_errors(err: Rejection) -> Result<impl Reply, Infallible> {
-    let mut http_response_code = StatusCode::INTERNAL_SERVER_ERROR;
-    let mut error_code = 255;
-    let mut error_message = "An unknown error occurred.".to_string();
-    let server_error = ServerError {
-        error_code,
-        error_message,
-    };
-
-    let error_json = warp::reply::json(&server_error);
-    Ok(warp::reply::with_status(error_json, http_response_code))
 }
 
 /// Authorizes a request for downstream endpoints.
