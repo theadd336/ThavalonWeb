@@ -78,7 +78,7 @@ pub async fn serve_connections() {
             "content-type",
             "Authorization",
         ])
-        .expose_header("Authorization")
+        .expose_headers(vec!["Token"])
         .allow_methods(vec!["POST", "GET"]);
 
     let all_routes = warp::path(API_BASE_PATH)

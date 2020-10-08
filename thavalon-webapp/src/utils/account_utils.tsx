@@ -41,10 +41,9 @@ export async function register_user(name: string, email: string, password: strin
         }
     }).then((response) => {
         console.log(response);
-        response.headers.forEach((key: any, value: any) => {
-            console.log(key);
-            console.log(value);
-        });
+        for (const header of response.headers.entries()) {
+            console.log(header);
+        }
         let auth_headers = response.headers.get("authentication");
         console.log(auth_headers);
     });

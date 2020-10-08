@@ -274,7 +274,7 @@ async fn create_validated_response(
 ) -> impl Reply {
     Builder::new()
         .header(
-            "Authentication",
+            "Token",
             serde_json::to_string(&jwt).expect("Could not serialize JWT."),
         )
         .header(
