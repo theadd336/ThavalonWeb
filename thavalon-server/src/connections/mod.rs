@@ -71,7 +71,8 @@ pub async fn serve_connections() {
     let put_routes = warp::put().and(update_user_route);
 
     let cors = warp::cors()
-        .allow_origin("localhost:3000")
+        .allow_origin("https://localhost:3000")
+        .allow_origin("http://localhost:3000")
         .allow_headers(vec![
             "User-Agent",
             "Sec-Fetch-Mode",
