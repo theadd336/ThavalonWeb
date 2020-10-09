@@ -1,16 +1,13 @@
 //! Rest handlers for account-based calls
 use super::validation::{self, JWTResponse, RefreshTokenInfo, TokenStore, ValidationError};
 use crate::database::{self, account_errors::AccountError, DatabaseAccount};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use warp::{
-    http::{
-        response::{Builder, Response},
-        StatusCode,
-    },
-    hyper::Body,
+    http::{response::Builder, StatusCode},
     reject::{self, Reject},
-    Rejection, Reply,
+    reply, Rejection, Reply,
 };
 
 /// Canonical representation of a Thavalon user.
@@ -112,9 +109,8 @@ pub async fn handle_add_user(
         return Err(reject::custom(DuplicateAccountRejection));
     }
     log::info!("Successfully added {} to the database.", db_user.email);
-    let (jwt, refresh_token) = validation::create_JWT(&db_user.email, token_store).await;
-    let response =
-        create_validated_response(jwt, refresh_token, StatusCode::CREATED, "".to_string()).await;
+    let (jwt, refresh_token) = validation::create_jwt(&db_user.email, token_store).await;
+    let response = create_validated_response(jwt, refresh_token, StatusCode::CREATED).await;
     Ok(response)
 }
 
@@ -147,13 +143,36 @@ pub async fn handle_user_login(
         return Err(reject::custom(InvalidLoginRejection));
     }
 
-    let authed_user: ThavalonUser = hashed_user.into();
-    log::info!("User {} logged in successfully.", authed_user.email);
-    let (jwt, refresh_token) = validation::create_JWT(&authed_user.email, token_store).await;
-    let body =
-        serde_json::to_string(&authed_user).expect("Could not serialize authenticated user.");
-    let response = create_validated_response(jwt, refresh_token, StatusCode::OK, body).await;
+    log::info!("User {} logged in successfully.", hashed_user.email);
+    let (jwt, refresh_token) = validation::create_jwt(&hashed_user.email, token_store).await;
+    let response = create_validated_response(jwt, refresh_token, StatusCode::OK).await;
     Ok(response)
+}
+
+/// Loads user account information from the database. The user must already be
+/// authenticated with an auth token before calling.
+///
+/// # Arguments
+///
+/// * `email` - The email to load information for
+///
+/// # Returns
+///
+/// * JSON serialized ThavalonUser on success. Rejection on failure.
+pub async fn get_user_account_info(email: String) -> Result<impl Reply, Rejection> {
+    log::info!("Loading user account info for the specified account.");
+    let user = match database::load_user_by_email(&email).await {
+        Ok(user) => user,
+        Err(e) => {
+            log::warn!("Failed to find user info for an authenticated account.");
+            log::warn!("{:?}", e);
+            return Err(reject::custom(UnknownErrorRejection));
+        }
+    };
+
+    let user: ThavalonUser = user.into();
+    log::info!("Successfully loaded user account information.");
+    Ok(reply::json(&user))
 }
 
 /// Deletes a user and all associated information from the database.
@@ -243,13 +262,13 @@ pub async fn validate_refresh_token(
             Ok(sec_tuple) => sec_tuple,
             Err(e) => {
                 log::info!("Refresh token is not valid. Rejecting request.");
+                log::info!("{}", e);
                 return Err(reject::custom(ValidationRejection));
             }
         };
 
     log::info!("Refresh token validated. Sending new token to client.");
-    let response =
-        create_validated_response(jwt, refresh_token, StatusCode::OK, "".to_string()).await;
+    let response = create_validated_response(jwt, refresh_token, StatusCode::OK).await;
     Ok(response)
 }
 
@@ -270,20 +289,21 @@ async fn create_validated_response(
     jwt: JWTResponse,
     refresh_token: RefreshTokenInfo,
     status_code: StatusCode,
-    body: String,
 ) -> impl Reply {
+    let exp_datetime = DateTime::<Utc>::from_utc(
+        NaiveDateTime::from_timestamp(refresh_token.expires_at, 0),
+        Utc,
+    );
+
     Builder::new()
-        .header(
-            "Token",
-            serde_json::to_string(&jwt).expect("Could not serialize JWT."),
-        )
         .header(
             "Set-Cookie",
             format!(
-                "refreshToken={}; Expires={}; Secure; HttpOnly; SameSite=None",
-                refresh_token.token, refresh_token.expires_at
+                "refreshToken={}; Expires={}; path=/; HttpOnly; Secure; SameSite=None",
+                refresh_token.token,
+                exp_datetime.to_rfc2822()
             ),
         )
         .status(status_code)
-        .body(body)
+        .body(serde_json::to_string(&jwt).expect("Could not serialize JWT."))
 }

@@ -5,8 +5,6 @@
 mod account_handlers;
 mod errors;
 mod validation;
-use account_handlers::ThavalonUser;
-use serde::Serialize;
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::sync::{Arc, Mutex};
@@ -14,9 +12,8 @@ use validation::TokenStore;
 use warp::{
     body,
     filters::cookie,
-    http::StatusCode,
     reject::{self, Reject},
-    Filter, Rejection, Reply,
+    Filter, Rejection,
 };
 //#endregion
 
@@ -47,6 +44,10 @@ pub async fn serve_connections() {
         .and(with_token_store(token_store.clone()))
         .and_then(account_handlers::handle_user_login);
 
+    let get_user_info_route = warp::path!("get" / "user")
+        .and(authorize_request())
+        .and_then(account_handlers::get_user_account_info);
+
     let refresh_jwt_route = warp::path!("auth" / "refresh")
         .and(cookie::cookie("refreshToken"))
         .and(with_token_store(token_store.clone()))
@@ -60,14 +61,13 @@ pub async fn serve_connections() {
         .and(body::json())
         .and_then(account_handlers::update_user);
 
-    let get_routes = warp::get().and(path_test.or(restricted_path_test));
-    let post_routes = warp::post().and(add_user_route.or(login_route));
+    let get_routes = warp::get().and(path_test.or(restricted_path_test).or(get_user_info_route));
+    let post_routes = warp::post().and(add_user_route.or(login_route).or(refresh_jwt_route));
     let delete_routes = warp::delete().and(delete_user_route);
     let put_routes = warp::put().and(update_user_route);
 
     let cors = warp::cors()
-        .allow_origin("https://localhost:3000")
-        .allow_origin("http://localhost:3000") // This must be removed before getting to production
+        .allow_any_origin()
         .allow_headers(vec![
             "User-Agent",
             "Sec-Fetch-Mode",
@@ -75,11 +75,11 @@ pub async fn serve_connections() {
             "Origin",
             "Access-Control-Request-Method",
             "Access-Control-Request-Headers",
-            "content-type",
+            "Content-Type",
             "Authorization",
         ])
-        .expose_headers(vec!["Token"])
-        .allow_methods(vec!["POST", "GET"]);
+        .allow_methods(vec!["POST", "GET"])
+        .allow_credentials(true);
 
     let all_routes = warp::path(API_BASE_PATH)
         .and(get_routes.or(post_routes).or(delete_routes).or(put_routes))

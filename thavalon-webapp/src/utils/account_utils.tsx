@@ -33,13 +33,15 @@ export async function register_user(name: string, email: string, password: strin
         "displayName": name
     }
 
-    let response = await fetch("http://localhost:8001/api/add/user", {
+    let response = await fetch("/api/add/user", {
         method: "POST",
         body: JSON.stringify(add_user_dict),
         headers: {
             "Content-Type": "application/json"
-        }
+        },
+        credentials: "include"
     }).then((response) => {
+        console.log(document.cookie);
         console.log(response);
         for (const header of response.headers.entries()) {
             console.log(header);

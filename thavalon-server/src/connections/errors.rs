@@ -17,6 +17,7 @@ enum ErrorCode {
     Unauthorized = 1,
     DuplicateAccount,
     PasswordInsecure,
+    InvalidLogin,
     Unknown = 255,
 }
 
@@ -42,6 +43,10 @@ pub async fn recover_errors(err: Rejection) -> Result<impl Reply, Infallible> {
         http_response_code = StatusCode::NOT_ACCEPTABLE;
         error_message = "This password does not meet minimum security requirements.".to_string();
         error_code = ErrorCode::PasswordInsecure;
+    } else if let Some(InvalidLoginRejection) = err.find() {
+        http_response_code = StatusCode::UNAUTHORIZED;
+        error_message = "Invalid email or password.".to_string();
+        error_code = ErrorCode::InvalidLogin;
     }
 
     let server_error = ServerError {

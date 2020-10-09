@@ -15,8 +15,6 @@ const PASSWORD_MIN_LENGTH: usize = 8;
 pub enum ValidationError {
     #[error("Fatal hashing error")]
     HashError,
-    #[error("User does not exist.")]
-    InvalidUserError,
     #[error("Invalid password")]
     InvalidPassword,
     #[error("User unathorized for this request.")]
@@ -105,7 +103,7 @@ pub async fn validate_password(plaintext: &String, hash: &String) -> bool {
 /// # Returns
 ///
 /// A JWTResponse with the JWT
-pub async fn create_JWT(
+pub async fn create_jwt(
     user_email: &String,
     token_store: TokenStore,
 ) -> (JWTResponse, RefreshTokenInfo) {
@@ -229,14 +227,14 @@ pub async fn validate_refresh_token(
 ) -> Result<(JWTResponse, RefreshTokenInfo), ValidationError> {
     log::info!("Attempting to validate refresh token {}.", refresh_token);
 
-    let mut token_info: Option<RefreshTokenInfo> = None;
+    let token_info;
     {
         let mut token_store_locked = token_store
             .lock()
             .expect("Could not lock token store for validation.");
 
         token_info = match token_store_locked.remove(&refresh_token) {
-            Some(info) => Some(info),
+            Some(info) => info,
             None => {
                 log::info!("Could not validate this request.");
                 return Err(ValidationError::Unauthorized);
@@ -244,7 +242,6 @@ pub async fn validate_refresh_token(
         };
         log::info!("Refresh token exists in DB. Validating expiration time.");
     }
-    let token_info = token_info.unwrap();
     let time = Utc::now().timestamp();
     if time > token_info.expires_at {
         log::info!(
@@ -256,5 +253,5 @@ pub async fn validate_refresh_token(
     }
 
     log::info!("Token is valid. Sending new JWT.");
-    Ok(create_JWT(&token_info.email, token_store).await)
+    Ok(create_jwt(&token_info.email, token_store).await)
 }
