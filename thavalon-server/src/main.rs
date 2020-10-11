@@ -28,5 +28,6 @@ fn setup_logger() -> Result<(), fern::InitError> {
 #[tokio::main]
 async fn main() {
     setup_logger().expect("Could not set up logging");
+    database::initialize_mongo_client().await;
     connections::serve_connections().await;
 }

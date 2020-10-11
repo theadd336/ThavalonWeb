@@ -1,5 +1,5 @@
 pub mod account_errors;
-use super::get_db_client;
+use super::get_database;
 use account_errors::AccountError;
 use mongodb::{
     bson::{self, doc},
@@ -29,7 +29,7 @@ pub struct DatabaseAccount {
 /// * Null on success, AccountCreationError on failure
 pub async fn create_new_user(user: &DatabaseAccount) -> Result<(), AccountError> {
     log::info!("Attempting to add thavalon user: {}.", user.email);
-    let collection = get_db_client().await.collection(USER_COLLECTION);
+    let collection = get_database().await.collection(USER_COLLECTION);
     let filter = doc! {
         "email": user.email.clone()
     };
@@ -90,7 +90,7 @@ pub async fn remove_user(user: &DatabaseAccount) -> Result<(), AccountError> {
         }
     };
 
-    let collection = get_db_client().await.collection(USER_COLLECTION);
+    let collection = get_database().await.collection(USER_COLLECTION);
     let document =
         bson::to_document(&user_hashed).expect("Could not serialize user to database document.");
 
@@ -119,7 +119,7 @@ pub async fn remove_user(user: &DatabaseAccount) -> Result<(), AccountError> {
 pub async fn load_user_by_email(email: &String) -> Result<DatabaseAccount, AccountError> {
     // Get the collection and set up options and filters.
     log::info!("Loading user account for email: {}", email);
-    let collection = get_db_client().await.collection(USER_COLLECTION);
+    let collection = get_database().await.collection(USER_COLLECTION);
     let find_options = FindOneOptions::builder().show_record_id(false).build();
     let filter = doc! {"email": email.clone()};
 
@@ -156,7 +156,7 @@ pub async fn load_user_by_email(email: &String) -> Result<DatabaseAccount, Accou
 pub async fn update_user(user: &DatabaseAccount) -> Result<(), AccountError> {
     log::info!("Attempting to update user {}.", user.email);
 
-    let collection = get_db_client().await.collection(USER_COLLECTION);
+    let collection = get_database().await.collection(USER_COLLECTION);
     let filter = doc! {"email": user.email.clone()};
     let user_doc = bson::to_document(user).expect("Failed to serialize user to BSON.");
     match collection
