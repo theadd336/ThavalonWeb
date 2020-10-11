@@ -52,11 +52,12 @@ pub async fn serve_connections() {
         .and_then(account_handlers::renew_refresh_token);
 
     let delete_user_route = warp::path!("remove" / "user")
-        .and(body::json())
+        .and(authorize_request(&token_manager))
         .and_then(account_handlers::delete_user);
 
     let update_user_route = warp::path!("update" / "user")
         .and(body::json())
+        .and(authorize_request(&token_manager))
         .and_then(account_handlers::update_user);
 
     let get_routes = warp::get().and(path_test.or(restricted_path_test).or(get_user_info_route));
@@ -91,6 +92,7 @@ pub async fn serve_connections() {
 fn authorize_request(
     token_manager: &TokenManager,
 ) -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
+    log::info!("Restricted API called. Validating auth header.");
     warp::header::<String>("Authorization")
         .and(with_token_manager(token_manager.clone()))
         .and_then(authorize_user)
@@ -99,6 +101,7 @@ fn authorize_request(
 /// Authorizes a user via JWT.
 /// Returns either the user ID or a rejection if the user isn't authorized.
 async fn authorize_user(header: String, token_manager: TokenManager) -> Result<String, Rejection> {
+    log::info!("Authorizing user for restricted API by JWT.");
     let token_pieces: Vec<&str> = header.split(' ').collect();
     if token_pieces.len() < 2 {
         log::info!(
@@ -108,16 +111,19 @@ async fn authorize_user(header: String, token_manager: TokenManager) -> Result<S
         return Err(reject::custom(InvalidTokenRejection));
     }
     let token = token_pieces[1];
-    let email = match token_manager.validate_jwt(token).await {
-        Ok(email) => email,
+    let player_id = match token_manager.validate_jwt(token).await {
+        Ok(player_id) => player_id,
         Err(_) => {
             log::info!("JWT is not valid. Rejecting request.");
             return Err(reject::custom(InvalidTokenRejection));
         }
     };
 
-    log::info!("User {} is authorized for the requested service.", email);
-    Ok(email)
+    log::info!(
+        "User {} is authorized for the requested service.",
+        player_id
+    );
+    Ok(player_id)
 }
 
 /// Moves a token_store reference into downstream filters.

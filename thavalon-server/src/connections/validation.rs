@@ -39,7 +39,7 @@ pub struct JWTResponse {
 pub struct RefreshTokenInfo {
     pub token: String,
     pub expires_at: i64,
-    pub email: String,
+    pub player_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,26 +69,26 @@ impl TokenManager {
         }
     }
 
-    /// Creates a valid JWT using a user's email.
+    /// Creates a valid JWT using a user's ID.
     ///
     /// # Arguments
     ///
-    /// * `user_email` - The user's email to create a JWT with.
+    /// * `player_id` - The user's ID to create a JWT with.
     ///
     /// # Returns
     ///
     /// A JWTResponse with the JWT
-    pub async fn create_jwt(&mut self, user_email: &String) -> (JWTResponse, RefreshTokenInfo) {
-        log::info!("Creating a new JWT for {}.", user_email);
+    pub async fn create_jwt(&mut self, player_id: &String) -> (JWTResponse, RefreshTokenInfo) {
+        log::info!("Creating a new JWT for {}.", player_id);
         let time = Utc::now();
         let expiration_time = time
             .checked_add_signed(Duration::minutes(60))
             .expect("Failed to get expiration time.");
         let claims = JWTClaims {
-            aud: user_email.clone(),
+            aud: player_id.clone(),
             exp: expiration_time.timestamp(),
             iat: time.timestamp(),
-            iss: self.sub.to_string(),
+            iss: self.iss.to_string(),
             nbf: time.timestamp(),
             sub: self.sub.to_string(),
         };
@@ -100,14 +100,14 @@ impl TokenManager {
         )
         .expect("Failed to generate a JWT for this claim.");
 
-        log::info!("Successfully created a JWT for {}.", user_email);
+        log::info!("Successfully created a JWT for {}.", player_id);
         (
             JWTResponse {
                 token_type: "Bearer".to_string(),
                 access_token: token,
                 expires_at: expiration_time.timestamp(),
             },
-            self.create_refresh_token(user_email).await,
+            self.create_refresh_token(player_id).await,
         )
     }
 
@@ -151,7 +151,7 @@ impl TokenManager {
     ///
     /// # Arguments
     ///
-    /// * `user` - The email address of the user of the refresh token.
+    /// * `user` - The ID of the user of the refresh token.
     ///
     /// # Returns
     ///
@@ -169,7 +169,7 @@ impl TokenManager {
                 .checked_add_signed(Duration::weeks(1))
                 .expect("Could not create refresh token expires time.")
                 .timestamp(),
-            email: user.clone(),
+            player_id: user.clone(),
         };
 
         self.refresh_tokens
@@ -221,7 +221,7 @@ impl TokenManager {
         }
 
         log::info!("Token is valid. Sending new JWT.");
-        Ok(self.create_jwt(&token_info.email).await)
+        Ok(self.create_jwt(&token_info.player_id).await)
     }
 }
 

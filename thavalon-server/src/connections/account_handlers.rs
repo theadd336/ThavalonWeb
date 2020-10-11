@@ -15,6 +15,8 @@ use warp::{
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ThavalonUser {
+    #[serde(default)]
+    pub player_id: String,
     pub email: String,
     pub password: String,
     #[serde(default)]
@@ -27,6 +29,7 @@ pub struct ThavalonUser {
 impl From<DatabaseAccount> for ThavalonUser {
     fn from(db_account: DatabaseAccount) -> Self {
         ThavalonUser {
+            player_id: db_account.id,
             email: db_account.email,
             password: String::from(""),
             display_name: db_account.display_name,
@@ -39,6 +42,7 @@ impl From<DatabaseAccount> for ThavalonUser {
 impl Into<DatabaseAccount> for ThavalonUser {
     fn into(self) -> DatabaseAccount {
         DatabaseAccount {
+            id: self.player_id,
             email: self.email,
             hash: String::from(""),
             display_name: self.display_name,
@@ -47,6 +51,24 @@ impl Into<DatabaseAccount> for ThavalonUser {
         }
     }
 }
+
+/// Represents information required to log a user in.
+#[derive(Deserialize)]
+pub struct LoginRequestInfo {
+    email: String,
+    password: String,
+}
+
+/// Represents information required to create a new user account.
+/// Display name is optional for this request.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NewUserInfo {
+    email: String,
+    password: String,
+    display_name: String,
+}
+
 #[derive(Debug)]
 pub struct ValidationRejection;
 impl Reject for ValidationRejection {}
@@ -85,10 +107,10 @@ impl Reject for UnknownErrorRejection {}
 ///
 /// * Success reply on success, a variety of rejections otherwise.
 pub async fn handle_add_user(
-    new_user: ThavalonUser,
+    new_user: NewUserInfo,
     mut token_manager: TokenManager,
 ) -> Result<impl Reply, Rejection> {
-    log::info!("Attempting to add new user: {}.", new_user.email);
+    log::info!("Attempting to add new user.");
     let hash = match validation::hash_password(&new_user.password).await {
         Ok(hash) => hash,
         Err(e) => {
@@ -104,14 +126,13 @@ pub async fn handle_add_user(
         }
     };
 
-    let mut db_user: DatabaseAccount = new_user.into();
-    db_user.hash = hash;
-    if let Err(e) = database::create_new_user(&db_user).await {
+    if let Err(e) = database::create_new_user(&new_user.email, &hash, &new_user.display_name).await
+    {
         log::info!("{:?}", e);
         return Err(reject::custom(DuplicateAccountRejection));
     }
-    log::info!("Successfully added {} to the database.", db_user.email);
-    let (jwt, refresh_token) = token_manager.create_jwt(&db_user.email).await;
+    log::info!("Successfully added user to the database.");
+    let (jwt, refresh_token) = token_manager.create_jwt(&new_user.email).await;
     let response = create_validated_response(jwt, refresh_token, StatusCode::CREATED).await;
     Ok(response)
 }
@@ -126,11 +147,11 @@ pub async fn handle_add_user(
 ///
 /// * Reply containing full user info on success. Password rejection otherwise.
 pub async fn handle_user_login(
-    user: ThavalonUser,
+    login_info: LoginRequestInfo,
     mut token_manager: TokenManager,
 ) -> Result<impl Reply, Rejection> {
-    log::info!("Attempting to log user {} in.", user.email);
-    let hashed_user = match database::load_user_by_email(&user.email).await {
+    log::info!("Attempting to log a user in.");
+    let hashed_user = match database::load_user_by_email(&login_info.email).await {
         Ok(user) => user,
         Err(e) => {
             log::info!("An error occurred while looking up the user. {}", e);
@@ -138,14 +159,14 @@ pub async fn handle_user_login(
         }
     };
 
-    let is_valid = validation::validate_password(&user.password, &hashed_user.hash).await;
+    let is_valid = validation::validate_password(&login_info.password, &hashed_user.hash).await;
     if !is_valid {
-        log::info!("Invalid password for {}.", user.email);
+        log::info!("Invalid password for {}.", hashed_user.id);
         return Err(reject::custom(InvalidLoginRejection));
     }
 
-    log::info!("User {} logged in successfully.", hashed_user.email);
-    let (jwt, refresh_token) = token_manager.create_jwt(&hashed_user.email).await;
+    log::info!("User {} logged in successfully.", hashed_user.id);
+    let (jwt, refresh_token) = token_manager.create_jwt(&hashed_user.id).await;
     let response = create_validated_response(jwt, refresh_token, StatusCode::OK).await;
     Ok(response)
 }
@@ -155,14 +176,14 @@ pub async fn handle_user_login(
 ///
 /// # Arguments
 ///
-/// * `email` - The email to load information for
+/// * `player_id` - The player ID to load information for
 ///
 /// # Returns
 ///
 /// * JSON serialized ThavalonUser on success. Rejection on failure.
-pub async fn get_user_account_info(email: String) -> Result<impl Reply, Rejection> {
+pub async fn get_user_account_info(player_id: String) -> Result<impl Reply, Rejection> {
     log::info!("Loading user account info for the specified account.");
-    let user = match database::load_user_by_email(&email).await {
+    let user = match database::load_user_by_id(&player_id).await {
         Ok(user) => user,
         Err(e) => {
             log::warn!(
@@ -182,18 +203,14 @@ pub async fn get_user_account_info(email: String) -> Result<impl Reply, Rejectio
 ///
 /// # Arguments
 ///
-/// * `user` - The Thavalon user to remove
+/// * `player_id` - The ID of the user to remove
 ///
 /// # Returns
 ///
 /// * Empty reply on success, descriptive rejection otherwise.
-pub async fn delete_user(user: ThavalonUser) -> Result<impl Reply, Rejection> {
-    log::info!(
-        "Attempting to delete user {} from the database.",
-        user.email
-    );
-    let db_account: DatabaseAccount = user.into();
-    if let Err(e) = database::remove_user(&db_account).await {
+pub async fn delete_user(player_id: String) -> Result<impl Reply, Rejection> {
+    log::info!("Attempting to delete user {} from the database.", player_id);
+    if let Err(e) = database::remove_user(&player_id).await {
         log::info!("Error while removing the user from the database. {}", e);
 
         if e == AccountError::UnknownError {
@@ -216,8 +233,11 @@ pub async fn delete_user(user: ThavalonUser) -> Result<impl Reply, Rejection> {
 /// # Returns
 ///
 /// Status 200 reply on success, Rejection on failure.
-pub async fn update_user(user: ThavalonUser) -> Result<impl Reply, Rejection> {
-    log::info!("Attempting to update user {} in the database.", user.email);
+pub async fn update_user(user: ThavalonUser, _: String) -> Result<impl Reply, Rejection> {
+    log::info!(
+        "Attempting to update user {} in the database.",
+        user.player_id
+    );
     let password = user.password.clone();
     let mut user: DatabaseAccount = user.into();
     if &password != "" {
@@ -233,10 +253,10 @@ pub async fn update_user(user: ThavalonUser) -> Result<impl Reply, Rejection> {
         };
     }
 
-    match database::update_user(&user).await {
+    match database::update_user(user).await {
         Ok(_) => Ok(warp::reply()),
         Err(e) => {
-            log::warn!("Update to user {} failed. {}", user.email, e);
+            log::warn!("Failed to update user. {}", e);
             Err(reject::custom(NoAccountRejection))
         }
     }
@@ -278,7 +298,6 @@ pub async fn renew_refresh_token(
 /// * `jwt` - The javascript web token to send in the authorization header
 /// * `refresh_token` - A valid refresh token sent as an HttpOnly cookie
 /// * `status_code` - An HTTP status code to send.
-/// * `body` - The body of the HTTP response, as a string.
 ///
 /// # Returns
 ///
