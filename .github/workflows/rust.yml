@@ -12,12 +12,11 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: thavalon-server
     steps:
     - uses: actions/checkout@v2
-    - name: Switch Working Directory
-      run: 
-        working-directory: thavalon-server
     - name: Build
       run: cargo build --verbose
     - name: Run tests
