@@ -131,19 +131,13 @@ pub async fn create_new_user(
 /// * None on success, account error on failure.
 pub async fn remove_user(user_id: &String) -> Result<(), AccountError> {
     log::info!("Attempting to remove user {} from the database.", user_id);
-    let user_hashed = match load_user_by_id(user_id).await {
-        Ok(user) => user,
-        Err(_) => {
-            log::warn!("User {} does not exist in the database.", user_id);
-            return Err(AccountError::UserDoesNotExist);
-        }
-    };
 
     let collection = get_database().await.collection(USER_COLLECTION);
-    let document = bson::to_document(&InternalDBAccount::from(user_hashed))
-        .expect("Could not serialize user to database document.");
+    let filter = doc! {
+        "_id": ObjectId::with_string(user_id).unwrap()
+    };
 
-    let result = collection.delete_one(document, None).await;
+    let result = collection.find_one_and_delete(filter, None).await;
     match result {
         Ok(_) => {
             log::info!("Successfully removed {} from database.", user_id);

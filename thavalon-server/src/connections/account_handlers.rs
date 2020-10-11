@@ -15,14 +15,11 @@ use warp::{
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ThavalonUser {
-    #[serde(default)]
     pub player_id: String,
     pub email: String,
     pub password: String,
-    #[serde(default)]
     pub display_name: String,
     pub profile_picture: Option<Vec<u8>>,
-    #[serde(default)]
     pub email_verified: bool,
 }
 
