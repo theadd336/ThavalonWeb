@@ -1,5 +1,5 @@
 # ThavalonWeb
-[![Actions Status](https://github.com/theadd336/ThavalonWeb/workflows/Rust/badge.svg)](https://github.com/theadd336/ThavalonWeb/actions)
+![Rust](https://github.com/theadd336/ThavalonWeb/workflows/Rust/badge.svg)
 
 Web App for THavalon
 
