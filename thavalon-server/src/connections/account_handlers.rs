@@ -1,5 +1,5 @@
 //! Rest handlers for account-based calls
-use super::validation::{self, JWTResponse, RefreshTokenInfo, TokenStore, ValidationError};
+use super::validation::{self, JWTResponse, RefreshTokenInfo, TokenManager, ValidationError};
 use crate::database::{self, account_errors::AccountError, DatabaseAccount};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -86,15 +86,17 @@ impl Reject for UnknownErrorRejection {}
 /// * Success reply on success, a variety of rejections otherwise.
 pub async fn handle_add_user(
     new_user: ThavalonUser,
-    token_store: TokenStore,
+    mut token_manager: TokenManager,
 ) -> Result<impl Reply, Rejection> {
     log::info!("Attempting to add new user: {}.", new_user.email);
     let hash = match validation::hash_password(&new_user.password).await {
         Ok(hash) => hash,
         Err(e) => {
             if e == ValidationError::HashError {
-                log::error!("A hashing error occurred that prevented new user creation.");
-                log::error!("{:?}", e);
+                log::error!(
+                    "A hashing error occurred that prevented new user creation. {}",
+                    e
+                );
                 return Err(reject::custom(FatalHashingError));
             }
             log::info!("Password below minimum security requirements");
@@ -109,7 +111,7 @@ pub async fn handle_add_user(
         return Err(reject::custom(DuplicateAccountRejection));
     }
     log::info!("Successfully added {} to the database.", db_user.email);
-    let (jwt, refresh_token) = validation::create_jwt(&db_user.email, token_store).await;
+    let (jwt, refresh_token) = token_manager.create_jwt(&db_user.email).await;
     let response = create_validated_response(jwt, refresh_token, StatusCode::CREATED).await;
     Ok(response)
 }
@@ -125,14 +127,13 @@ pub async fn handle_add_user(
 /// * Reply containing full user info on success. Password rejection otherwise.
 pub async fn handle_user_login(
     user: ThavalonUser,
-    token_store: TokenStore,
+    mut token_manager: TokenManager,
 ) -> Result<impl Reply, Rejection> {
     log::info!("Attempting to log user {} in.", user.email);
     let hashed_user = match database::load_user_by_email(&user.email).await {
         Ok(user) => user,
         Err(e) => {
-            log::info!("An error occurred while looking up the user.");
-            log::info!("{:?}", e);
+            log::info!("An error occurred while looking up the user. {}", e);
             return Err(reject::custom(InvalidLoginRejection));
         }
     };
@@ -144,7 +145,7 @@ pub async fn handle_user_login(
     }
 
     log::info!("User {} logged in successfully.", hashed_user.email);
-    let (jwt, refresh_token) = validation::create_jwt(&hashed_user.email, token_store).await;
+    let (jwt, refresh_token) = token_manager.create_jwt(&hashed_user.email).await;
     let response = create_validated_response(jwt, refresh_token, StatusCode::OK).await;
     Ok(response)
 }
@@ -164,8 +165,10 @@ pub async fn get_user_account_info(email: String) -> Result<impl Reply, Rejectio
     let user = match database::load_user_by_email(&email).await {
         Ok(user) => user,
         Err(e) => {
-            log::warn!("Failed to find user info for an authenticated account.");
-            log::warn!("{:?}", e);
+            log::warn!(
+                "Failed to find user info for an authenticated account. {}",
+                e
+            );
             return Err(reject::custom(UnknownErrorRejection));
         }
     };
@@ -191,8 +194,7 @@ pub async fn delete_user(user: ThavalonUser) -> Result<impl Reply, Rejection> {
     );
     let db_account: DatabaseAccount = user.into();
     if let Err(e) = database::remove_user(&db_account).await {
-        log::info!("Error while removing the user from the database.");
-        log::info!("{:?}", e);
+        log::info!("Error while removing the user from the database. {}", e);
 
         if e == AccountError::UnknownError {
             return Err(reject::custom(UnknownErrorRejection));
@@ -218,12 +220,11 @@ pub async fn update_user(user: ThavalonUser) -> Result<impl Reply, Rejection> {
     log::info!("Attempting to update user {} in the database.", user.email);
     let password = user.password.clone();
     let mut user: DatabaseAccount = user.into();
-    if password != String::from("") {
+    if &password != "" {
         user.hash = match validation::hash_password(&password).await {
             Ok(hash) => hash,
             Err(e) => {
-                log::warn!("Failed to hash password. Update will be skipped.");
-                log::warn!("{:?}", e);
+                log::warn!("Failed to hash password. Update will be skipped. {}", e);
                 if e == ValidationError::HashError {
                     return Err(reject::custom(FatalHashingError));
                 }
@@ -235,37 +236,34 @@ pub async fn update_user(user: ThavalonUser) -> Result<impl Reply, Rejection> {
     match database::update_user(&user).await {
         Ok(_) => Ok(warp::reply()),
         Err(e) => {
-            log::warn!("Update to user {} failed.", user.email);
-            log::warn!("{:?}", e);
+            log::warn!("Update to user {} failed. {}", user.email, e);
             Err(reject::custom(NoAccountRejection))
         }
     }
 }
 
-/// Validates a given refresh token and returns a new JWT and refresh token if valid.
+/// Validates and renews a given refresh token and returns a new JWT and refresh token if valid.
 ///
 /// # Arguments
 ///
 /// * `refresh_token` - Current refresh token to validate
-/// * `token_store` - A store of active tokens
+/// * `token_manager` - A manager of active tokens
 ///
 /// # Returns
 ///
 /// * Reply with cookie and JWT on success. Rejection otherwise.
-pub async fn validate_refresh_token(
+pub async fn renew_refresh_token(
     refresh_token: String,
-    token_store: TokenStore,
+    mut token_manager: TokenManager,
 ) -> Result<impl Reply, Rejection> {
     log::info!("Handling request to refresh a token.");
-    let (jwt, refresh_token) =
-        match validation::validate_refresh_token(refresh_token, token_store).await {
-            Ok(sec_tuple) => sec_tuple,
-            Err(e) => {
-                log::info!("Refresh token is not valid. Rejecting request.");
-                log::info!("{}", e);
-                return Err(reject::custom(ValidationRejection));
-            }
-        };
+    let (jwt, refresh_token) = match token_manager.renew_refresh_token(refresh_token).await {
+        Ok(sec_tuple) => sec_tuple,
+        Err(e) => {
+            log::info!("Refresh token is not valid. Rejecting request. {}", e);
+            return Err(reject::custom(ValidationRejection));
+        }
+    };
 
     log::info!("Refresh token validated. Sending new token to client.");
     let response = create_validated_response(jwt, refresh_token, StatusCode::OK).await;

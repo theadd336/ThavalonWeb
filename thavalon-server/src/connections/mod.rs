@@ -5,10 +5,8 @@
 mod account_handlers;
 mod errors;
 mod validation;
-use std::collections::HashMap;
 use std::convert::Infallible;
-use std::sync::{Arc, Mutex};
-use validation::TokenStore;
+use validation::TokenManager;
 use warp::{
     body,
     filters::cookie,
@@ -27,31 +25,31 @@ impl Reject for InvalidTokenRejection {}
 /// This function does not return unless warp crashes (bad),
 /// or the server is being shut down.
 pub async fn serve_connections() {
-    let token_store = Arc::new(Mutex::new(HashMap::new()));
+    let token_manager = TokenManager::new();
     let path_test = warp::path("hi").map(|| "Hello, World!");
 
     let restricted_path_test = warp::path("restricted_hi")
-        .and(authorize_request())
+        .and(authorize_request(&token_manager))
         .map(|_| "Hello, restricted world!");
 
     let add_user_route = warp::path!("add" / "user")
         .and(body::json())
-        .and(with_token_store(token_store.clone()))
+        .and(with_token_manager(token_manager.clone()))
         .and_then(account_handlers::handle_add_user);
 
     let login_route = warp::path!("auth" / "login")
         .and(body::json())
-        .and(with_token_store(token_store.clone()))
+        .and(with_token_manager(token_manager.clone()))
         .and_then(account_handlers::handle_user_login);
 
     let get_user_info_route = warp::path!("get" / "user")
-        .and(authorize_request())
+        .and(authorize_request(&token_manager))
         .and_then(account_handlers::get_user_account_info);
 
     let refresh_jwt_route = warp::path!("auth" / "refresh")
         .and(cookie::cookie("refreshToken"))
-        .and(with_token_store(token_store.clone()))
-        .and_then(account_handlers::validate_refresh_token);
+        .and(with_token_manager(token_manager.clone()))
+        .and_then(account_handlers::renew_refresh_token);
 
     let delete_user_route = warp::path!("remove" / "user")
         .and(body::json())
@@ -78,30 +76,29 @@ pub async fn serve_connections() {
             "Content-Type",
             "Authorization",
         ])
-        .allow_methods(vec!["POST", "GET"])
+        .allow_methods(vec!["POST", "GET", "PUT", "DELETE"])
         .allow_credentials(true);
 
     let all_routes = warp::path(API_BASE_PATH)
         .and(get_routes.or(post_routes).or(delete_routes).or(put_routes))
         .recover(errors::recover_errors)
         .with(cors);
-    warp::serve(all_routes)
-        // .tls()
-        // .cert_path("./thavalon_cert.crt")
-        // .key_path("./thavalon_key.key")
-        .run(([0, 0, 0, 0], 8001))
-        .await;
+    warp::serve(all_routes).run(([0, 0, 0, 0], 8001)).await;
 }
 
 /// Authorizes a request for downstream endpoints.
 /// This function returns a filter that passes along the user ID or a rejection.
-fn authorize_request() -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
-    warp::header::<String>("Authorization").and_then(authorize_user)
+fn authorize_request(
+    token_manager: &TokenManager,
+) -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
+    warp::header::<String>("Authorization")
+        .and(with_token_manager(token_manager.clone()))
+        .and_then(authorize_user)
 }
 
 /// Authorizes a user via JWT.
 /// Returns either the user ID or a rejection if the user isn't authorized.
-async fn authorize_user(header: String) -> Result<String, Rejection> {
+async fn authorize_user(header: String, token_manager: TokenManager) -> Result<String, Rejection> {
     let token_pieces: Vec<&str> = header.split(' ').collect();
     if token_pieces.len() < 2 {
         log::info!(
@@ -111,7 +108,7 @@ async fn authorize_user(header: String) -> Result<String, Rejection> {
         return Err(reject::custom(InvalidTokenRejection));
     }
     let token = token_pieces[1];
-    let email = match validation::validate_jwt(token).await {
+    let email = match token_manager.validate_jwt(token).await {
         Ok(email) => email,
         Err(_) => {
             log::info!("JWT is not valid. Rejecting request.");
@@ -129,8 +126,8 @@ async fn authorize_user(header: String) -> Result<String, Rejection> {
 /// # Arguments
 ///
 /// `token_store` - A token store with all active refresh tokens
-fn with_token_store(
-    token_store: TokenStore,
-) -> impl Filter<Extract = (TokenStore,), Error = Infallible> + Clone {
-    warp::any().map(move || token_store.clone())
+fn with_token_manager(
+    token_manager: TokenManager,
+) -> impl Filter<Extract = (TokenManager,), Error = Infallible> + Clone {
+    warp::any().map(move || token_manager.clone())
 }

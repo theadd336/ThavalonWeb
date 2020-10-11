@@ -12,17 +12,21 @@ lazy_static! {
     static ref CLIENT_MANAGER: MongoClientManager = MongoClientManager::new();
 }
 
+/// Manages a MongoDB connection so we can share one connection.
+/// Lazily initializes the connection the first time it's needed.
 struct MongoClientManager {
     client: RwLock<Option<Client>>,
 }
 
 impl MongoClientManager {
+    /// Creates a new uninitialized MongoClientMananger.
     fn new() -> MongoClientManager {
         MongoClientManager {
             client: RwLock::new(None),
         }
     }
 
+    /// Creates a new MongoDB connection and stores it for future use.
     async fn init(&self) {
         let client_options = ClientOptions::parse(MONGO_HOST).await.unwrap();
         let client =
@@ -34,6 +38,15 @@ impl MongoClientManager {
         locked_client.replace(client);
     }
 
+    /// Gets a MongoDB database using the existing client. Creates a client if needed.
+    ///
+    /// # Arguments
+    ///
+    /// * `database_name` - Name of the MongoDB database to fetch.
+    ///
+    /// # Returns
+    ///
+    /// * A `Database` to the specified MongoDB database
     async fn get_database(&self, database_name: &str) -> Database {
         let is_initialized;
         {
@@ -44,7 +57,7 @@ impl MongoClientManager {
                 .is_some();
         }
         if !is_initialized {
-            self.init();
+            self.init().await;
         }
         let locked_client = self
             .client

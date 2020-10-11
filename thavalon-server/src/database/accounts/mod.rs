@@ -3,7 +3,7 @@ use super::get_db_client;
 use account_errors::AccountError;
 use mongodb::{
     bson::{self, doc},
-    options::FindOneOptions,
+    options::{FindOneOptions, UpdateOptions},
 };
 use serde::{Deserialize, Serialize};
 const USER_COLLECTION: &str = "thavalon_users";
@@ -29,22 +29,40 @@ pub struct DatabaseAccount {
 /// * Null on success, AccountCreationError on failure
 pub async fn create_new_user(user: &DatabaseAccount) -> Result<(), AccountError> {
     log::info!("Attempting to add thavalon user: {}.", user.email);
-    if does_user_exist(user).await {
-        log::warn!("User {} already exists.", user.email);
-        return Err(AccountError::DuplicateAccount);
-    }
-
     let collection = get_db_client().await.collection(USER_COLLECTION);
+    let filter = doc! {
+        "email": user.email.clone()
+    };
+
+    // For some reason, Rust won't allow UpdateOptions to be constructed using
+    // the standard {upsert: Some(true) ..UpdateOptions::default()}, so this
+    // needs to be mut.
+    let mut update_options = UpdateOptions::default();
+    update_options.upsert = Some(true);
+
     let user_doc = bson::to_document(user).expect("Could not serialize user information.");
-    let result = collection.insert_one(user_doc, None).await;
+    // Use setOnInsert to ensure we don't blow out a user if they already exist.
+    let update_doc = doc! {
+        "$setOnInsert": user_doc
+    };
+    let result = collection
+        .update_one(filter, update_doc, update_options)
+        .await;
     match result {
-        Ok(_) => {
+        Ok(result) => {
+            // If the filter matched, the user already exists, so return an error.
+            if result.matched_count > 0 {
+                log::info!("The username already exists. Email addresses must be unique.");
+                return Err(AccountError::DuplicateAccount);
+            }
             log::info!("Successfully added user.");
             Ok(())
         }
         Err(e) => {
-            log::error!("Could not add unique user to thavalon users collection.");
-            log::error!("{:?}", e);
+            log::error!(
+                "Could not add unique user to thavalon users collection. {:?}.",
+                e
+            );
             Err(AccountError::UnknownError)
         }
     }
@@ -83,8 +101,7 @@ pub async fn remove_user(user: &DatabaseAccount) -> Result<(), AccountError> {
             Ok(())
         }
         Err(e) => {
-            log::warn!("Failed to remove {} from database.", user.email);
-            log::warn!("{:?}", e);
+            log::warn!("Failed to remove {} from database. {:?}", user.email, e);
             Err(AccountError::UnknownError)
         }
     }
@@ -116,7 +133,7 @@ pub async fn load_user_by_email(email: &String) -> Result<DatabaseAccount, Accou
     // No error, so see if we found a user or not.
     // Log and return appropriately
     if let Some(user) = document {
-        log::info!("Found a valid DB admin for the given username.");
+        log::info!("Found a valid player for the given username.");
         let user_account: DatabaseAccount =
             bson::from_document(user).expect("Could not decode database BSON.");
         Ok(user_account)
@@ -148,25 +165,8 @@ pub async fn update_user(user: &DatabaseAccount) -> Result<(), AccountError> {
     {
         Ok(_) => Ok(()),
         Err(e) => {
-            log::error!("Failed to find and replace user {}.", user.email);
-            log::error!("{:?}", e);
+            log::error!("Failed to find and replace user {}. {:?}", user.email, e);
             Err(AccountError::UnknownError)
         }
-    }
-}
-
-/// Checks if a given username exists in the database already
-///
-/// # Arguments
-///
-/// * `user` - A DatabaseAcocunt with the username in question.
-///
-/// # Returns
-///
-/// * True if the user exists, false otherwise.
-async fn does_user_exist(user: &DatabaseAccount) -> bool {
-    match load_user_by_email(&user.email).await {
-        Ok(_) => true,
-        Err(_) => false,
     }
 }
