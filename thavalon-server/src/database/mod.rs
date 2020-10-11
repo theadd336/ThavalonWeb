@@ -35,13 +35,3 @@ async fn get_client_internal() -> Client {
         .expect("ERROR: client called before initialization.")
         .clone()
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_tests() {
-        assert!(1 == 1);
-    }
-}
