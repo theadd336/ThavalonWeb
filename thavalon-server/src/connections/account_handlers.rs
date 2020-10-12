@@ -316,7 +316,7 @@ async fn create_validated_response(
         .header(
             "Set-Cookie",
             format!(
-                "refreshToken={}; Expires={}; path=/; HttpOnly; Secure; SameSite=None",
+                "refreshToken={}; Expires={}; path=/; HttpOnly; SameSite=Strict",
                 refresh_token.token,
                 exp_datetime.to_rfc2822()
             ),
