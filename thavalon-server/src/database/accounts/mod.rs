@@ -73,7 +73,7 @@ pub async fn create_new_user(
     email: &String,
     hash: &String,
     display_name: &String,
-) -> Result<(), AccountError> {
+) -> Result<String, AccountError> {
     log::info!("Attempting to add thavalon user.");
     let collection = get_database().await.collection(USER_COLLECTION);
     let filter = doc! {
@@ -104,11 +104,9 @@ pub async fn create_new_user(
                 log::info!("The username already exists. Email addresses must be unique.");
                 return Err(AccountError::DuplicateAccount);
             }
-            log::info!(
-                "Successfully added user {}.",
-                bson::from_bson::<ObjectId>(result.upserted_id.unwrap()).unwrap()
-            );
-            Ok(())
+            let id = bson::from_bson::<ObjectId>(result.upserted_id.unwrap()).unwrap();
+            log::info!("Successfully added user {}.", id);
+            Ok(id.to_hex())
         }
         Err(e) => {
             log::error!(

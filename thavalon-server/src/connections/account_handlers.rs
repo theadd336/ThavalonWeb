@@ -123,13 +123,16 @@ pub async fn handle_add_user(
         }
     };
 
-    if let Err(e) = database::create_new_user(&new_user.email, &hash, &new_user.display_name).await
-    {
-        log::info!("{:?}", e);
-        return Err(reject::custom(DuplicateAccountRejection));
-    }
+    let player_id =
+        match database::create_new_user(&new_user.email, &hash, &new_user.display_name).await {
+            Ok(id) => id,
+            Err(e) => {
+                log::info!("{:?}", e);
+                return Err(reject::custom(DuplicateAccountRejection));
+            }
+        };
     log::info!("Successfully added user to the database.");
-    let (jwt, refresh_token) = token_manager.create_jwt(&new_user.email).await;
+    let (jwt, refresh_token) = token_manager.create_jwt(&player_id).await;
     let response = create_validated_response(jwt, refresh_token, StatusCode::CREATED).await;
     Ok(response)
 }
