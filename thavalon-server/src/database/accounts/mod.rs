@@ -106,7 +106,7 @@ pub async fn create_new_user(
             }
             log::info!(
                 "Successfully added user {}.",
-                bson::from_bson::<String>(result.upserted_id.unwrap()).unwrap()
+                bson::from_bson::<ObjectId>(result.upserted_id.unwrap()).unwrap()
             );
             Ok(())
         }
