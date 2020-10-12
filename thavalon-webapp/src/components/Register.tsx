@@ -9,11 +9,13 @@ ReactModal.setAppElement("#root");
 function Login() {
     const [modalIsOpen, setModalIsOpen] = useState(true);
     const {register, handleSubmit, errors} = useForm();
+    const [disable, setDisabled] = useState(false);
     function closeModal() {
         setModalIsOpen(false);
     }
 
     function onError(data: any, event: any) {
+        setDisabled(false);
         console.log(data);
         console.log("ERROR");
         event.preventDefault();
@@ -67,7 +69,7 @@ function Login() {
                     ref={register({required: true})} />
                 {errors.confirmPassword && <span className="errorMsg">Password required.</span>}
                 <br />
-                <input type="submit" value="Register" />
+                <input type="submit" onClick={() => setDisabled(true)} disabled={disable} value="Register" />
             </form>
         </ReactModal>
     )
