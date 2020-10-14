@@ -8,8 +8,8 @@ THavalon is balanced around games of 5, 7, 8, or 10 players. 6- and 9-player gam
 
 # Using This Repo
 This entire repo is fully Dockerized. Certain services can be used independent of one another and have different commands to start.
-* To build and launch just the front-end webapp, type `make web.`
-* To build and launch just the back-end API, type `make api.`
-* To build all components, type `make.`
+* To build and launch just the front-end webapp, type `make web`
+* To build and launch just the back-end API, type `make api`
+* To build all components, type `make`
 
 As is, this repo is **NOT** secured for production use. It only has basic security keys meant for rapid development. Of note, the backend currently does not support TLS, and the secret used for JWT encryption is extremely weak.
