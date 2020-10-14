@@ -9,10 +9,12 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  Rust-Tests:
 
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: thavalon-server
     steps:
     - uses: actions/checkout@v2
     - name: Build
