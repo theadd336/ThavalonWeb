@@ -244,7 +244,7 @@ pub async fn update_user(user: ThavalonUser, _: String) -> Result<impl Reply, Re
         user.hash = match validation::hash_password(&password).await {
             Ok(hash) => hash,
             Err(e) => {
-                log::info!("Failed to hash password. Update will be skipped. {}", e);
+                log::warn!("Failed to hash password. Update will be skipped. {}", e);
                 if e == ValidationError::HashError {
                     return Err(reject::custom(FatalHashingError));
                 }
@@ -256,7 +256,7 @@ pub async fn update_user(user: ThavalonUser, _: String) -> Result<impl Reply, Re
     match database::update_user(user).await {
         Ok(_) => Ok(warp::reply()),
         Err(e) => {
-            log::info!("Failed to update user. {}", e);
+            log::warn!("Failed to update user. {}", e);
             Err(reject::custom(NoAccountRejection))
         }
     }

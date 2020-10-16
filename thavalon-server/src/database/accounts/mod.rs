@@ -39,8 +39,11 @@ impl TryFrom<DatabaseAccount> for InternalDBAccount {
     fn try_from(public_account: DatabaseAccount) -> Result<Self, Self::Error> {
         let _id = match ObjectId::with_string(&public_account.id) {
             Ok(id) => id,
-            Err(_) => {
-                return Err(format!("Given ID {} is not valid hex.", &public_account.id));
+            Err(e) => {
+                return Err(format!(
+                    "Given ID {} is not valid hex. {}",
+                    &public_account.id, e
+                ));
             }
         };
 
