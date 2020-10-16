@@ -7,6 +7,8 @@ pub enum AccountError {
     UserDoesNotExist,
     #[error("This email address is already in use.")]
     DuplicateAccount,
+    #[error("The given ID is not valid hex for an internal ID.")]
+    InvalidID,
     #[error("An unknown error occurred. See logs for more details.")]
     UnknownError,
 }

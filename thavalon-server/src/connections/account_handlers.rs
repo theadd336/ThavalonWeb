@@ -186,7 +186,7 @@ pub async fn get_user_account_info(player_id: String) -> Result<impl Reply, Reje
     let user = match database::load_user_by_id(&player_id).await {
         Ok(user) => user,
         Err(e) => {
-            log::warn!(
+            log::error!(
                 "Failed to find user info for an authenticated account. {}",
                 e
             );
@@ -244,7 +244,7 @@ pub async fn update_user(user: ThavalonUser, _: String) -> Result<impl Reply, Re
         user.hash = match validation::hash_password(&password).await {
             Ok(hash) => hash,
             Err(e) => {
-                log::warn!("Failed to hash password. Update will be skipped. {}", e);
+                log::info!("Failed to hash password. Update will be skipped. {}", e);
                 if e == ValidationError::HashError {
                     return Err(reject::custom(FatalHashingError));
                 }
@@ -256,7 +256,7 @@ pub async fn update_user(user: ThavalonUser, _: String) -> Result<impl Reply, Re
     match database::update_user(user).await {
         Ok(_) => Ok(warp::reply()),
         Err(e) => {
-            log::warn!("Failed to update user. {}", e);
+            log::info!("Failed to update user. {}", e);
             Err(reject::custom(NoAccountRejection))
         }
     }

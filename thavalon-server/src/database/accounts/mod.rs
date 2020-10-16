@@ -6,6 +6,8 @@ use mongodb::{
     options::{FindOneOptions, UpdateOptions},
 };
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
+
 const USER_COLLECTION: &str = "thavalon_users";
 
 /// Canonical representation of a database account.
@@ -31,19 +33,25 @@ struct InternalDBAccount {
     email_verified: bool,
 }
 
-impl From<DatabaseAccount> for InternalDBAccount {
-    fn from(public_account: DatabaseAccount) -> Self {
-        InternalDBAccount {
-            _id: ObjectId::with_string(&public_account.id).expect(&format!(
-                "Received ID {} is not a valid ObjectId.",
-                &public_account.id
-            )),
+impl TryFrom<DatabaseAccount> for InternalDBAccount {
+    type Error = String;
+
+    fn try_from(public_account: DatabaseAccount) -> Result<Self, Self::Error> {
+        let _id = match ObjectId::with_string(&public_account.id) {
+            Ok(id) => id,
+            Err(_) => {
+                return Err(format!("Given ID {} is not valid hex.", &public_account.id));
+            }
+        };
+
+        Ok(InternalDBAccount {
+            _id,
             email: public_account.email,
             hash: public_account.hash,
             display_name: public_account.display_name,
             profile_picture: public_account.profile_picture,
             email_verified: public_account.email_verified,
-        }
+        })
     }
 }
 
@@ -226,7 +234,14 @@ async fn load_user_with_filter(filter: Document) -> Result<DatabaseAccount, Acco
 /// * None on success. Error on failure.
 pub async fn update_user(user: DatabaseAccount) -> Result<(), AccountError> {
     log::info!("Attempting to update user {}.", user.id);
-    let user = InternalDBAccount::from(user);
+    let user = match InternalDBAccount::try_from(user) {
+        Ok(user) => user,
+        Err(e) => {
+            log::warn!("Could not generate an ObjectId from the received ID. {}", e);
+            return Err(AccountError::InvalidID);
+        }
+    };
+
     let collection = get_database().await.collection(USER_COLLECTION);
     let filter = doc! {"_id": &user._id};
     let user_doc = bson::to_document(&user).expect("Failed to serialize user to BSON.");

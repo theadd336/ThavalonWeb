@@ -329,7 +329,7 @@ mod tests {
             .timestamp();
         assert!(expires_at - 60 <= jwt.expires_at);
         assert!(jwt.expires_at <= expires_at + 60);
-        assert_eq!(jwt.token_type, "Bearer".to_string());
+        assert_eq!(jwt.token_type.as_str(), "Bearer");
     }
 
     /// Tests validate_jwt with a valid JWT.
