@@ -4,6 +4,10 @@ import {NavLink} from 'react-router-dom';
 import styled from 'styled-components';
 import {faBars} from '@fortawesome/free-solid-svg-icons';
 
+/**
+ * Code for supporting hamburger menu on mobile.
+ * @param event The event caused by clicking button.
+ */
 function openMenu(event: any) {
     let x = document.getElementById("navbar");
     if (x === null) {

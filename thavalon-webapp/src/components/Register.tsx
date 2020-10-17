@@ -58,6 +58,7 @@ function Register(props: RegisterProps) {
             setFormErrorMsg("Password do not match");
             setDisabled(false);
             event.preventDefault();
+            return;
         }
 
         // attempt registering of user

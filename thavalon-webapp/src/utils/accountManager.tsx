@@ -66,6 +66,7 @@ class AccountManager {
             },
             credentials: "include"
         }).then((response) => {
+            // On success, set jwt info. On fail, set error messages to return to user.
             if (response.status === STATUS_CREATED) {
                 response.json().then((jwt: JwtType) => {
                     this.token = jwt.access_token;
