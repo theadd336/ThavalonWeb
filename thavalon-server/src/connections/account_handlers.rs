@@ -174,7 +174,6 @@ pub async fn handle_user_login(
 }
 
 /// Handles a user logging out. This revokes the user's refresh token.
-/// Currently this doesn't support "force logouts" of all devices.
 ///
 /// # Arguments
 ///
