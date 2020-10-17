@@ -4,10 +4,11 @@ use lazy_static::lazy_static;
 use rand::{distributions::Alphanumeric, Rng};
 use scrypt::{errors::CheckError, ScryptParams};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::env;
-use std::iter;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    env, iter,
+    sync::{Arc, Mutex},
+};
 use thiserror::Error;
 
 const PASSWORD_MIN_LENGTH: usize = 8;
@@ -28,14 +29,14 @@ pub enum ValidationError {
     Unauthorized,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct JWTResponse {
     token_type: String,
     access_token: String,
     expires_at: i64,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RefreshTokenInfo {
     pub token: String,
     pub expires_at: i64,
@@ -222,6 +223,24 @@ impl TokenManager {
 
         log::info!("Token is valid. Sending new JWT.");
         Ok(self.create_jwt(&token_info.player_id).await)
+    }
+
+    /// Revokes a refresh token, making the token invalid.
+    ///
+    /// # Arguments
+    ///
+    /// * `refresh_token` - The refresh token to remove.
+    pub async fn revoke_refresh_token(&mut self, refresh_token: &String) {
+        log::info!("Revoking refresh token {}.", refresh_token);
+        match self
+            .refresh_tokens
+            .lock()
+            .expect("Failed to acquire lock on refresh token store.")
+            .remove(refresh_token)
+        {
+            Some(_) => log::info!("Successfully revoked the refresh token."),
+            None => log::info!("Refresh token does not exist to revoke."),
+        };
     }
 }
 
@@ -424,5 +443,29 @@ mod tests {
         } else {
             panic!("ERROR: Successfully validated an invalid refresh token.");
         }
+    }
+
+    /// Tests revoking a refresh token with both a valid and invalid token. The results should be the same.
+    #[tokio::test]
+    async fn test_revoke_refresh_token() {
+        let mut manager = TokenManager::new();
+        let info = manager.create_refresh_token(&String::from("TESTING")).await;
+        manager.revoke_refresh_token(&info.token).await;
+        assert!(!manager
+            .refresh_tokens
+            .lock()
+            .unwrap()
+            .contains_key(&info.token));
+
+        let result = manager
+            .renew_refresh_token(info.token.clone())
+            .await
+            .expect_err("ERROR: revoked refresh token is still valid.");
+        assert_eq!(result, ValidationError::Unauthorized);
+
+        // This shouldn't crash here.
+        manager
+            .revoke_refresh_token(&"This shouldn't crash".to_string())
+            .await;
     }
 }

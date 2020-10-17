@@ -25,6 +25,7 @@ services:
         ports:
             - "127.0.0.1:8001:8001"
         volumes:
+            - /app/target
             - ./thavalon-server:/app
         expose: 
             - "8001"

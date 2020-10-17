@@ -4,7 +4,7 @@ use crate::connections::account_handlers::{
 };
 use serde::Serialize;
 use std::convert::Infallible;
-use warp::{http::StatusCode, Rejection, Reply};
+use warp::{http::StatusCode, reject::InvalidHeader, Rejection, Reply};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -13,11 +13,13 @@ struct ServerError {
     error_message: String,
 }
 
+#[derive(PartialEq)]
 enum ErrorCode {
     Unauthorized = 1,
     DuplicateAccount,
     PasswordInsecure,
     InvalidLogin,
+    MissingHeader,
     Unknown = 255,
 }
 
@@ -27,6 +29,7 @@ enum ErrorCode {
 ///
 /// * `err` - The rejection caused by an upstream failure.
 pub async fn recover_errors(err: Rejection) -> Result<impl Reply, Infallible> {
+    log::info!("Handling rejections: {:?}", err);
     let mut http_response_code = StatusCode::INTERNAL_SERVER_ERROR;
     let mut error_code = ErrorCode::Unknown;
     let mut error_message = "An unknown error occurred.".to_string();
@@ -51,6 +54,19 @@ pub async fn recover_errors(err: Rejection) -> Result<impl Reply, Infallible> {
         http_response_code = StatusCode::UNAUTHORIZED;
         error_message = "Missing or invalid JSON web token.".to_string();
         error_code = ErrorCode::Unauthorized;
+    } else if let Some(e) = err.find::<InvalidHeader>() {
+        // Since MissingHeader has fields, need to use the generic fn notation here.
+        http_response_code = StatusCode::UNAUTHORIZED;
+        error_message = format!("Missing or invalid header: {}.", e.name());
+        error_code = ErrorCode::MissingHeader;
+    }
+
+    if error_code == ErrorCode::Unknown {
+        log::warn!(
+            "WARNING: an unhandled server exception occurred. 
+            Please see logs for more info. Rejection: {:?}.",
+            err
+        );
     }
 
     let server_error = ServerError {

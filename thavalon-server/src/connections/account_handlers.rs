@@ -4,6 +4,7 @@ use crate::database::{self, account_errors::AccountError, DatabaseAccount};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json;
+use std::convert::Infallible;
 use warp::{
     http::{response::Builder, StatusCode},
     reject::{self, Reject},
@@ -169,6 +170,22 @@ pub async fn handle_user_login(
     let (jwt, refresh_token) = token_manager.create_jwt(&hashed_user.id).await;
     let response = create_validated_response(jwt, refresh_token, StatusCode::OK).await;
     Ok(response)
+}
+
+/// Handles a user logging out. This revokes the user's refresh token.
+/// Currently this doesn't support "force logouts" of all devices.
+///
+/// # Arguments
+///
+/// * `refresh_token` - The user's refresh token to revoke.
+/// * `token_manager` - The token store with refresh tokens.
+pub async fn handle_logout(
+    refresh_token: String,
+    mut token_manager: TokenManager,
+) -> Result<impl Reply, Infallible> {
+    log::info!("Logging out user with refresh token {}.", refresh_token);
+    token_manager.revoke_refresh_token(&refresh_token).await;
+    Ok(StatusCode::RESET_CONTENT)
 }
 
 /// Loads user account information from the database. The user must already be
