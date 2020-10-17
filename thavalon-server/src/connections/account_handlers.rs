@@ -1,5 +1,6 @@
 //! Rest handlers for account-based calls
 use super::validation::{self, JWTResponse, RefreshTokenInfo, TokenManager, ValidationError};
+use super::REFRESH_TOKEN_COOKIE;
 use crate::database::{self, account_errors::AccountError, DatabaseAccount};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -333,7 +334,8 @@ async fn create_validated_response(
         .header(
             "Set-Cookie",
             format!(
-                "refreshToken={}; Expires={}; path=/; HttpOnly; SameSite=Strict",
+                "{}={}; Expires={}; path=/; HttpOnly; SameSite=Strict",
+                REFRESH_TOKEN_COOKIE,
                 refresh_token.token,
                 exp_datetime.to_rfc2822()
             ),

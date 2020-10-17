@@ -16,6 +16,7 @@ use warp::{
 //#endregion
 
 const API_BASE_PATH: &str = "api";
+const REFRESH_TOKEN_COOKIE: &str = "refreshToken";
 
 #[derive(Debug, PartialEq)]
 struct InvalidTokenRejection;
@@ -43,7 +44,7 @@ pub async fn serve_connections() {
         .and_then(account_handlers::handle_user_login);
 
     let logout_route = warp::path!("auth" / "logout")
-        .and(cookie::cookie("refreshToken"))
+        .and(cookie::cookie(REFRESH_TOKEN_COOKIE))
         .and(with_token_manager(token_manager.clone()))
         .and_then(account_handlers::handle_logout);
 
@@ -52,7 +53,7 @@ pub async fn serve_connections() {
         .and_then(account_handlers::get_user_account_info);
 
     let refresh_jwt_route = warp::path!("auth" / "refresh")
-        .and(cookie::cookie("refreshToken"))
+        .and(cookie::cookie(REFRESH_TOKEN_COOKIE))
         .and(with_token_manager(token_manager.clone()))
         .and_then(account_handlers::renew_refresh_token);
 
