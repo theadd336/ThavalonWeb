@@ -33,7 +33,7 @@ export async function register_user(name: string, email: string, password: strin
         "displayName": name
     }
 
-    let response = await fetch("/api/add/user", {
+    await fetch("/api/add/user", {
         method: "POST",
         body: JSON.stringify(add_user_dict),
         headers: {

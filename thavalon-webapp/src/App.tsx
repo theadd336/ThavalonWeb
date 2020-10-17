@@ -1,17 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import { Switch, Route } from 'react-router-dom';
 import Login from './components/Login';
 import Logout from './components/Logout';
 import Register from './components/Register';
-import { say_hello } from './utils/account_utils';
 
 function App() {
+  // TODO: Replace with api call to 
   const [loggedIn, setLoggedIn] = useState(false);
-  useEffect(
-    () => setLoggedIn(loggedIn),
-    [loggedIn]
-  )
+
   return (
     <div>
       <Navbar loggedIn={loggedIn} />
@@ -21,16 +18,17 @@ function App() {
         </Route>
         <Route path="/rules">
           <h1>Rules</h1>
-          {say_hello()}
         </Route>
-        <Route path="/login">
-          <Login setLoggedIn={() => setLoggedIn(true)} />
+        <Route path="/login" render={
+          (routeProps) => <Login setLoggedIn={setLoggedIn} />
+        }>
         </Route>
         <Route path="/logout">
           <Logout setLoggedIn={() => setLoggedIn(false)} />
         </Route>
-        <Route path="/register">
-          <Register />
+        <Route path="/register" render={
+          (routeProps) => <Register setLoggedIn={setLoggedIn} />
+        }>
         </Route>
       </Switch>
     </div>

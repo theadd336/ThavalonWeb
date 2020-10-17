@@ -1,8 +1,7 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
-import { Link, Redirect } from 'react-router-dom';
-import { log_in, say_hello } from '../utils/account_utils';
+import { Link } from 'react-router-dom';
 
 import "./modal.scss";
 type LoginProps = {
@@ -31,8 +30,7 @@ function Login(props: LoginProps) {
         console.log(data);
 
         // try logging in, if it works update page to reflect that
-        let loggedIn = log_in();
-        useEffect(() => props.setLoggedIn(log_in()));
+        props.setLoggedIn(true);
 
         // prevent page from reloading
         event.preventDefault();
