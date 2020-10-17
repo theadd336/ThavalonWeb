@@ -1,0 +1,104 @@
+use super::account_errors::AccountError;
+use super::get_database;
+use mongodb::{
+    bson::{self, doc, oid::ObjectId, Document},
+    options::{FindOneOptions, UpdateOptions},
+};
+use serde::Deserialize;
+
+const EMAIL_VERIFICATION_COLLECTION: &str = "thavalon_unverified_emails";
+
+#[derive(Deserialize)]
+pub struct UnverifiedEmailInfo {
+    pub verification_code: String,
+    pub email: String,
+    pub expires_at: i64,
+}
+
+pub async fn add_unverified_email(
+    code: &String,
+    email: &String,
+    expires_at: i64,
+) -> Result<(), AccountError> {
+    log::info!(
+        "Adding unverified email info with code: {} to the database.",
+        code
+    );
+
+    let collection = get_database()
+        .await
+        .collection(EMAIL_VERIFICATION_COLLECTION);
+
+    let filter = doc! {
+        "email": email
+    };
+
+    // For some reason, Rust won't allow UpdateOptions to be constructed using
+    // the standard {upsert: Some(true) ..UpdateOptions::default()}, so this
+    // needs to be mut.
+    let mut update_options = UpdateOptions::default();
+    update_options.upsert = Some(true);
+
+    // Unlike a user, this will blow out an old verification code if one exists.
+    // This is because verification codes can be changed for an email on a resend.
+    let update_doc = doc! {
+        "$set": {
+            "verification_code": code,
+            "email": email,
+            "expires_at": expires_at
+         },
+    };
+    let result = collection
+        .update_one(filter, update_doc, update_options)
+        .await;
+
+    match result {
+        Ok(result) => {
+            // If the filter matched, the user already exists, so return an error.
+            if result.matched_count > 0 {
+                log::info!("The email already exists. Updated verification code successfully.");
+                return Ok(());
+            }
+            log::info!("Successfully added verification code.");
+            Ok(())
+        }
+        Err(e) => {
+            log::error!(
+                "An unknown error occured while adding unverified email info. {:?}.",
+                e
+            );
+            Err(AccountError::UnknownError)
+        }
+    }
+}
+
+pub async fn pop_info_by_code(
+    verification_code: &String,
+) -> Result<UnverifiedEmailInfo, AccountError> {
+    log::info!(
+        "Popping unverified email info using code {}.",
+        verification_code
+    );
+
+    let filter = doc! {
+        "verification_code": verification_code
+    };
+
+    pop_info_with_filter(filter).await
+}
+
+pub async fn pop_info_by_email(email: &String) -> Result<UnverifiedEmailInfo, AccountError> {
+    log::info!("Popping unverified email info using email.");
+
+    let filter = doc! {
+        "email": email
+    };
+
+    pop_info_with_filter(filter).await
+}
+
+async fn pop_info_with_filter(filter: Document) -> Result<UnverifiedEmailInfo, AccountError> {
+    let collection = get_database()
+        .await
+        .collection(EMAIL_VERIFICATION_COLLECTION);
+}

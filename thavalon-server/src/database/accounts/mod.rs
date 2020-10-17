@@ -1,4 +1,5 @@
 pub mod account_errors;
+pub mod email_verification;
 use super::get_database;
 use account_errors::AccountError;
 use mongodb::{
