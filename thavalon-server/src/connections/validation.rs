@@ -39,7 +39,7 @@ pub struct JWTResponse {
 pub struct RefreshTokenInfo {
     pub token: String,
     pub expires_at: i64,
-    pub email: String,
+    pub player_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,26 +69,26 @@ impl TokenManager {
         }
     }
 
-    /// Creates a valid JWT using a user's email.
+    /// Creates a valid JWT using a user's ID.
     ///
     /// # Arguments
     ///
-    /// * `user_email` - The user's email to create a JWT with.
+    /// * `player_id` - The user's ID to create a JWT with.
     ///
     /// # Returns
     ///
     /// A JWTResponse with the JWT
-    pub async fn create_jwt(&mut self, user_email: &String) -> (JWTResponse, RefreshTokenInfo) {
-        log::info!("Creating a new JWT for {}.", user_email);
+    pub async fn create_jwt(&mut self, player_id: &String) -> (JWTResponse, RefreshTokenInfo) {
+        log::info!("Creating a new JWT for {}.", player_id);
         let time = Utc::now();
         let expiration_time = time
-            .checked_add_signed(Duration::minutes(60))
+            .checked_add_signed(Duration::minutes(15))
             .expect("Failed to get expiration time.");
         let claims = JWTClaims {
-            aud: user_email.clone(),
+            aud: player_id.clone(),
             exp: expiration_time.timestamp(),
             iat: time.timestamp(),
-            iss: self.sub.to_string(),
+            iss: self.iss.to_string(),
             nbf: time.timestamp(),
             sub: self.sub.to_string(),
         };
@@ -100,14 +100,14 @@ impl TokenManager {
         )
         .expect("Failed to generate a JWT for this claim.");
 
-        log::info!("Successfully created a JWT for {}.", user_email);
+        log::info!("Successfully created a JWT for {}.", player_id);
         (
             JWTResponse {
                 token_type: "Bearer".to_string(),
                 access_token: token,
                 expires_at: expiration_time.timestamp(),
             },
-            self.create_refresh_token(user_email).await,
+            self.create_refresh_token(player_id).await,
         )
     }
 
@@ -151,7 +151,7 @@ impl TokenManager {
     ///
     /// # Arguments
     ///
-    /// * `user` - The email address of the user of the refresh token.
+    /// * `user` - The ID of the user of the refresh token.
     ///
     /// # Returns
     ///
@@ -169,7 +169,7 @@ impl TokenManager {
                 .checked_add_signed(Duration::weeks(1))
                 .expect("Could not create refresh token expires time.")
                 .timestamp(),
-            email: user.clone(),
+            player_id: user.clone(),
         };
 
         self.refresh_tokens
@@ -221,7 +221,7 @@ impl TokenManager {
         }
 
         log::info!("Token is valid. Sending new JWT.");
-        Ok(self.create_jwt(&token_info.email).await)
+        Ok(self.create_jwt(&token_info.player_id).await)
     }
 }
 
@@ -269,4 +269,160 @@ pub async fn validate_password(plaintext: &String, hash: &String) -> bool {
     };
 
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{Duration, Utc};
+    use scrypt::ScryptParams;
+
+    /// Tests hashing passwords against an insecure password.
+    #[tokio::test]
+    async fn test_hash_password_insecure() {
+        let result = hash_password(&String::from("not_sec")).await;
+        assert!(result.unwrap_err() == ValidationError::InvalidPassword);
+    }
+
+    /// Tests hasing passwords against a secure password.
+    #[tokio::test]
+    async fn test_hash_password_normal_pw() {
+        let password = String::from("32fdsfjidsfj293423");
+        let result = hash_password(&password)
+            .await
+            .expect("Failed to hash password correctly.");
+        scrypt::scrypt_check(&password, &result).expect("Failed to match password hashes.");
+    }
+
+    /// Tests validating a password with a matching hash.
+    #[tokio::test]
+    async fn test_validate_password_match() {
+        let password = String::from("asdfwe322ef2342");
+        let hash = scrypt::scrypt_simple(&password, &ScryptParams::recommended()).unwrap();
+        assert!(validate_password(&password, &hash).await);
+    }
+
+    /// Tests validating a password with an invalid hash. This shouldn't match.
+    #[tokio::test]
+    async fn test_validate_password_bad_hash() {
+        let password = String::from("23qsadf2323f");
+        assert!(!validate_password(&password, &password).await);
+    }
+
+    /// Tests validating a password with a mismatched hash.
+    #[tokio::test]
+    async fn test_validate_password_mismatch() {
+        let password = String::from("32f23f2ef23");
+        let other_password = String::from("342f98j98j34gf");
+        let hash = scrypt::scrypt_simple(&other_password, &ScryptParams::recommended()).unwrap();
+        assert!(!validate_password(&password, &hash).await);
+    }
+
+    /// Tests creating a JWT for a given player ID. Expected results generated from jwt.io.
+    #[tokio::test]
+    async fn test_create_jwt_valid() {
+        let mut mananger = TokenManager::new();
+        let (jwt, _) = mananger.create_jwt(&String::from("TESTING_THIS")).await;
+        let expires_at = Utc::now()
+            .checked_add_signed(Duration::minutes(15))
+            .unwrap()
+            .timestamp();
+        assert!(expires_at - 60 <= jwt.expires_at);
+        assert!(jwt.expires_at <= expires_at + 60);
+        assert_eq!(jwt.token_type.as_str(), "Bearer");
+    }
+
+    /// Tests validate_jwt with a valid JWT.
+    #[tokio::test]
+    async fn test_validate_jwt_valid() {
+        let mut manager = TokenManager::new();
+        let input_player = String::from("TESTING");
+        let (jwt, _) = manager.create_jwt(&input_player).await;
+        let player_id = manager
+            .validate_jwt(&jwt.access_token)
+            .await
+            .expect("Token was marked as invalid, but should be valid.");
+
+        assert_eq!(player_id, input_player);
+    }
+
+    /// Tests validate_jwt with a tampered JWT.
+    #[tokio::test]
+    async fn test_validate_jwt_invalid() {
+        let mut manager = TokenManager::new();
+        let input_player = String::from("TESTING");
+        let (mut jwt, _) = manager.create_jwt(&input_player).await;
+        jwt.access_token.insert(5, 'A');
+        let result = manager
+            .validate_jwt(&jwt.access_token)
+            .await
+            .expect_err("WARNING: invalid JWT showing as valid.");
+        assert_eq!(result, ValidationError::Unauthorized);
+    }
+
+    /// Tests create_refresh_token for a valid refresh token.
+    #[tokio::test]
+    async fn test_create_refresh_token() {
+        let mut manager = TokenManager::new();
+        let player = String::from("TESTING");
+        let token = manager.create_refresh_token(&player).await;
+
+        let expires_at = Utc::now()
+            .checked_add_signed(Duration::weeks(1))
+            .unwrap()
+            .timestamp();
+        assert_eq!(token.player_id, player);
+        assert!(expires_at - 60 <= token.expires_at);
+        assert!(token.expires_at <= expires_at + 60);
+        assert_eq!(
+            manager
+                .refresh_tokens
+                .lock()
+                .unwrap()
+                .get(&token.token)
+                .unwrap()
+                .player_id,
+            player
+        );
+    }
+
+    /// Tests renewing a refresh token with a valid refresh token
+    #[tokio::test]
+    async fn test_renew_refresh_token_valid() {
+        let mut manager = TokenManager::new();
+        let player_id = String::from("TESTING");
+        let token = manager.create_refresh_token(&player_id).await;
+
+        let (_, new_token) = manager
+            .renew_refresh_token(token.token.clone())
+            .await
+            .expect("Failed to generate a new refresh token with a valid refresh token.");
+        assert!(new_token.player_id == player_id);
+        assert!(manager
+            .refresh_tokens
+            .lock()
+            .unwrap()
+            .contains_key(&new_token.token));
+        assert!(!manager
+            .refresh_tokens
+            .lock()
+            .unwrap()
+            .contains_key(&token.token));
+    }
+
+    /// Tests renewing a refresh token with an invalid refresh token.
+    #[tokio::test]
+    async fn test_renew_refresh_token_invalid() {
+        let mut manager = TokenManager::new();
+        manager.create_refresh_token(&String::from("TESTING")).await;
+
+        if let Err(e) = manager
+            .renew_refresh_token(String::from("WER@#R@F@#"))
+            .await
+        {
+            assert_eq!(e, ValidationError::Unauthorized);
+        } else {
+            panic!("ERROR: Successfully validated an invalid refresh token.");
+        }
+    }
 }
