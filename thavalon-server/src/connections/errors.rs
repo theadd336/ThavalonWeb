@@ -47,6 +47,10 @@ pub async fn recover_errors(err: Rejection) -> Result<impl Reply, Infallible> {
         http_response_code = StatusCode::UNAUTHORIZED;
         error_message = "Invalid email or password.".to_string();
         error_code = ErrorCode::InvalidLogin;
+    } else if let Some(super::InvalidTokenRejection) = err.find() {
+        http_response_code = StatusCode::UNAUTHORIZED;
+        error_message = "Missing or invalid JSON web token.".to_string();
+        error_code = ErrorCode::Unauthorized;
     }
 
     let server_error = ServerError {
