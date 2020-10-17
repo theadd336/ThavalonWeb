@@ -1885,7 +1885,7 @@ dependencies = [
 
 [[package]]
 name = "thavalon-server"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "fern",
