@@ -16,6 +16,7 @@ use warp::{
 //#endregion
 
 const API_BASE_PATH: &str = "api";
+const REFRESH_TOKEN_COOKIE: &str = "refreshToken";
 
 #[derive(Debug, PartialEq)]
 struct InvalidTokenRejection;
@@ -42,12 +43,17 @@ pub async fn serve_connections() {
         .and(with_token_manager(token_manager.clone()))
         .and_then(account_handlers::handle_user_login);
 
+    let logout_route = warp::path!("auth" / "logout")
+        .and(cookie::cookie(REFRESH_TOKEN_COOKIE))
+        .and(with_token_manager(token_manager.clone()))
+        .and_then(account_handlers::handle_logout);
+
     let get_user_info_route = warp::path!("get" / "user")
         .and(authorize_request(&token_manager))
         .and_then(account_handlers::get_user_account_info);
 
     let refresh_jwt_route = warp::path!("auth" / "refresh")
-        .and(cookie::cookie("refreshToken"))
+        .and(cookie::cookie(REFRESH_TOKEN_COOKIE))
         .and(with_token_manager(token_manager.clone()))
         .and_then(account_handlers::renew_refresh_token);
 
@@ -61,7 +67,12 @@ pub async fn serve_connections() {
         .and_then(account_handlers::update_user);
 
     let get_routes = warp::get().and(path_test.or(restricted_path_test).or(get_user_info_route));
-    let post_routes = warp::post().and(add_user_route.or(login_route).or(refresh_jwt_route));
+    let post_routes = warp::post().and(
+        add_user_route
+            .or(login_route)
+            .or(refresh_jwt_route)
+            .or(logout_route),
+    );
     let delete_routes = warp::delete().and(delete_user_route);
     let put_routes = warp::put().and(update_user_route);
 
