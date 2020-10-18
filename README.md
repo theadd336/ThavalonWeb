@@ -1,5 +1,6 @@
 # ThavalonWeb
 ![Rust](https://github.com/theadd336/ThavalonWeb/workflows/Rust/badge.svg)
+
 This repo contains the all code for ThavalonWeb. For a description of Thavalon, see below. To view the rules, see the [rules page](docs/rules.md).
 
 # What is Thavalon?

@@ -1,9 +1,11 @@
 //! Rest handlers for account-based calls
 use super::validation::{self, JWTResponse, RefreshTokenInfo, TokenManager, ValidationError};
+use super::REFRESH_TOKEN_COOKIE;
 use crate::database::{self, account_errors::AccountError, DatabaseAccount};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json;
+use std::convert::Infallible;
 use warp::{
     http::{response::Builder, StatusCode},
     reject::{self, Reject},
@@ -171,6 +173,21 @@ pub async fn handle_user_login(
     Ok(response)
 }
 
+/// Handles a user logging out. This revokes the user's refresh token.
+///
+/// # Arguments
+///
+/// * `refresh_token` - The user's refresh token to revoke.
+/// * `token_manager` - The token store with refresh tokens.
+pub async fn handle_logout(
+    refresh_token: String,
+    mut token_manager: TokenManager,
+) -> Result<impl Reply, Infallible> {
+    log::info!("Logging out user with refresh token {}.", refresh_token);
+    token_manager.revoke_refresh_token(&refresh_token).await;
+    Ok(StatusCode::RESET_CONTENT)
+}
+
 /// Loads user account information from the database. The user must already be
 /// authenticated with an auth token before calling.
 ///
@@ -316,7 +333,8 @@ async fn create_validated_response(
         .header(
             "Set-Cookie",
             format!(
-                "refreshToken={}; Expires={}; path=/; HttpOnly; SameSite=Strict",
+                "{}={}; Expires={}; path=/; HttpOnly; SameSite=Strict",
+                REFRESH_TOKEN_COOKIE,
                 refresh_token.token,
                 exp_datetime.to_rfc2822()
             ),
