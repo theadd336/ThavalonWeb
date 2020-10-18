@@ -103,6 +103,7 @@ pub async fn create_new_user(
             "email": email,
             "hash": hash,
             "display_name": display_name,
+            "email_verified": false,
         },
     };
     let result = collection
@@ -112,7 +113,7 @@ pub async fn create_new_user(
         Ok(result) => {
             // If the filter matched, the user already exists, so return an error.
             if result.matched_count > 0 {
-                log::info!("The username already exists. Email addresses must be unique.");
+                log::info!("The account already exists. Email addresses must be unique.");
                 return Err(AccountError::DuplicateAccount);
             }
             let id = bson::from_bson::<ObjectId>(result.upserted_id.unwrap()).unwrap();
