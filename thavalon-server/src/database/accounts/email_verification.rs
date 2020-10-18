@@ -15,6 +15,18 @@ pub struct UnverifiedEmailInfo {
     pub expires_at: i64,
 }
 
+/// Adds an unverified email to the collection.
+/// This will update the verification code for an email, if it's present already.
+///
+/// # Arguments
+///
+/// * `code` - The verification code to send to a user to verify
+/// * `email` - The email address to verify
+/// * `expires_at` - The timestamp at which the verification code will expire.
+///
+/// # Returns
+///
+/// * Empty type on success, AccountError on failure
 pub async fn add_unverified_email(
     code: &String,
     email: &String,
@@ -72,6 +84,15 @@ pub async fn add_unverified_email(
     }
 }
 
+/// Pops unverified email information by verification code from the DB.
+///
+/// # Arguments
+///
+/// * `verification_code` - The verification code to use for lookup
+///
+/// # Returns
+///
+/// * `UnverifiedEmailInfo` on success, `AccountError` on failure.
 pub async fn pop_info_by_code(
     verification_code: &String,
 ) -> Result<UnverifiedEmailInfo, AccountError> {
@@ -87,6 +108,15 @@ pub async fn pop_info_by_code(
     pop_info_with_filter(filter).await
 }
 
+/// Pops unverified email information by email from the DB.
+///
+/// # Arguments
+///
+/// * `email` - The email to use for lookup
+///
+/// # Returns
+///
+/// * `UnverifiedEmailInfo` on success, `AccountError` on failure.
 pub async fn pop_info_by_email(email: &String) -> Result<UnverifiedEmailInfo, AccountError> {
     log::info!("Popping unverified email info using email.");
 
@@ -97,8 +127,35 @@ pub async fn pop_info_by_email(email: &String) -> Result<UnverifiedEmailInfo, Ac
     pop_info_with_filter(filter).await
 }
 
+/// Internal function to pop email info given a specified filter.
+///
+/// # Arguments
+///
+/// * `filter` - The BSON document to use as a filter
+///
+/// # Returns
+///
+/// * `UnverifiedEmailInfo` on success, `AccountError` on failure
 async fn pop_info_with_filter(filter: Document) -> Result<UnverifiedEmailInfo, AccountError> {
     let collection = get_database()
         .await
         .collection(EMAIL_VERIFICATION_COLLECTION);
+
+    let db_document = match collection.find_one_and_delete(filter, None).await {
+        Ok(document) => document,
+        Err(e) => {
+            log::error!("An error occurred while retrieving information. {:?}", e);
+            return Err(AccountError::InvalidEmailVerification);
+        }
+    };
+
+    if db_document.is_none() {
+        log::info!("No matching unverified email account was found.");
+        return Err(AccountError::InvalidEmailVerification);
+    }
+
+    let email_info: UnverifiedEmailInfo = bson::from_document(db_document.unwrap())
+        .expect("Could not deserialize unverified email info.");
+    log::info!("Found a valid unverified email account.");
+    Ok(email_info)
 }
