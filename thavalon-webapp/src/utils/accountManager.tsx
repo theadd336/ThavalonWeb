@@ -61,10 +61,10 @@ class AccountManager {
         this.token = jwt.access_token;
         this.expiresAt = jwt.expires_at;
 
-        const currUnixTime = Math.floor(Date.now() / 1000);
+        const currUnixTime: number = Math.floor(Date.now() / 1000);
         // Take the diff between expires at and now, and subtract 60 seconds
         // This is the timeout for when we should recheck the refresh token
-        const refreshTimeout = (this.expiresAt - currUnixTime) - 890;
+        const refreshTimeout: number = (this.expiresAt - currUnixTime) - 890;
         if (callback !== undefined) {
             setTimeout(callback, refreshTimeout * 1000);
         }
