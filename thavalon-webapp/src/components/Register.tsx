@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
 import "./modal.scss";
-import AccountManager, { RegisterResponse } from '../utils/accountManager';
+import AccountManager, { HttpResponse } from '../utils/accountManager';
 import { Redirect } from 'react-router-dom';
 
 type RegisterProps = {
@@ -63,15 +63,15 @@ function Register(props: RegisterProps) {
 
         // attempt registering of user
         const accountManager: AccountManager = AccountManager.getInstance();
-        let registerResult: RegisterResponse = await accountManager.registerUser(data.name, data.email, data.password);
+        let httpResponse: HttpResponse = await accountManager.registerUser(data.name, data.email, data.password);
 
         // on successful register, log in user to update navbar and redirect to home page.
         // On fail, set error message and re-enable register button
-        if (registerResult.result) {
+        if (httpResponse.result) {
             props.setLoggedIn(true);
             setRedirectToHome(true);
         } else {
-            setFormErrorMsg(registerResult.message);
+            setFormErrorMsg(httpResponse.message);
             setDisabled(false);
         }
 
