@@ -1,7 +1,8 @@
-pub mod account_errors;
-pub mod email_verification;
+mod account_errors;
+mod email_verification;
 use super::get_database;
-use account_errors::AccountError;
+pub use account_errors::AccountError;
+pub use email_verification::*;
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Document},
     options::{FindOneOptions, UpdateOptions},

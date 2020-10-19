@@ -1,7 +1,8 @@
 //! Rest handlers for account-based calls
 use super::validation::{self, JWTResponse, RefreshTokenInfo, TokenManager, ValidationError};
 use super::REFRESH_TOKEN_COOKIE;
-use crate::database::{self, account_errors::AccountError, DatabaseAccount};
+use crate::database::accounts::{self, AccountError, DatabaseAccount};
+use crate::notifications::account;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -126,7 +127,7 @@ pub async fn handle_add_user(
     };
 
     let player_id =
-        match database::create_new_user(&new_user.email, &hash, &new_user.display_name).await {
+        match accounts::create_new_user(&new_user.email, &hash, &new_user.display_name).await {
             Ok(id) => id,
             Err(e) => {
                 log::info!("{:?}", e);
@@ -136,6 +137,7 @@ pub async fn handle_add_user(
     log::info!("Successfully added user to the database.");
     let (jwt, refresh_token) = token_manager.create_jwt(&player_id).await;
     let response = create_validated_response(jwt, refresh_token, StatusCode::CREATED).await;
+    account::send_email_verification(&new_user.email).await;
     Ok(response)
 }
 
@@ -153,7 +155,7 @@ pub async fn handle_user_login(
     mut token_manager: TokenManager,
 ) -> Result<impl Reply, Rejection> {
     log::info!("Attempting to log a user in.");
-    let hashed_user = match database::load_user_by_email(&login_info.email).await {
+    let hashed_user = match accounts::load_user_by_email(&login_info.email).await {
         Ok(user) => user,
         Err(e) => {
             log::info!("An error occurred while looking up the user. {}", e);
@@ -200,7 +202,7 @@ pub async fn handle_logout(
 /// * JSON serialized ThavalonUser on success. Rejection on failure.
 pub async fn get_user_account_info(player_id: String) -> Result<impl Reply, Rejection> {
     log::info!("Loading user account info for the specified account.");
-    let user = match database::load_user_by_id(&player_id).await {
+    let user = match accounts::load_user_by_id(&player_id).await {
         Ok(user) => user,
         Err(e) => {
             log::error!(
@@ -227,7 +229,7 @@ pub async fn get_user_account_info(player_id: String) -> Result<impl Reply, Reje
 /// * Empty reply on success, descriptive rejection otherwise.
 pub async fn delete_user(player_id: String) -> Result<impl Reply, Rejection> {
     log::info!("Attempting to delete user {} from the database.", player_id);
-    if let Err(e) = database::remove_user(&player_id).await {
+    if let Err(e) = accounts::remove_user(&player_id).await {
         log::info!("Error while removing the user from the database. {}", e);
 
         if e == AccountError::UnknownError {
@@ -270,7 +272,7 @@ pub async fn update_user(user: ThavalonUser, _: String) -> Result<impl Reply, Re
         };
     }
 
-    match database::update_user(user).await {
+    match accounts::update_user(user).await {
         Ok(_) => Ok(warp::reply()),
         Err(e) => {
             log::warn!("Failed to update user. {}", e);

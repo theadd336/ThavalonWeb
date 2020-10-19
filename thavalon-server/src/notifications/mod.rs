@@ -30,7 +30,7 @@ async fn send_email(email: &String, subject: &String, body: &String) {
         .body(body)
         .expect("ERROR: Could not parse email information.");
 
-    let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+    let creds = Credentials::new(SMTP_USER.to_string(), SMTP_PASSWORD.to_string());
 
     log::info!(
         "Email and credentials built. Opening secure connection to {}.",
