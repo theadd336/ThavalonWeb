@@ -25,9 +25,9 @@ jobs:
   Typescript:
       name: Typescript
       runs-on: ubuntu-latest
-          defaults:
-      run:
-        working-directory: thavalon-webapp
+      defaults:
+        run:
+          working-directory: thavalon-webapp
       steps:
       - uses: actions/checkout@v1
       - name: install node v12
