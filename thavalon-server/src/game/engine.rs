@@ -9,10 +9,10 @@ use std::slice;
 use itertools::Itertools;
 use tokio::time::{self, Duration};
 
+use super::{Card, Game, GameSpec, PlayerId};
 use super::interactions::Interactions;
 use super::messages::{Action, GameError, Message};
 use super::role::Role;
-use super::{Card, Game, GameSpec, PlayerId};
 
 /// Amount of time to wait for a declaration, for declarations that have to happen within a certain timeframe.
 const DECLARE_DELAY: Duration = Duration::from_secs(30);
@@ -43,6 +43,7 @@ struct VotingResults {
     sent: bool,
 }
 
+/// Runs a THavalon game to completion.
 pub async fn run_game<I: Interactions>(game: &Game, interactions: &mut I) -> Result<(), GameError> {
     let mut ge = GameEngine::new(game, interactions);
 
@@ -133,6 +134,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         }
     }
 
+    /// Obtain a valid proposal from the proposing player. This will continue asking them until they make a valid proposal.
     async fn get_proposal(
         &mut self,
         from: PlayerId,
@@ -191,6 +193,8 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         Ok(prop)
     }
 
+    /// Collect votes for a mission proposal. Players should assume they are voting on the most recent proposal,
+    /// except for on mission 1 where players choose between two proposals. Each player must vote exactly once.
     async fn vote(&mut self) -> Result<VotingResults, GameError> {
         log::debug!("Voting on a proposal!");
         let game = self.game;
@@ -228,6 +232,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         Ok(results)
     }
 
+    ///Run a mission, given the proposed players. This will return `true` if the mission passes, `false` if it fails.
     async fn send_mission(
         &mut self,
         proposal: Proposal<'_>,
@@ -487,9 +492,9 @@ mod test {
     use futures::executor::block_on;
     use maplit::{hashmap, hashset};
 
-    use super::super::interactions::test::TestInteractions;
-    use super::super::runner::{Action, Message};
     use super::super::{Player, Players, Role};
+    use super::super::interactions::test::TestInteractions;
+    use super::super::messages::{Action, Message};
     use super::*;
 
     fn make_game() -> Game {

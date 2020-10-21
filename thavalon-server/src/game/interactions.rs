@@ -7,8 +7,8 @@ use futures::{future, TryFutureExt};
 use tokio::stream::{StreamExt, StreamMap};
 use tokio::sync::mpsc;
 
-use super::messages::{Action, GameError, Message};
 use super::PlayerId;
+use super::messages::{Action, GameError, Message};
 
 #[async_trait]
 pub trait Interactions {

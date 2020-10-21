@@ -1,12 +1,12 @@
-//! API for spawning game engines
+//! Builder for configuring and launching a new game.
 
 use tokio::sync::mpsc;
 use tokio::task;
 
+use super::{Game, PlayerId};
 use super::engine;
 use super::interactions::ChannelInteractions;
 use super::messages::{Action, Message};
-use super::{Game, PlayerId};
 
 /// Builder for starting a new THavalon game
 pub struct GameBuilder {
@@ -32,7 +32,7 @@ impl GameBuilder {
     /// The returned `task::JoinHandle` will complete once the game has ended.
     pub fn start(self) -> task::JoinHandle<()> {
         let game = Game::roll(self.players);
-        let interactions = self.interactions;
+        let mut interactions = self.interactions;
         task::spawn(async move {
             if let Err(e) = engine::run_game(&game, &mut interactions).await {
                 log::error!("Fatal game error: {}", e);
