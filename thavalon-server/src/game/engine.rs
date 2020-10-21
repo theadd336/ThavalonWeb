@@ -9,10 +9,10 @@ use std::slice;
 use itertools::Itertools;
 use tokio::time::{self, Duration};
 
-use super::{Card, Game, GameSpec, PlayerId};
 use super::interactions::Interactions;
 use super::messages::{Action, GameError, Message};
 use super::role::Role;
+use super::{Card, Game, GameSpec, PlayerId};
 
 /// Amount of time to wait for a declaration, for declarations that have to happen within a certain timeframe.
 const DECLARE_DELAY: Duration = Duration::from_secs(30);
@@ -289,7 +289,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
             })
             .await?;
 
-        if failed {
+        if !failed {
             let agravaine_declared = match time::timeout(
                 DECLARE_DELAY,
                 self.interactions.receive(|player, action| {
@@ -303,9 +303,9 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
             .await
             {
                 Ok(Ok(declared)) => declared,
-                Ok(Err(err)) => return Err(err),
-                // Timed out waiting for a declaration
-                Err(_) => false,
+                // We either timed out waiting for Agravaine to declare or encountered an error receiving messages. Since there won't
+                // necessarily _be_ a message in this time frame, ignore errors.
+                _ => false,
             };
 
             if agravaine_declared {
@@ -492,9 +492,9 @@ mod test {
     use futures::executor::block_on;
     use maplit::{hashmap, hashset};
 
-    use super::super::{Player, Players, Role};
     use super::super::interactions::test::TestInteractions;
     use super::super::messages::{Action, Message};
+    use super::super::{Player, Players, Role};
     use super::*;
 
     fn make_game() -> Game {
@@ -521,7 +521,8 @@ mod test {
         });
         players.add_player(Player {
             id: 5,
-            role: Role::Mordred,
+            // Agravaine isn't supposed to be in 5-player but shhh
+            role: Role::Agravaine,
             name: "Player 5".to_string(),
         });
 
@@ -532,7 +533,7 @@ mod test {
                 2 => "You are Lancelot".to_string(),
                 3 => "You are Iseult".to_string(),
                 4 => "You are Maelegant".to_string(),
-                5 => "You are Mordred".to_string(),
+                5 => "You are Agravaine".to_string(),
             },
             proposal_order: vec![1, 2, 3, 4, 5],
             spec: GameSpec::for_players(5),
@@ -648,4 +649,113 @@ mod test {
     }
 
     // TODO: ties
+
+    #[tokio::test]
+    async fn test_mission() {
+        let mut interactions = TestInteractions::new();
+        let game = make_game();
+        let mut engine = GameEngine::new(&game, &mut interactions);
+
+        engine.interactions.extend_actions(vec![
+            (1, Action::Play { card: Card::Fail }),
+            (
+                1,
+                Action::Play {
+                    card: Card::Success,
+                },
+            ),
+            (
+                2,
+                Action::Play {
+                    card: Card::Reverse,
+                },
+            ),
+            (
+                2,
+                Action::Play {
+                    card: Card::Success,
+                },
+            ),
+            (4, Action::Play { card: Card::Fail }),
+        ]);
+
+        let proposal = Proposal {
+            game: &game,
+            proposer: 1,
+            players: hashset![1, 2, 4],
+        };
+
+        let success = engine.send_mission(proposal, 3).await.unwrap();
+        assert!(success);
+
+        assert_eq!(
+            interactions.broadcasts()[0],
+            Message::MissionResults {
+                passed: true,
+                successes: 1,
+                reverses: 1,
+                fails: 1,
+            }
+        );
+
+        assert_eq!(
+            interactions.messages_for(1).next(),
+            Some(&Message::Error("You can't play a Fail".to_string()))
+        );
+        assert_eq!(
+            interactions.messages_for(2).next(),
+            Some(&Message::Error("You already played a Reverse".to_string()))
+        );
+    }
+
+    #[tokio::test]
+    async fn test_agravaine() {
+        let mut interactions = TestInteractions::new();
+        let game = make_game();
+        let mut engine = GameEngine::new(&game, &mut interactions);
+
+        engine.interactions.extend_actions(vec![
+            (
+                1,
+                Action::Play {
+                    card: Card::Success,
+                },
+            ),
+            (
+                2,
+                Action::Play {
+                    card: Card::Reverse,
+                },
+            ),
+            (5, Action::Play { card: Card::Fail }),
+            (5, Action::Declare),
+        ]);
+
+        let proposal = Proposal {
+            game: &game,
+            proposer: 1,
+            players: hashset![1, 2, 5],
+        };
+
+        let passed = engine.send_mission(proposal, 3).await.unwrap();
+        assert!(!passed);
+
+        assert_eq!(
+            interactions.broadcasts(),
+            &[
+                Message::MissionResults {
+                    passed: true,
+                    successes: 1,
+                    reverses: 1,
+                    fails: 1,
+                },
+                Message::MissionResults {
+                    passed: false,
+                    successes: 1,
+                    reverses: 1,
+                    fails: 1
+                }
+            ]
+        );
+    }
 }

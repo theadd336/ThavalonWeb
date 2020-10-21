@@ -3,10 +3,10 @@
 use tokio::sync::mpsc;
 use tokio::task;
 
-use super::{Game, PlayerId};
 use super::engine;
 use super::interactions::ChannelInteractions;
 use super::messages::{Action, Message};
+use super::{Game, PlayerId};
 
 /// Builder for starting a new THavalon game
 pub struct GameBuilder {
