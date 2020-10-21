@@ -6,15 +6,14 @@ use std::ops::Index;
 
 use rand::prelude::*;
 
-mod role;
-mod runner;
-mod state;
-
+pub mod builder;
 mod engine;
 mod interactions;
+mod messages;
+mod role;
 
+pub use self::messages::*;
 pub use self::role::*;
-pub use self::runner::{ControlRequest, ControlResponse, GameRunner};
 
 /// Key for identifying a player in the game. Cheaper to copy and move around than a String
 pub type PlayerId = usize;

@@ -10,8 +10,8 @@ use itertools::Itertools;
 use tokio::time::{self, Duration};
 
 use super::interactions::Interactions;
+use super::messages::{Action, GameError, Message};
 use super::role::Role;
-use super::runner::{Action, GameError, Message};
 use super::{Card, Game, GameSpec, PlayerId};
 
 /// Amount of time to wait for a declaration, for declarations that have to happen within a certain timeframe.
@@ -43,7 +43,7 @@ struct VotingResults {
     sent: bool,
 }
 
-async fn run_game<I: Interactions>(game: &Game, interactions: &mut I) -> Result<(), GameError> {
+pub async fn run_game<I: Interactions>(game: &Game, interactions: &mut I) -> Result<(), GameError> {
     let mut ge = GameEngine::new(game, interactions);
 
     for player in ge.game.players.iter() {

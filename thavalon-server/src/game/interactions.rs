@@ -7,11 +7,11 @@ use futures::{future, TryFutureExt};
 use tokio::stream::{StreamExt, StreamMap};
 use tokio::sync::mpsc;
 
-use super::runner::{Action, GameError, Message};
+use super::messages::{Action, GameError, Message};
 use super::PlayerId;
 
-#[async_trait(?Send)]
-pub(super) trait Interactions {
+#[async_trait]
+pub trait Interactions {
     /// Send a message to a specific player
     async fn send_to(&mut self, player: PlayerId, message: Message) -> Result<(), GameError>;
 
@@ -24,11 +24,12 @@ pub(super) trait Interactions {
     /// Think of this like a one-off `filter_map` operation.
     async fn receive<F, R>(&mut self, mut f: F) -> Result<R, GameError>
     where
-        F: FnMut(PlayerId, Action) -> Result<R, String>;
+        R: Send,
+        F: FnMut(PlayerId, Action) -> Result<R, String> + Send;
 }
 
 /// An Interactions that uses per-player MPSC channels
-pub(super) struct ChannelInteractions {
+pub struct ChannelInteractions {
     inbox: StreamMap<PlayerId, mpsc::Receiver<Action>>,
     outbox: HashMap<PlayerId, mpsc::Sender<Message>>,
 }
@@ -52,7 +53,7 @@ impl ChannelInteractions {
     }
 }
 
-#[async_trait(?Send)]
+#[async_trait]
 impl Interactions for ChannelInteractions {
     async fn send_to(&mut self, player: PlayerId, message: Message) -> Result<(), GameError> {
         self.outbox
@@ -74,7 +75,8 @@ impl Interactions for ChannelInteractions {
 
     async fn receive<F, R>(&mut self, mut f: F) -> Result<R, GameError>
     where
-        F: FnMut(PlayerId, Action) -> Result<R, String>,
+        R: Send,
+        F: FnMut(PlayerId, Action) -> Result<R, String> + Send,
     {
         loop {
             match self.inbox.next().await {
@@ -94,7 +96,7 @@ pub(super) mod test {
 
     use async_trait::async_trait;
 
-    use super::super::runner::{Action, GameError, Message};
+    use super::super::messages::{Action, GameError, Message};
     use super::super::PlayerId;
     use super::Interactions;
 
@@ -143,7 +145,7 @@ pub(super) mod test {
         }
     }
 
-    #[async_trait(?Send)]
+    #[async_trait]
     impl Interactions for TestInteractions {
         async fn send_to(&mut self, player: PlayerId, message: Message) -> Result<(), GameError> {
             self.messages.push((player, message));
@@ -157,7 +159,8 @@ pub(super) mod test {
 
         async fn receive<F, R>(&mut self, mut f: F) -> Result<R, GameError>
         where
-            F: FnMut(PlayerId, Action) -> Result<R, String>,
+            R: Send,
+            F: FnMut(PlayerId, Action) -> Result<R, String> + Send,
         {
             loop {
                 match self.actions.pop_front() {
