@@ -1,0 +1,50 @@
+.Modal {
+    margin: auto;
+    width: 300px;
+    height: 200px;
+    border: 1px solid #000000;
+    overflow: auto;
+    border-radius: 10px;
+    outline: none;
+    padding: 20px;
+    background-color: #ffffff;
+    opacity: 100%;
+
+    @media only screen and (max-width: 600px) {
+        width: 225px;
+        height: 250px;
+        position: fixed;
+        top: 40px;
+        left: 40px;
+        right: 40px;
+        bottom: 40px;
+    }    
+}
+
+.Overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, .5);
+}
+
+.errorMsg {
+    color: red;
+    font-size: 13px;
+    font-style: italic;
+    display: inline-block;
+    padding-left: 5px;
+}
+
+.formLink {
+    font-size: 13px;
+}
+
+.modalHeader {
+    margin-top: 0px;
+}

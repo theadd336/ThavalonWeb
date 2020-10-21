@@ -1,13 +1,7 @@
-#![allow(dead_code)]
-
 use fern::colors::{Color, ColoredLevelConfig};
-use tokio::stream::StreamExt;
 
 mod connections;
-mod game;
-mod lobbies;
-
-use self::game::{ControlRequest, GameRunner};
+mod database;
 
 fn setup_logger() -> Result<(), fern::InitError> {
     let colors = ColoredLevelConfig::new()
@@ -24,7 +18,7 @@ fn setup_logger() -> Result<(), fern::InitError> {
         })
         .level(log::LevelFilter::Debug)
         .level_for("hyper", log::LevelFilter::Info)
-        .level_for("warp", log::LevelFilter::Info)
+        .level_for("warp", log::LevelFilter::Debug)
         .chain(std::io::stdout())
         .apply()?;
 
@@ -34,5 +28,6 @@ fn setup_logger() -> Result<(), fern::InitError> {
 #[tokio::main]
 async fn main() {
     setup_logger().expect("Could not set up logging");
+    database::initialize_mongo_client().await;
     connections::serve_connections().await;
 }
