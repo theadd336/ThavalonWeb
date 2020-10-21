@@ -1,14 +1,14 @@
 import React, { useEffect } from 'react';
 import { Redirect } from 'react-router-dom';
-import AccountManager, { HttpResponse } from '../utils/accountManager';
+import { AccountManager, HttpResponse } from '../utils/accountManager';
 
-type LogoutProps = {
+interface LogoutProps {
     setLoggedIn: any
 };
 
-function Logout(props: LogoutProps) {
+export function Logout(props: LogoutProps) {
     useEffect(() => {
-        const accountManager: AccountManager = AccountManager.getInstance();
+        const accountManager = AccountManager.getInstance();
         accountManager.logoutUser().then((httpResponse: HttpResponse) => {
             if (httpResponse.result) {
                 props.setLoggedIn(false);
@@ -20,8 +20,5 @@ function Logout(props: LogoutProps) {
 
     return (
         <Redirect to="/" />
-    )
+    );
 }
-
-
-export default Logout;

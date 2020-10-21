@@ -22,11 +22,11 @@ function openMenu(event: any) {
     event.preventDefault();
 }
 
-type NavbarProps = {
+interface NavbarProps {
     loggedIn: boolean
 };
 
-function Navbar(props: NavbarProps) {    
+export function Navbar(props: NavbarProps) {    
     return (
         <NavbarContainer id="navbar" className="topnav">
             <NavbarItemLeft exact to="/" activeClassName="active" id="homeLink">Home</NavbarItemLeft>
@@ -45,10 +45,8 @@ function Navbar(props: NavbarProps) {
                 </RightSpan>
             }
         </NavbarContainer>
-    )
+    );
 }
-
-export default Navbar;
 
 const RightSpan = styled.span`
     display: inline-block;
@@ -153,6 +151,3 @@ const NavbarItemRight = styled(NavbarItem)`
         }
     }
 `;
-
-// TODO: 
-// 1. span width of 100% causes extra space near bottom when resizing to responsive

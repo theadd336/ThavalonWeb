@@ -10,12 +10,12 @@ interface AddUserInfo {
     "displayName": string,
     "email": string,
     "password": string,
-}
+};
 
 interface LogInInfo {
     "email": string,
     "password": string,
-}
+};
 
 interface JwtType {
     "token_type": string,
@@ -26,10 +26,9 @@ interface JwtType {
 export interface HttpResponse {
     "result": boolean, // true if successful http query, false otherwise
     "message": string, // message will contain error message if result is false, otherwise blank
-}
+};
 
-
-class AccountManager {
+export class AccountManager {
     private static instance: AccountManager;
     private token: string;
     private expiresAt: number;
@@ -250,5 +249,3 @@ class AccountManager {
         });
     }
 }
-
-export default AccountManager;

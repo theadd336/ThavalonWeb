@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Link, Redirect } from 'react-router-dom';
 
 import "./modal.scss";
-import AccountManager, { HttpResponse } from '../utils/accountManager';
+import { AccountManager } from '../utils/accountManager';
 type LoginProps = {
     setLoggedIn: any
 };
@@ -14,9 +14,9 @@ ReactModal.setAppElement("#root");
 interface LoginData {
     "email": string,
     "password": string
-}
+};
 
-function Login(props: LoginProps) {
+export function Login(props: LoginProps) {
     // if set, register modal is open
     const [modalIsOpen, setModalIsOpen] = useState(true);
     // hook for register form
@@ -28,23 +28,32 @@ function Login(props: LoginProps) {
     // state for redirecting to home on successful login
     const [redirectToHome, setRedirectToHome] = useState(false);
 
+    /**
+     * Called when register modal is closed.
+     */
     function closeModal() {
         setModalIsOpen(false);
     }
+    /**
+     * On error, just prevent page reload - form handles showing errors.
+     * @param data The data being sent on error.
+     * @param event The event caused by submission.
+     */
 
     function OnError(data: any, event: any) {
-        console.log(data);
-        console.log("ERROR");
-
-        // prevent page from reloading
         event.preventDefault();
     }
 
+    /**
+     * On error, just prevent page reload - form handles showing errors.
+     * @param data The data being sent on submit.
+     * @param event The event caused by submission.
+     */
     async function OnSubmit(data: LoginData, event: any) {
         setDisabled(true);
 
-        const accountManager: AccountManager = AccountManager.getInstance();
-        let httpResponse: HttpResponse = await accountManager.loginUser(data.email, data.password);
+        const accountManager = AccountManager.getInstance();
+        let httpResponse = await accountManager.loginUser(data.email, data.password);
 
         // on successful register, log in user to update navbar and redirect to home page.
         // On fail, set error message and re-enable register button
@@ -88,7 +97,7 @@ function Login(props: LoginProps) {
                     type="password"
                     placeholder="Password"
                     name="password"
-                    ref={register({required: true})} />
+                    ref={register({required: true, minLength: 8})} />
                 {errors.password && <span className="errorMsg">Password required.</span>}
                 <br />
                 <Link to="/register" className="formLink">Create Account?</Link>
@@ -97,7 +106,5 @@ function Login(props: LoginProps) {
                 <span className="errorMsg">{formErrorMsg}</span>
             </form>
         </ReactModal>
-    )
+    );
 }
-
-export default Login;

@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
 import "./modal.scss";
-import AccountManager, { HttpResponse } from '../utils/accountManager';
+import { AccountManager, HttpResponse } from '../utils/accountManager';
 import { Redirect } from 'react-router-dom';
 
 type RegisterProps = {
@@ -14,11 +14,11 @@ interface RegisterData {
     "email": string,
     "password": string,
     "confirmPassword": string,
-}
+};
 
 ReactModal.setAppElement("#root");
 
-function Register(props: RegisterProps) {
+export function Register(props: RegisterProps) {
     // if set, register modal is open
     const [modalIsOpen, setModalIsOpen] = useState(true);
     // hook for register form
@@ -38,15 +38,19 @@ function Register(props: RegisterProps) {
     }
 
     /**
-     * 
-     * @param data 
-     * @param event 
+     * On error, just prevent page reload - form handles showing errors.
+     * @param data The data being sent on error.
+     * @param event The event caused by submission.
      */
     function onError(data: any, event: any) {
-        console.log("ERROR: " + data);
         event.preventDefault();
     }
 
+    /**
+     * On error, just prevent page reload - form handles showing errors.
+     * @param data The data being sent on submit.
+     * @param event The event caused by submission.
+     */
     async function onSubmit(data: RegisterData, event: any) {
         // disable button on start of submit
         // TODO: Also add loading image
@@ -56,7 +60,7 @@ function Register(props: RegisterProps) {
         // confirm passwords match. If they do not, show error message.
         if (data.password !== data.confirmPassword) {
             setFormErrorMsg("Password do not match");
-            setDisabled(false);
+            setDisabled(false); 
             event.preventDefault();
             return;
         }
@@ -115,21 +119,19 @@ function Register(props: RegisterProps) {
                     type="password"
                     placeholder="Password"
                     name="password"
-                    ref={register({required: true})} />
+                    ref={register({required: true, minLength: 8})} />
                 {errors.password && <span className="errorMsg">Password required.</span>}
                 <br />
                 <input
                     type="password"
                     placeholder="Confirm Password"
                     name="confirmPassword"
-                    ref={register({required: true})} />
+                    ref={register({required: true, minLength: 8})} />
                 {errors.confirmPassword && <span className="errorMsg">Password required.</span>}
                 <br />
                 <input type="submit" disabled={disable} value="Register" />
                 <span className="errorMsg">{formErrorMsg}</span>
             </form>
         </ReactModal>
-    )
+    );
 }
-
-export default Register;
