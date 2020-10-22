@@ -3,7 +3,7 @@ import { Redirect } from 'react-router-dom';
 import { AccountManager, HttpResponse } from '../utils/accountManager';
 
 interface LogoutProps {
-    setLoggedIn: any
+    setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 };
 
 export function Logout(props: LogoutProps) {

@@ -6,7 +6,7 @@ import { Link, Redirect } from 'react-router-dom';
 import "./modal.scss";
 import { AccountManager } from '../utils/accountManager';
 type LoginProps = {
-    setLoggedIn: any
+    setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 };
 
 ReactModal.setAppElement("#root");

@@ -6,7 +6,7 @@ import { AccountManager, HttpResponse } from '../utils/accountManager';
 import { Redirect } from 'react-router-dom';
 
 type RegisterProps = {
-    setLoggedIn: any
+    setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 };
 
 interface RegisterData {

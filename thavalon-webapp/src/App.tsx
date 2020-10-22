@@ -9,6 +9,7 @@ import { AccountManager, HttpResponse } from './utils/accountManager';
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [useMobileMenu, setUseMobileMenu] = useState(false);
   // check logged in status within useEffect to not enter render loop
   useEffect(() => {
     const accountManager = AccountManager.getInstance();
@@ -21,7 +22,7 @@ function App() {
 
   return (
     <div>
-      <Navbar loggedIn={loggedIn} />
+      <Navbar loggedIn={loggedIn} useMobileMenu={useMobileMenu} setUseMobileMenu={setUseMobileMenu} />
       <Switch>
         <Route path="/" exact>
           <Home />

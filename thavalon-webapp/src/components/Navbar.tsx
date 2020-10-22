@@ -4,37 +4,26 @@ import {NavLink} from 'react-router-dom';
 import styled from 'styled-components';
 import {faBars} from '@fortawesome/free-solid-svg-icons';
 
-/**
- * Code for supporting hamburger menu on mobile.
- * @param event The event caused by clicking button.
- */
-function openMenu(event: any) {
-    let x = document.getElementById("navbar");
-    if (x === null) {
-        return;
-    }
-    if (x.classList.contains("responsive")) {
-        x.classList.remove("responsive");
-    } else if (x.classList.contains("topnav")) {
-        x.classList.add("responsive");
-    }
-
-    event.preventDefault();
-}
-
 interface NavbarProps {
     loggedIn: boolean
+    useMobileMenu: boolean
+    setUseMobileMenu: React.Dispatch<React.SetStateAction<boolean>>
 };
 
-export function Navbar(props: NavbarProps) {    
+export function Navbar(props: NavbarProps) {
+    // handle mobile menu functionality
+    let topnavClasses: string = "topnav"
+    if (props.useMobileMenu) {
+        topnavClasses += " responsive";
+    }
     return (
-        <NavbarContainer id="navbar" className="topnav">
+        <NavbarContainer id="navbar" className={topnavClasses}>
             <NavbarItemLeft exact to="/" activeClassName="active" id="homeLink">Home</NavbarItemLeft>
             <NavbarItemLeft to="/rules" activeClassName="active">Rules</NavbarItemLeft>
             {!props.loggedIn &&
                 <NavbarItemRight to="/login" activeClassName="active">Log In</NavbarItemRight>
             }
-            <NavbarItemRight to="" className="icon" onClick={openMenu}>
+            <NavbarItemRight to="" className="icon" onClick={() => props.setUseMobileMenu(!props.useMobileMenu)}>
                     <FontAwesomeIcon icon={faBars} />
             </NavbarItemRight>
             {props.loggedIn &&
