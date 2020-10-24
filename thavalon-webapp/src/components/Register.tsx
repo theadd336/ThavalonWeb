@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
-import "./modal.scss";
+import "./Modal.scss";
 import { AccountManager, HttpResponse } from '../utils/accountManager';
 import { Redirect } from 'react-router-dom';
 
@@ -16,13 +16,11 @@ interface RegisterData {
     "confirmPassword": string,
 };
 
-ReactModal.setAppElement("#root");
-
 export function Register(props: RegisterProps) {
     // if set, register modal is open
     const [modalIsOpen, setModalIsOpen] = useState(true);
     // hook for register form
-    const {register, handleSubmit, errors} = useForm<RegisterData>();
+    const {register, handleSubmit, errors} = useForm<RegisterData, Event>();
     // state for setting if register button is disabled
     const [disable, setDisabled] = useState(false);
     // state for setting register error
@@ -39,19 +37,10 @@ export function Register(props: RegisterProps) {
 
     /**
      * On error, just prevent page reload - form handles showing errors.
-     * @param data The data being sent on error.
-     * @param event The event caused by submission.
-     */
-    function onError(data: any, event: any) {
-        event.preventDefault();
-    }
-
-    /**
-     * On error, just prevent page reload - form handles showing errors.
      * @param data The data being sent on submit.
      * @param event The event caused by submission.
      */
-    async function onSubmit(data: RegisterData, event: any) {
+    async function onSubmit(data: RegisterData) {
         // disable button on start of submit
         // TODO: Also add loading image
         setDisabled(true);
@@ -59,9 +48,8 @@ export function Register(props: RegisterProps) {
 
         // confirm passwords match. If they do not, show error message.
         if (data.password !== data.confirmPassword) {
-            setFormErrorMsg("Password do not match");
+            setFormErrorMsg("Passwords do not match");
             setDisabled(false); 
-            event.preventDefault();
             return;
         }
 
@@ -78,9 +66,6 @@ export function Register(props: RegisterProps) {
             setFormErrorMsg(httpResponse.message);
             setDisabled(false);
         }
-
-        // prevent page reload
-        event.preventDefault();
     }
 
     if (redirectToHome) {
@@ -96,7 +81,7 @@ export function Register(props: RegisterProps) {
             overlayClassName="Overlay"
         >
             <h2 className="modalHeader">Register</h2>
-            <form onSubmit={handleSubmit(onSubmit, onError)}>
+            <form onSubmit={handleSubmit(onSubmit)}>
                 <input
                     type="text"
                     placeholder="Name"
@@ -120,14 +105,14 @@ export function Register(props: RegisterProps) {
                     placeholder="Password"
                     name="password"
                     ref={register({required: true, minLength: 8})} />
-                {errors.password && <span className="errorMsg">Password required.</span>}
+                {errors.password && <span className="errorMsg">Invalid Password.</span>}
                 <br />
                 <input
                     type="password"
                     placeholder="Confirm Password"
                     name="confirmPassword"
                     ref={register({required: true, minLength: 8})} />
-                {errors.confirmPassword && <span className="errorMsg">Password required.</span>}
+                {errors.confirmPassword && <span className="errorMsg">Invalid Password.</span>}
                 <br />
                 <input type="submit" disabled={disable} value="Register" />
                 <span className="errorMsg">{formErrorMsg}</span>

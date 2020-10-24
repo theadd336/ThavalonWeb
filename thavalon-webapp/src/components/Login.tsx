@@ -2,14 +2,12 @@ import React, {useState} from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
 import { Link, Redirect } from 'react-router-dom';
-
-import "./modal.scss";
 import { AccountManager } from '../utils/accountManager';
+import "./Modal.scss";
+
 type LoginProps = {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 };
-
-ReactModal.setAppElement("#root");
 
 interface LoginData {
     "email": string,
@@ -34,22 +32,13 @@ export function Login(props: LoginProps) {
     function closeModal() {
         setModalIsOpen(false);
     }
-    /**
-     * On error, just prevent page reload - form handles showing errors.
-     * @param data The data being sent on error.
-     * @param event The event caused by submission.
-     */
-
-    function OnError(data: any, event: any) {
-        event.preventDefault();
-    }
 
     /**
      * On error, just prevent page reload - form handles showing errors.
      * @param data The data being sent on submit.
      * @param event The event caused by submission.
      */
-    async function OnSubmit(data: LoginData, event: any) {
+    async function OnSubmit(data: LoginData) {
         setDisabled(true);
 
         const accountManager = AccountManager.getInstance();
@@ -64,8 +53,6 @@ export function Login(props: LoginProps) {
             setFormErrorMsg(httpResponse.message);
             setDisabled(false);
         }
-        // prevent page from reloading
-        event.preventDefault();
     }
 
     if (redirectToHome) {
@@ -82,7 +69,7 @@ export function Login(props: LoginProps) {
             overlayClassName="Overlay"
         >
             <h2 className="modalHeader">Log In</h2>
-            <form onSubmit={handleSubmit(OnSubmit, OnError)}>
+            <form onSubmit={handleSubmit(OnSubmit)}>
                 <input
                     type="email"
                     placeholder="Email"

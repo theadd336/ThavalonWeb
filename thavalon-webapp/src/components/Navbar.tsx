@@ -3,6 +3,7 @@ import React from 'react';
 import {NavLink} from 'react-router-dom';
 import styled from 'styled-components';
 import {faBars} from '@fortawesome/free-solid-svg-icons';
+import "./Navbar.scss";
 
 interface NavbarProps {
     loggedIn: boolean
@@ -17,35 +18,26 @@ export function Navbar(props: NavbarProps) {
         topnavClasses += " responsive";
     }
     return (
-        <NavbarContainer id="navbar" className={topnavClasses}>
-            <NavbarItemLeft exact to="/" activeClassName="active" id="homeLink">Home</NavbarItemLeft>
-            <NavbarItemLeft to="/rules" activeClassName="active">Rules</NavbarItemLeft>
+        <div id="navbarContainer" className={topnavClasses}>
+            <NavLink exact to="/" className="navbarItemLeft" activeClassName="active" id="homeLink">Home</NavLink>
+            <NavLink to="/rules" className="navbarItemLeft" activeClassName="active">Rules</NavLink>
             {!props.loggedIn &&
-                <NavbarItemRight to="/login" activeClassName="active">Log In</NavbarItemRight>
+                <NavLink to="/login" className="navbarItemRight" activeClassName="active">Log In</NavLink>
             }
-            <NavbarItemRight to="" className="icon" onClick={() => props.setUseMobileMenu(!props.useMobileMenu)}>
+            <NavLink to="" className="icon navbarItemRight" onClick={() => props.setUseMobileMenu(!props.useMobileMenu)}>
                     <FontAwesomeIcon icon={faBars} />
-            </NavbarItemRight>
+            </NavLink>
             {props.loggedIn &&
-                <RightSpan id="rightContainer">
+                <span id="rightContainer">
                     <SubNavbarItemLeft to="/stats" className="nav-item" activeClassName="active">Stats</SubNavbarItemLeft>
                     <SubNavbarItemLeft to="/account" className="nav-item" activeClassName="active">Account</SubNavbarItemLeft>
                     <SubNavbarItemLeft to="/logout" className="nav-item" activeClassName="active">Log Out</SubNavbarItemLeft>
-                </RightSpan>
+                </span>
             }
-        </NavbarContainer>
+        </div>
     );
 }
 
-const RightSpan = styled.span`
-    display: inline-block;
-    float: right;
-
-    @media screen and (max-width: 600px) {
-        float: none;
-        width: 100%;
-    }
-`;
 
 const NavbarContainer = styled.div`
     background-color: #333;

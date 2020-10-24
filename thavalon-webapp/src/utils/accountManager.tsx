@@ -60,10 +60,10 @@ export class AccountManager {
         this.token = jwt.access_token;
         this.expiresAt = jwt.expires_at;
 
-        const currUnixTime: number = Math.floor(Date.now() / 1000);
+        const currUnixTime = Math.floor(Date.now() / 1000);
         // Take the diff between expires at and now, and subtract 60 seconds
         // This is the timeout for when we should recheck the refresh token
-        const refreshTimeout: number = (this.expiresAt - currUnixTime) - 890;
+        const refreshTimeout = (this.expiresAt - currUnixTime) - 890;
         if (callback !== undefined) {
             setTimeout(callback, refreshTimeout * 1000);
         }
@@ -73,7 +73,7 @@ export class AccountManager {
      */
     private async checkRefreshToken(): Promise<HttpResponse> {
         console.log("Checking refresh token!");
-        let httpResponse: HttpResponse = {
+        const httpResponse: HttpResponse = {
             "result": true,
             "message": "",
         }
@@ -120,13 +120,13 @@ export class AccountManager {
      */
     public async registerUser(name: string, email: string, password: string): Promise<HttpResponse> {
         // parameters for registering user
-        let addUserInfo: AddUserInfo = {
+        const addUserInfo: AddUserInfo = {
             "displayName": name,
             "email": email,
             "password": password
         }
 
-        let httpResponse: HttpResponse = {
+        const httpResponse: HttpResponse = {
             "result": true,
             "message": ""
         }
@@ -136,8 +136,7 @@ export class AccountManager {
             body: JSON.stringify(addUserInfo),
             headers: {
                 "Content-Type": "application/json"
-            },
-            credentials: "include"
+            }
         }).then((response) => {
             // On success, set jwt info. On fail, set error messages to return to user.
             if (response.status === STATUS_CREATED) {
@@ -174,12 +173,12 @@ export class AccountManager {
      */
     public async loginUser(email: string, password: string): Promise<HttpResponse> {
         // parameters for logging in user
-        let logInInfo: LogInInfo = {
+        const logInInfo: LogInInfo = {
             "email": email,
             "password": password
         }
 
-        let httpResponse: HttpResponse = {
+        const httpResponse: HttpResponse = {
             "result": true,
             "message": ""
         }
@@ -189,8 +188,7 @@ export class AccountManager {
             body: JSON.stringify(logInInfo),
             headers: {
                 "Content-Type": "application/json"
-            },
-            credentials: "include"
+            }
         }).then((response) => {
             if (response.status === STATUS_OK) {
                 response.json().then((jwt: JwtType) => {
@@ -221,7 +219,7 @@ export class AccountManager {
      * @returns HttpResponse with result (true on success, false otherwise) and message set if result is false
      */
     public async logoutUser(): Promise<HttpResponse> {
-        let httpResponse: HttpResponse = {
+        const httpResponse: HttpResponse = {
             "result": true,
             "message": ""
         }
