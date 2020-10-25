@@ -8,7 +8,7 @@ import "./Modal.scss";
 // Used by react modal for screen readers
 ReactModal.setAppElement("#root");
 
-type LoginProps = {
+interface LoginProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 };
 

@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import ReactModal from 'react-modal';
-import { useForm } from 'react-hook-form';
+import { Resolver, useForm } from 'react-hook-form';
 import "./Modal.scss";
 import { AccountManager, HttpResponse } from '../utils/accountManager';
 import { Redirect } from 'react-router-dom';
@@ -8,7 +8,7 @@ import { Redirect } from 'react-router-dom';
 // Used by react modal for screen readers
 ReactModal.setAppElement("#root");
 
-type RegisterProps = {
+interface RegisterProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 };
 
@@ -19,11 +19,26 @@ interface RegisterData {
     "confirmPassword": string,
 };
 
+
+const registerResolver: Resolver<RegisterData> = async (values: RegisterData) => {
+    return {
+        values: values.email && values.name && values.password && values.confirmPassword ? values : {},
+        errors: (values.password !== values.confirmPassword) ? {
+                    confirmPassword: {
+                        type: "required",
+                        message: "Passwords do not match."
+                    }
+                } : {}
+        }
+    }
+
 export function Register(props: RegisterProps) {
     // if set, register modal is open
     const [modalIsOpen, setModalIsOpen] = useState(true);
     // hook for register form
-    const {register, handleSubmit, errors} = useForm<RegisterData, Event>();
+    const {register, handleSubmit, errors} = useForm<RegisterData, Event>({
+        resolver: registerResolver
+    });
     // state for setting if register button is disabled
     const [disable, setDisabled] = useState(false);
     // state for setting register error
@@ -48,13 +63,6 @@ export function Register(props: RegisterProps) {
         // TODO: Also add loading image
         setDisabled(true);
         setFormErrorMsg("");
-
-        // confirm passwords match. If they do not, show error message.
-        if (data.password !== data.confirmPassword) {
-            setFormErrorMsg("Passwords do not match");
-            setDisabled(false); 
-            return;
-        }
 
         // attempt registering of user
         const accountManager: AccountManager = AccountManager.getInstance();
@@ -108,14 +116,14 @@ export function Register(props: RegisterProps) {
                     placeholder="Password"
                     name="password"
                     ref={register({required: true, minLength: 8})} />
-                {errors.password && <span className="errorMsg">Invalid Password.</span>}
+                {errors.password && <span className="errorMsg">{errors.password.message}.</span>}
                 <br />
                 <input
                     type="password"
                     placeholder="Confirm Password"
                     name="confirmPassword"
                     ref={register({required: true, minLength: 8})} />
-                {errors.confirmPassword && <span className="errorMsg">Invalid Password.</span>}
+                {errors.confirmPassword && <span className="errorMsg">{errors.confirmPassword.message}</span>}
                 <br />
                 <input type="submit" disabled={disable} value="Register" />
                 <span className="errorMsg">{formErrorMsg}</span>
