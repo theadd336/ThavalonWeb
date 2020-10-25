@@ -21,20 +21,3 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
-
-  Typescript:
-      name: Typescript
-      runs-on: ubuntu-latest
-      defaults:
-        run:
-          working-directory: thavalon-webapp
-      steps:
-      - uses: actions/checkout@v1
-      - name: install node v12
-        uses: actions/setup-node@v1
-        with:
-          node-version: 12
-      - name: npm install
-        run: npm install
-      - name: tsc
-        uses: icrawl/action-tsc@v1
