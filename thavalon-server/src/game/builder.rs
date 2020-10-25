@@ -19,6 +19,7 @@ impl GameBuilder {
     /// on the returned `mpsc::Receiver` should be shown to the player.
     pub fn add_player(&mut self, name: String) -> (mpsc::Sender<Action>, mpsc::Receiver<Message>) {
         let id = self.players.len() + 1;
+        // Allow a 10-message backlog for each channel, in case tasks get backed up.
         let (action_tx, action_rx) = mpsc::channel(10);
         let (message_tx, message_rx) = mpsc::channel(10);
 

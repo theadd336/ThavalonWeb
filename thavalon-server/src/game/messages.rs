@@ -4,7 +4,7 @@ use std::collections::HashSet;
 
 use thiserror::Error;
 
-use super::role::Role;
+use super::role::RoleDetails;
 use super::{Card, MissionNumber, PlayerId, ProposalNumber};
 
 // Game-related messages
@@ -15,6 +15,7 @@ pub enum Action {
     Propose { players: HashSet<PlayerId> },
     Vote { upvote: bool },
     Play { card: Card },
+    QuestingBeast,
     Declare,
 }
 
@@ -25,7 +26,7 @@ pub enum Message {
     Error(String),
 
     /// Sends the player their role and information
-    RoleInformation { role: Role, information: String },
+    RoleInformation { details: RoleDetails },
 
     /// Announces that a new player is proposing
     NextProposal {
@@ -46,18 +47,32 @@ pub enum Message {
     CommenceVoting,
 
     /// Announces the results of a vote
-    VotingResults {
-        upvotes: Vec<PlayerId>,
-        downvotes: Vec<PlayerId>,
-        sent: bool,
-    },
+    VotingResults { sent: bool, counts: VoteCounts },
 
     /// Announces the results of a mission going
     MissionResults {
+        mission: MissionNumber,
         successes: usize,
         fails: usize,
         reverses: usize,
+        questing_beasts: usize,
         passed: bool,
+    },
+
+    /// Agravaine declared, so the given mission now failed.
+    AgravaineDeclaration { mission: MissionNumber },
+}
+
+/// How players voted on a proposal
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum VoteCounts {
+    Public {
+        upvotes: HashSet<PlayerId>,
+        downvotes: HashSet<PlayerId>,
+    },
+    Obscured {
+        upvotes: u32,
+        downvotes: u32,
     },
 }
 

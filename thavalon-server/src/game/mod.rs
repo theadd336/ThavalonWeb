@@ -24,10 +24,50 @@ pub type MissionNumber = u8;
 /// A proposal number (starts at 0)
 pub type ProposalNumber = u8;
 
+/// Game rules determined by the number of players
+#[derive(Debug, Clone)]
+pub struct GameSpec {
+    /// Number of players in the game
+    pub players: u8,
+    /// The number of players on each mission
+    pub mission_sizes: [usize; 5],
+    /// Allowed good roles in the game
+    pub good_roles: &'static [Role],
+    /// Allowed evil roles in the game
+    pub evil_roles: &'static [Role],
+    /// The number of players on the good team
+    pub good_players: u8,
+    /// True if mission 4 requires at least two failures
+    double_fail_mission_four: bool,
+}
+/// Fixed information about a player, decided at startup
+#[derive(Debug, Clone)]
+pub struct Player {
+    pub id: PlayerId,
+    pub name: String,
+    pub role: Role,
+}
+
+/// A collection of players, indexed in various useful ways.
+#[derive(Debug, Clone)]
+pub struct Players {
+    players: HashMap<PlayerId, Player>,
+    roles: HashMap<Role, PlayerId>,
+    good_players: Vec<PlayerId>,
+    evil_players: Vec<PlayerId>,
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum Card {
+    Success,
+    Fail,
+    Reverse,
+}
+
 #[derive(Debug, Clone)]
 pub struct Game {
     players: Players,
-    info: HashMap<PlayerId, String>,
+    info: HashMap<PlayerId, RoleDetails>,
     proposal_order: Vec<PlayerId>,
     spec: &'static GameSpec,
 }
@@ -97,23 +137,6 @@ impl Game {
     }
 }
 
-/// Fixed information about a player, decided at startup
-#[derive(Debug, Clone)]
-pub struct Player {
-    pub id: PlayerId,
-    pub name: String,
-    pub role: Role,
-}
-
-/// A collection of players, indexed in various useful ways.
-#[derive(Debug, Clone)]
-pub struct Players {
-    players: HashMap<PlayerId, Player>,
-    roles: HashMap<Role, PlayerId>,
-    good_players: Vec<PlayerId>,
-    evil_players: Vec<PlayerId>,
-}
-
 impl Players {
     fn new() -> Players {
         Players {
@@ -167,13 +190,6 @@ impl Index<PlayerId> for Players {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum Card {
-    Success,
-    Fail,
-    Reverse,
-}
-
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(match self {
@@ -182,23 +198,6 @@ impl fmt::Display for Card {
             Card::Reverse => "Reverse",
         })
     }
-}
-
-/// Game rules determined by the number of players
-#[derive(Debug, Clone)]
-pub struct GameSpec {
-    /// Number of players in the game
-    pub players: u8,
-    /// The number of players on each mission
-    pub mission_sizes: [usize; 5],
-    /// Allowed good roles in the game
-    pub good_roles: &'static [Role],
-    /// Allowed evil roles in the game
-    pub evil_roles: &'static [Role],
-    /// The number of players on the good team
-    pub good_players: u8,
-    /// True if mission 4 requires at least two failures
-    double_fail_mission_four: bool,
 }
 
 impl GameSpec {
@@ -241,7 +240,12 @@ static FIVE_PLAYER: GameSpec = GameSpec {
         Role::Tristan,
         Role::Iseult,
     ],
-    evil_roles: &[Role::Mordred, Role::Morgana, Role::Maelegant],
+    evil_roles: &[
+        Role::Mordred,
+        Role::Morgana,
+        Role::Maelegant,
+        Role::Agravaine,
+    ],
     good_players: 3,
     double_fail_mission_four: false,
 };

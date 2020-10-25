@@ -10,9 +10,9 @@ use itertools::Itertools;
 use tokio::time::{self, Duration};
 
 use super::interactions::Interactions;
-use super::messages::{Action, GameError, Message};
+use super::messages::{Action, GameError, Message, VoteCounts};
 use super::role::Role;
-use super::{Card, Game, GameSpec, PlayerId};
+use super::{Card, Game, GameSpec, MissionNumber, PlayerId};
 
 /// Amount of time to wait for a declaration, for declarations that have to happen within a certain timeframe.
 const DECLARE_DELAY: Duration = Duration::from_secs(30);
@@ -52,8 +52,7 @@ pub async fn run_game<I: Interactions>(game: &Game, interactions: &mut I) -> Res
             .send_to(
                 player.id,
                 Message::RoleInformation {
-                    role: player.role,
-                    information: game.info[&player.id].clone(),
+                    details: game.info[&player.id].clone(),
                 },
             )
             .await?;
@@ -223,8 +222,10 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         let results = VotingResults::new(votes);
         self.interactions
             .send(Message::VotingResults {
-                upvotes: results.upvotes().collect(),
-                downvotes: results.downvotes().collect(),
+                counts: VoteCounts::Public {
+                    upvotes: results.upvotes().collect(),
+                    downvotes: results.downvotes().collect(),
+                },
                 sent: results.sent,
             })
             .await?;
@@ -243,6 +244,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         log::debug!("Sending {} on mission {}", proposal, mission);
 
         let mut cards = HashMap::with_capacity(proposal.players.len());
+        let mut questing_beasts = 0;
         while cards.len() != proposal.players.len() {
             self.interactions
                 .receive(|player, action| {
@@ -263,6 +265,11 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
                                     }
                                 }
                             },
+                            Action::QuestingBeast => {
+                                questing_beasts += 1;
+                                log::debug!("{} sent the Questing Beast", game.name(player));
+                                Ok(())
+                            }
                             // TODO: fun on-mission actions
                             _ => Err("You can't do that right now".to_string()),
                         }
@@ -273,23 +280,34 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
                 .await?;
         }
 
-        let failed = is_failure(game.spec, mission, cards.values());
+        let passed = !is_failure(game.spec, mission, cards.values());
         log::debug!(
             "Mission {} {}",
             mission,
-            if failed { "failed" } else { "passed" }
+            if passed { "passed" } else { "failed" }
         );
+
+        let (successes, fails, reverses) =
+            cards
+                .values()
+                .fold((0, 0, 0), |(successes, fails, reverses), card| match card {
+                    &Card::Success => (successes + 1, fails, reverses),
+                    &Card::Reverse => (successes, fails, reverses + 1),
+                    &Card::Fail => (successes, fails + 1, reverses),
+                });
 
         self.interactions
             .send(Message::MissionResults {
-                passed: !failed,
-                successes: cards.values().filter(|c| c == &&Card::Success).count(),
-                fails: cards.values().filter(|c| c == &&Card::Fail).count(),
-                reverses: cards.values().filter(|c| c == &&Card::Reverse).count(),
+                passed,
+                successes,
+                fails,
+                reverses,
+                questing_beasts,
+                mission: mission as MissionNumber,
             })
             .await?;
 
-        if !failed {
+        if passed {
             let agravaine_declared = match time::timeout(
                 DECLARE_DELAY,
                 self.interactions.receive(|player, action| {
@@ -310,22 +328,16 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
 
             if agravaine_declared {
                 log::debug!("Agravaine declared!");
-
-                // maybe this should be a different message?
                 self.interactions
-                    .send(Message::MissionResults {
-                        passed: false,
-                        successes: cards.values().filter(|c| c == &&Card::Success).count(),
-                        fails: cards.values().filter(|c| c == &&Card::Fail).count(),
-                        reverses: cards.values().filter(|c| c == &&Card::Reverse).count(),
+                    .send(Message::AgravaineDeclaration {
+                        mission: mission as MissionNumber,
                     })
                     .await?;
-
                 return Ok(false);
             }
         }
 
-        Ok(!failed)
+        Ok(passed)
     }
 }
 
@@ -400,101 +412,16 @@ impl<'a> fmt::Display for Proposal<'a> {
     }
 }
 
-#[test]
-fn test_is_failure() {
-    use super::GameSpec;
-    let spec = GameSpec::for_players(5);
-
-    assert!(!is_failure(
-        spec,
-        1,
-        &[Card::Success, Card::Success, Card::Success]
-    ));
-    assert!(!is_failure(
-        spec,
-        1,
-        &[Card::Success, Card::Fail, Card::Reverse]
-    ));
-    assert!(!is_failure(
-        spec,
-        1,
-        &[Card::Success, Card::Reverse, Card::Reverse]
-    ));
-
-    assert!(is_failure(
-        spec,
-        1,
-        &[Card::Success, Card::Success, Card::Fail]
-    ));
-    assert!(is_failure(
-        spec,
-        1,
-        &[Card::Success, Card::Fail, Card::Fail]
-    ));
-    assert!(is_failure(spec, 1, &[Card::Fail, Card::Fail, Card::Fail]));
-
-    assert!(is_failure(
-        spec,
-        1,
-        &[Card::Success, Card::Success, Card::Reverse]
-    ));
-    assert!(is_failure(
-        spec,
-        1,
-        &[Card::Fail, Card::Reverse, Card::Reverse]
-    ));
-
-    // TODO: replace with proper 7-player spec
-    let mut with_seven = spec.clone();
-    with_seven.double_fail_mission_four = true;
-
-    assert!(!is_failure(
-        &with_seven,
-        4,
-        &[Card::Success, Card::Success, Card::Success, Card::Fail]
-    ));
-    assert!(!is_failure(
-        &with_seven,
-        4,
-        &[Card::Success, Card::Reverse, Card::Fail, Card::Fail]
-    ));
-    assert!(!is_failure(
-        &with_seven,
-        4,
-        &[Card::Success, Card::Success, Card::Success, Card::Reverse]
-    ));
-    assert!(!is_failure(
-        &with_seven,
-        4,
-        &[Card::Reverse, Card::Reverse, Card::Fail, Card::Success]
-    ));
-
-    assert!(is_failure(
-        &with_seven,
-        4,
-        &[Card::Success, Card::Success, Card::Fail, Card::Fail]
-    ));
-    // This is why reversing mission 4 as Lance is a choice
-    assert!(is_failure(
-        &with_seven,
-        4,
-        &[Card::Success, Card::Success, Card::Reverse, Card::Fail]
-    ));
-    assert!(is_failure(
-        &with_seven,
-        4,
-        &[Card::Reverse, Card::Reverse, Card::Fail, Card::Fail]
-    ));
-}
-
 #[cfg(test)]
 mod test {
     use futures::executor::block_on;
     use maplit::{hashmap, hashset};
+    use rand::thread_rng;
 
     use super::super::interactions::test::TestInteractions;
     use super::super::messages::{Action, Message};
-    use super::super::{Player, Players, Role};
+    use super::super::role::Role;
+    use super::super::{Player, Players};
     use super::*;
 
     fn make_game() -> Game {
@@ -526,18 +453,108 @@ mod test {
             name: "Player 5".to_string(),
         });
 
+        let mut rng = thread_rng();
+        let info = hashmap! {
+            1 => Role::Merlin.generate_info(&mut rng, 1, &players),
+            2 => Role::Lancelot.generate_info(&mut rng, 2, &players),
+            3 => Role::Iseult.generate_info(&mut rng, 3, &players),
+            4 => Role::Maelegant.generate_info(&mut rng, 4, &players),
+            5 => Role::Agravaine.generate_info(&mut rng, 5, &players),
+        };
+
         Game {
             players,
-            info: hashmap! {
-                1 => "You are Merlin".to_string(),
-                2 => "You are Lancelot".to_string(),
-                3 => "You are Iseult".to_string(),
-                4 => "You are Maelegant".to_string(),
-                5 => "You are Agravaine".to_string(),
-            },
+            info,
             proposal_order: vec![1, 2, 3, 4, 5],
             spec: GameSpec::for_players(5),
         }
+    }
+
+    #[test]
+    fn test_is_failure() {
+        use super::GameSpec;
+        let spec = GameSpec::for_players(5);
+
+        assert!(!is_failure(
+            spec,
+            1,
+            &[Card::Success, Card::Success, Card::Success]
+        ));
+        assert!(!is_failure(
+            spec,
+            1,
+            &[Card::Success, Card::Fail, Card::Reverse]
+        ));
+        assert!(!is_failure(
+            spec,
+            1,
+            &[Card::Success, Card::Reverse, Card::Reverse]
+        ));
+
+        assert!(is_failure(
+            spec,
+            1,
+            &[Card::Success, Card::Success, Card::Fail]
+        ));
+        assert!(is_failure(
+            spec,
+            1,
+            &[Card::Success, Card::Fail, Card::Fail]
+        ));
+        assert!(is_failure(spec, 1, &[Card::Fail, Card::Fail, Card::Fail]));
+
+        assert!(is_failure(
+            spec,
+            1,
+            &[Card::Success, Card::Success, Card::Reverse]
+        ));
+        assert!(is_failure(
+            spec,
+            1,
+            &[Card::Fail, Card::Reverse, Card::Reverse]
+        ));
+
+        // TODO: replace with proper 7-player spec
+        let mut with_seven = spec.clone();
+        with_seven.double_fail_mission_four = true;
+
+        assert!(!is_failure(
+            &with_seven,
+            4,
+            &[Card::Success, Card::Success, Card::Success, Card::Fail]
+        ));
+        assert!(!is_failure(
+            &with_seven,
+            4,
+            &[Card::Success, Card::Reverse, Card::Fail, Card::Fail]
+        ));
+        assert!(!is_failure(
+            &with_seven,
+            4,
+            &[Card::Success, Card::Success, Card::Success, Card::Reverse]
+        ));
+        assert!(!is_failure(
+            &with_seven,
+            4,
+            &[Card::Reverse, Card::Reverse, Card::Fail, Card::Success]
+        ));
+
+        assert!(is_failure(
+            &with_seven,
+            4,
+            &[Card::Success, Card::Success, Card::Fail, Card::Fail]
+        ));
+        // This is why reversing mission 4 as Lance is a choice
+        assert!(is_failure(
+            &with_seven,
+            4,
+            &[Card::Success, Card::Success, Card::Reverse, Card::Fail]
+        ));
+        assert!(is_failure(
+            &with_seven,
+            4,
+            &[Card::Reverse, Card::Reverse, Card::Fail, Card::Fail]
+        ));
     }
 
     #[test]
@@ -627,25 +644,19 @@ mod test {
             vec![&Message::Error("You already voted".to_string())]
         );
 
-        assert_eq!(interactions.broadcasts()[0], Message::CommenceVoting);
-        if let Message::VotingResults {
-            upvotes,
-            downvotes,
-            sent,
-        } = interactions.broadcasts()[1].clone()
-        {
-            assert!(sent);
-            assert_eq!(
-                upvotes.into_iter().collect::<HashSet<_>>(),
-                hashset![2, 1, 5]
-            );
-            assert_eq!(
-                downvotes.into_iter().collect::<HashSet<_>>(),
-                hashset![3, 4]
-            );
-        } else {
-            panic!("Expected a VotingResults message");
-        }
+        assert_eq!(
+            interactions.broadcasts(),
+            &[
+                Message::CommenceVoting,
+                Message::VotingResults {
+                    sent: true,
+                    counts: VoteCounts::Public {
+                        upvotes: hashset![2, 1, 5],
+                        downvotes: hashset![3, 4]
+                    }
+                }
+            ]
+        );
     }
 
     // TODO: ties
@@ -670,6 +681,7 @@ mod test {
                     card: Card::Reverse,
                 },
             ),
+            (1, Action::QuestingBeast),
             (
                 2,
                 Action::Play {
@@ -691,10 +703,12 @@ mod test {
         assert_eq!(
             interactions.broadcasts()[0],
             Message::MissionResults {
+                mission: 3,
                 passed: true,
                 successes: 1,
                 reverses: 1,
                 fails: 1,
+                questing_beasts: 1
             }
         );
 
@@ -744,17 +758,14 @@ mod test {
             interactions.broadcasts(),
             &[
                 Message::MissionResults {
+                    mission: 3,
                     passed: true,
                     successes: 1,
                     reverses: 1,
                     fails: 1,
+                    questing_beasts: 0,
                 },
-                Message::MissionResults {
-                    passed: false,
-                    successes: 1,
-                    reverses: 1,
-                    fails: 1
-                }
+                Message::AgravaineDeclaration { mission: 3 }
             ]
         );
     }
