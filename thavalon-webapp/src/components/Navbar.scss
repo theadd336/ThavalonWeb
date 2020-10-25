@@ -2,10 +2,12 @@
     background-color: #333;
     overflow: hidden;
 
-    .icon {
-        display: none;
+    #rightContainer {
+        float: right;
 
         @media screen and (max-width: 600px) {
+            float: none;
+            width: 100%;
         }
     }
 
@@ -38,7 +40,12 @@
             &:not(:first-child) {
                 display: none;
             }
-        }    
+
+            
+            &.subNavbarItemLeft {
+                display: none;
+            }
+        }
     }
 
     .navbarItemRight {
@@ -64,6 +71,10 @@
             color: #FFF;
         }
 
+        &.icon {
+            display: none;
+        }
+    
         float: right;
 
         @media screen and (max-width: 600px) {
@@ -86,7 +97,7 @@
                 text-align: left;
             }
         
-            &.icon {
+            .icon {
                 display: block;
                 float: none;
                 text-align: left;

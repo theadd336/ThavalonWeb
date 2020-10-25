@@ -5,6 +5,9 @@ import { Link, Redirect } from 'react-router-dom';
 import { AccountManager } from '../utils/accountManager';
 import "./Modal.scss";
 
+// Used by react modal for screen readers
+ReactModal.setAppElement("#root");
+
 type LoginProps = {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 };

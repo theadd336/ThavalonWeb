@@ -1,10 +1,12 @@
-const STATUS_OK: number = 200;
-const STATUS_CREATED: number = 201;
-const STATUS_RESET_CONTENT: number = 205;
-const STATUS_UNAUTHORIZED: number = 401;
-const STATUS_NOT_ACCEPTABLE: number = 406;
-const STATUS_CONFLICT: number = 409;
-const STATUS_INTERNAL_SERVER_ERROR: number = 500;
+enum STATUS {
+    OK = 200,
+    CREATED = 201,
+    RESET_CONTENT = 205,
+    UNAUTHORIZED = 401,
+    NOT_ACCEPTABLE = 406,
+    CONFLICT = 409,
+    INTERNAL_SERVER_ERROR = 500
+};
 
 interface AddUserInfo {
     "displayName": string,
@@ -56,23 +58,16 @@ export class AccountManager {
      * @param jwt The given JWT.
      * @param callback If passed in, will call the callback 60 seconds before jwt is set to expire
      */
-    private setJwtInfo(jwt: JwtType, callback?: () => Promise<HttpResponse>): void {
+    private setJwtInfo(jwt: JwtType): void {
         this.token = jwt.access_token;
         this.expiresAt = jwt.expires_at;
-
-        const currUnixTime = Math.floor(Date.now() / 1000);
-        // Take the diff between expires at and now, and subtract 60 seconds
-        // This is the timeout for when we should recheck the refresh token
-        const refreshTimeout = (this.expiresAt - currUnixTime) - 890;
-        if (callback !== undefined) {
-            setTimeout(callback, refreshTimeout * 1000);
-        }
     }
+
     /**
-     * Queries the server to see if refresh token we currently have is valid.
+     * Logic for checking refresh token.
+     * @returns A promise with an HttpResponse, containing server code.
      */
     private async checkRefreshToken(): Promise<HttpResponse> {
-        console.log("Checking refresh token!");
         const httpResponse: HttpResponse = {
             "result": true,
             "message": "",
@@ -82,21 +77,37 @@ export class AccountManager {
             method: "POST",
             credentials: "include"
         }).then((response) => {
-            if (response.status === STATUS_OK) {
-                response.json().then((jwt: JwtType) => {
-                    // use anonymous function to get around this being unbound
-                    this.setJwtInfo(jwt, () => (this.checkRefreshToken()));
-                });
-            } else if (response.status === STATUS_UNAUTHORIZED) {
-                httpResponse.result = false;
-                httpResponse.message = "Unauthorized when trying to refresh token";
-            } else if (response.status === STATUS_INTERNAL_SERVER_ERROR) {
-                httpResponse.result = false;
-                httpResponse.message = "Internal server error when refreshing token";
-            } else {
-                httpResponse.result = false;
-                httpResponse.message = "Unexpected return code from server: " + response.status;
+            switch(response.status) {
+                case STATUS.OK: {
+                    // this.setJwtInfo.bind(this);
+                    response.json().then((jwt: JwtType) => {
+                        // use anonymous function to get around this being unbound
+                        this.setJwtInfo(jwt);
+                    });
+                    break;
+                }
+                case STATUS.UNAUTHORIZED: {
+                    httpResponse.result = false;
+                    httpResponse.message = "Unauthorized when trying to refresh token";
+                    break;
+                }
+                case STATUS.INTERNAL_SERVER_ERROR: {
+                    httpResponse.result = false;
+                    httpResponse.message = "Internal server error when refreshing token";    
+                    break;
+                }
+                default: {
+                    httpResponse.result = false;
+                    httpResponse.message = "Unexpected return code from server: " + response.status;    
+                    break;
+                }
             }
+            // log any non-OK statuses, and clear jwt info
+            if (!httpResponse.result) {
+                console.log("Invalid refresh token, Reason: " + httpResponse.message);
+                this.token = "";
+                this.expiresAt = 0;        
+            }    
             return httpResponse;
         }).catch((error) => {
             console.log("Failed to refresh token, error is: " + error);
@@ -106,8 +117,36 @@ export class AccountManager {
         });
     }
 
+    /**
+     * Queries the server to see if refresh token we currently have is valid. Will do this
+     * on a timer so long as JWT is valid.
+     **/
+    private checkRefreshTokenOnTimer(): void {
+        const currUnixTime = Math.floor(Date.now() / 1000);
+        const refreshTimeout = (this.expiresAt - currUnixTime) - 898;
+        // in timeout, use anonymous function so checkRefreshToken has access to this
+        // when timer ends, will check refresh token and call this function again if
+        // refresh token was valid
+        setTimeout(() => {
+            this.checkRefreshToken().then((httpResponse: HttpResponse) => {
+                if (httpResponse.result) {
+                    this.checkRefreshTokenOnTimer();
+                }
+            });
+        }, refreshTimeout * 1000);
+    }
+
+    /**
+     * Checks whether user is logged in via refresh token. If so, will set a timer to check
+     * refresh token regularly.
+     * @returns A promise with an HttpResponse, indicating if user is logged in and any errors.
+     */
     public async checkLoggedIn(): Promise<HttpResponse> {
-        return await this.checkRefreshToken();
+        let httpResponse = await this.checkRefreshToken();
+        if (httpResponse.result) {
+            this.checkRefreshTokenOnTimer();
+        }
+        return httpResponse;
     }
 
     /**
@@ -139,22 +178,33 @@ export class AccountManager {
             }
         }).then((response) => {
             // On success, set jwt info. On fail, set error messages to return to user.
-            if (response.status === STATUS_CREATED) {
-                response.json().then((jwt: JwtType) => {
-                    this.setJwtInfo(jwt, this.checkRefreshToken);
-                });
-            } else if (response.status === STATUS_NOT_ACCEPTABLE) {
-                httpResponse.result = false;
-                httpResponse.message = "Invalid email or password";
-            } else if (response.status === STATUS_CONFLICT) {
-                httpResponse.result = false;
-                httpResponse.message = "Invalid email - already in use";
-            } else if (response.status === STATUS_INTERNAL_SERVER_ERROR) {
-                httpResponse.result = false;
-                httpResponse.message = "Unable to create account, try again";
-            } else {
-                httpResponse.result = false;
-                httpResponse.message = "Unexpected return code from server: " + response.status;
+            switch (response.status) {
+                case STATUS.CREATED: {
+                    response.json().then((jwt: JwtType) => {
+                        this.setJwtInfo(jwt);
+                    });    
+                    break;
+                }
+                case STATUS.NOT_ACCEPTABLE: {
+                    httpResponse.result = false;
+                    httpResponse.message = "Invalid email or password";    
+                    break;
+                }
+                case STATUS.CONFLICT: {
+                    httpResponse.result = false;
+                    httpResponse.message = "Invalid email - already in use";    
+                    break;
+                }
+                case STATUS.INTERNAL_SERVER_ERROR: {
+                    httpResponse.result = false;
+                    httpResponse.message = "Unable to create account, try again";    
+                    break;
+                }
+                default: {
+                    httpResponse.result = false;
+                    httpResponse.message = "Unexpected return code from server: " + response.status;    
+                    break;
+                }
             }
             return httpResponse;
         }).catch((error) => {
@@ -190,19 +240,28 @@ export class AccountManager {
                 "Content-Type": "application/json"
             }
         }).then((response) => {
-            if (response.status === STATUS_OK) {
-                response.json().then((jwt: JwtType) => {
-                    this.setJwtInfo(jwt);
-                });
-            } else if (response.status === STATUS_UNAUTHORIZED) {
-                httpResponse.result = false;
-                httpResponse.message = "Invalid email or password";
-            } else if (response.status === STATUS_INTERNAL_SERVER_ERROR) {
-                httpResponse.result = false;
-                httpResponse.message = "Unable to log in, try again";
-            } else {
-                httpResponse.result = false;
-                httpResponse.message = "Unexpected return code from server: " + response.status;
+            switch (response.status) {
+                case STATUS.OK: {
+                    response.json().then((jwt: JwtType) => {
+                        this.setJwtInfo(jwt);
+                    });    
+                    break;
+                }
+                case STATUS.UNAUTHORIZED: {
+                    httpResponse.result = false;
+                    httpResponse.message = "Invalid email or password";    
+                    break;
+                }
+                case STATUS.INTERNAL_SERVER_ERROR: {
+                    httpResponse.result = false;
+                    httpResponse.message = "Unable to log in, try again";    
+                    break;
+                }
+                default: {
+                    httpResponse.result = false;
+                    httpResponse.message = "Unexpected return code from server: " + response.status;    
+                    break;
+                }
             }
             return httpResponse;
         }).catch((error) => {
@@ -231,7 +290,7 @@ export class AccountManager {
             },
             credentials: "include"
         }).then((response) => {
-            if (response.status === STATUS_RESET_CONTENT) {
+            if (response.status === STATUS.RESET_CONTENT) {
                 this.token = "";
                 this.expiresAt = 0;
             } else {

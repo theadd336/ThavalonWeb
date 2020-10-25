@@ -14,7 +14,7 @@ function App() {
   useEffect(() => {
     const accountManager = AccountManager.getInstance();
     accountManager.checkLoggedIn().then((httpResponse: HttpResponse) => {
-      console.log("Result is: " + httpResponse.result);
+      // calling set logged in will, on success, trigger a timer to regularly check refresh token
       setLoggedIn(httpResponse.result);
     });  
   })
