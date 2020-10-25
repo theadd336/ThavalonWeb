@@ -2,11 +2,8 @@ import React, {useState} from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
 import { Link, Redirect } from 'react-router-dom';
-import { AccountManager } from '../utils/accountManager';
+import { AccountManager } from '../utils/AccountManager';
 import "./Modal.scss";
-
-// Used by react modal for screen readers
-ReactModal.setAppElement("#root");
 
 interface LoginProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>

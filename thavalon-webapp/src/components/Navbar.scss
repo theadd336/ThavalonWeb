@@ -1,3 +1,6 @@
+$color-selected: #4CAF50;
+$color-text-selected: #fff;
+
 #navbarContainer {
     background-color: #333;
     overflow: hidden;
@@ -25,13 +28,13 @@
         }
     
         &:active {
-            background-color: #4CAF50;
-            color: #FFF;
+            background-color: $color-selected;
+            color: $color-text-selected;
         }
     
         &.active {
-            background-color: #4CAF50;
-            color: #FFF;
+            background-color: $color-selected;
+            color: $color-text-selected;
         }
 
         float: left;
@@ -62,13 +65,13 @@
         }
     
         &:active {
-            background-color: #4CAF50;
-            color: #FFF;
+            background-color: $color-selected;
+            color: $color-text-selected;
         }
     
         &.active {
-            background-color: #4CAF50;
-            color: #FFF;
+            background-color: $color-selected;
+            color: $color-text-selected;
         }
 
         &.icon {
@@ -103,7 +106,7 @@
                 text-align: left;
                 position: absolute;
                 right: 0;
-                top: 0;    
+                top: 0;
             }
         }
     }

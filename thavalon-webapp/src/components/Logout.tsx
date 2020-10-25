@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Redirect } from 'react-router-dom';
-import { AccountManager, HttpResponse } from '../utils/accountManager';
+import { AccountManager, HttpResponse } from '../utils/AccountManager';
 
 interface LogoutProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>

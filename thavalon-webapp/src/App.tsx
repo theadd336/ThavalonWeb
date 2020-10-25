@@ -5,7 +5,12 @@ import { Login } from './components/Login';
 import { Logout } from './components/Logout';
 import { Register } from './components/Register';
 import { Home } from './components/Home';
-import { AccountManager, HttpResponse } from './utils/accountManager';
+import { AccountManager, HttpResponse } from './utils/AccountManager';
+import { Account } from './components/Account';
+import ReactModal from 'react-modal';
+
+// Used by react modal for screen readers
+ReactModal.setAppElement("#root");
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -28,7 +33,7 @@ function App() {
           <Home />
         </Route>
         <Route path="/rules">
-          <h1>Rules</h1>
+          <Account />
         </Route>
         <Route path="/login" render={
           (_) => <Login setLoggedIn={setLoggedIn} />

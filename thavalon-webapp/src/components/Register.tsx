@@ -2,11 +2,8 @@ import React, {useState} from 'react';
 import ReactModal from 'react-modal';
 import { Resolver, useForm } from 'react-hook-form';
 import "./Modal.scss";
-import { AccountManager, HttpResponse } from '../utils/accountManager';
+import { AccountManager, HttpResponse } from '../utils/AccountManager';
 import { Redirect } from 'react-router-dom';
-
-// Used by react modal for screen readers
-ReactModal.setAppElement("#root");
 
 interface RegisterProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
@@ -18,7 +15,6 @@ interface RegisterData {
     "password": string,
     "confirmPassword": string,
 };
-
 
 const registerResolver: Resolver<RegisterData> = async (values: RegisterData) => {
     return {
