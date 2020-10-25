@@ -1,3 +1,5 @@
+//! Contains all code related to the Thavalon database.
+
 use lazy_static::lazy_static;
 use mongodb::{options::ClientOptions, Client, Database};
 use std::sync::RwLock;

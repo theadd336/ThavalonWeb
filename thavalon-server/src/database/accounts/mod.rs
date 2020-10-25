@@ -1,3 +1,5 @@
+//! Database related functions handling database accounts and email verification
+
 mod account_errors;
 mod email_verification;
 use super::get_database;

@@ -1,3 +1,5 @@
+//! Main entry point into ThavalonWeb's backend API
+
 use fern::colors::{Color, ColoredLevelConfig};
 
 mod connections;

@@ -1,3 +1,5 @@
+//! Error enum for any notification errors.
+
 use thiserror::Error;
 
 #[derive(Debug, Error, PartialEq)]

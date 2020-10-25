@@ -1,3 +1,5 @@
+//! Module containing email verification related database functions
+
 use super::account_errors::AccountError;
 use super::get_database;
 use mongodb::{
@@ -145,7 +147,7 @@ async fn pop_info_with_filter(filter: Document) -> Result<UnverifiedEmailInfo, A
         Ok(document) => document,
         Err(e) => {
             log::error!("An error occurred while retrieving information. {:?}", e);
-            return Err(AccountError::InvalidEmailVerification);
+            return Err(AccountError::UnknownError);
         }
     };
 

@@ -1,3 +1,5 @@
+//! Module containing errors for database account problems
+
 use thiserror::Error;
 
 #[derive(Debug, Error, PartialEq)]

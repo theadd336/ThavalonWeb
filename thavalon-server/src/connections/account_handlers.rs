@@ -353,10 +353,18 @@ pub async fn verify_account(
     let info = match accounts::pop_info_by_code(verification_code).await {
         Ok(info) => info,
         Err(e) => {
-            log::warn!(
-                "An error occurred while loading verification information. {}.",
-                e
-            );
+            // log::warn!(
+            //     "An error occurred while loading verification information. {}.",
+            //     e
+            // );
+            if e == AccountError::UnknownError {
+                log::error!(
+                    "An unknown error occurred while loading verification info. {}",
+                    e
+                );
+                return Err(reject::custom(UnknownErrorRejection));
+            }
+            log::warn!("An error occurred while loading verification info. {}", e);
             return Err(reject::custom(EmailVerificationRejection));
         }
     };
@@ -386,12 +394,23 @@ pub async fn verify_account(
     let mut user = match accounts::load_user_by_email(&info.email).await {
         Ok(user) => user,
         Err(e) => {
+            if e == AccountError::UnknownError {
+                log::error!("An unknown error occurred while loading the user. {}", e);
+                return Err(reject::custom(UnknownErrorRejection));
+            }
             log::warn!("Error occurred while loading the user. {}.", e);
             return Err(reject::custom(EmailVerificationRejection));
         }
     };
     user.email_verified = true;
     if let Err(e) = accounts::update_user(user).await {
+        if e == AccountError::UnknownError {
+            log::error!(
+                "An unknown error occurred while marking the user account as verified. {}",
+                e
+            );
+            return Err(reject::custom(UnknownErrorRejection));
+        }
         log::warn!("An error occurred while verifying the user account. {}.", e);
         return Err(reject::custom(EmailVerificationRejection));
     }
