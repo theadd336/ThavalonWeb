@@ -141,7 +141,7 @@ pub async fn create_new_user(
 /// # Returns
 ///
 /// * None on success, account error on failure.
-pub async fn remove_user(user_id: &String) -> Result<(), AccountError> {
+pub async fn remove_user(user_id: &String) -> Result<DatabaseAccount, AccountError> {
     log::info!("Attempting to remove user {} from the database.", user_id);
 
     let collection = get_database().await.collection(USER_COLLECTION);
@@ -151,9 +151,17 @@ pub async fn remove_user(user_id: &String) -> Result<(), AccountError> {
 
     let result = collection.find_one_and_delete(filter, None).await;
     match result {
-        Ok(_) => {
+        Ok(document) => {
+            if document.is_none() {
+                log::info!("No user found matching this ID.");
+                return Err(AccountError::UserDoesNotExist);
+            }
             log::info!("Successfully removed {} from database.", user_id);
-            Ok(())
+            let user_account: InternalDBAccount = bson::from_document(document.unwrap())
+                .expect("Could not deserialize database BSON");
+
+            let user_account = DatabaseAccount::from(user_account);
+            Ok(user_account)
         }
         Err(e) => {
             log::warn!("Failed to remove {} from database. {:?}", user_id, e);

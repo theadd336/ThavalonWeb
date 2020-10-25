@@ -8,42 +8,52 @@ mod errors;
 
 pub use errors::NotificationError;
 use lazy_static::lazy_static;
-use lettre::transport::smtp::authentication::Credentials;
-use lettre::{Message, SmtpTransport, Transport};
+use mailgun_rs::{EmailAddress, Mailgun, Message};
 use std::env;
 
-const SMTP_SERVER: &str = "smtp.gmail.com";
-const SMTP_USER: &str = "thavalonmanager@gmail.com";
+const SMTP_DOMAIN: &str = "mg.bennavetta.com";
+const SMTP_USER: &str = "thavalon@mg.bennavetta.com";
 
 lazy_static! {
-    static ref SMTP_PASSWORD: String =
-        env::var("SMTP_PASSWORD").unwrap_or("SMTP_SECRET".to_string());
+    static ref SMTP_API_KEY: String =
+        env::var("SMTP_API_KEY").unwrap_or("SMTP_API_KEY".to_string());
 }
 
-async fn send_email(email: &String, subject: &String, body: &String) {
+/// Builds and sends an email to the client and handles any SMTP related errors
+///
+/// # Arguments
+///
+/// * `email` - The email address of the recipient
+/// * `subject` - The subject to send to the recipient
+/// * `body` - The HTML body to send
+async fn send_email(
+    email: &String,
+    subject: String,
+    body: String,
+) -> Result<(), NotificationError> {
     log::info!("Building email to send to user.");
 
-    let email = Message::builder()
-        .from("NoReply <noreply@thavalonweb.com>".parse().unwrap())
-        .to(email.parse().unwrap())
-        .subject(subject)
-        .body(body)
-        .expect("ERROR: Could not parse email information.");
+    log::debug!("Subject: {}.\nBody: {}.", subject, body);
+    let message = Message {
+        to: vec![EmailAddress::address(email)],
+        subject,
+        html: body,
+        ..Default::default()
+    };
 
-    let creds = Credentials::new(SMTP_USER.to_string(), SMTP_PASSWORD.to_string());
+    let client = Mailgun {
+        api_key: SMTP_API_KEY.to_string(),
+        domain: SMTP_DOMAIN.to_string(),
+        message,
+    };
 
-    log::info!(
-        "Email and credentials built. Opening secure connection to {}.",
-        SMTP_SERVER
-    );
+    let sender = EmailAddress::name_address("no-reply", SMTP_USER);
 
-    let mailer = SmtpTransport::relay(SMTP_SERVER)
-        .unwrap()
-        .credentials(creds)
-        .build();
-
-    match mailer.send(&email) {
-        Ok(_) => log::info!("Email sent successfully"),
-        Err(e) => panic!(e),
+    if let Err(e) = client.send(&sender) {
+        log::error!("ERROR: Failed to send the message to the recipient. {}.", e);
+        return Err(NotificationError::SMTPError);
     }
+
+    log::info!("Successfully sent an email to the recipient.");
+    Ok(())
 }

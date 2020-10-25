@@ -7,8 +7,18 @@ use rand::{distributions::Alphanumeric, Rng};
 use std::iter;
 
 const EXPIRATION_DAYS: i64 = 3;
-const EMAIL_BASE_PATH: &str = "localhost:8001/api/verify_email";
+const EMAIL_BASE_PATH: &str = "http://localhost:8001/api/verify_email/";
 
+/// Sends an email verification email to the client and adds the verification
+/// code to the database.
+///
+/// # Arguments
+///
+/// * `email` - The email to send to the client
+///
+/// # Returns
+///
+/// * Empty type on success, `NotificationError` on failure.
 pub async fn send_email_verification(email: &String) -> Result<(), NotificationError> {
     log::info!("Sending a verification email for a new account.");
     let code: String = iter::repeat(())
@@ -27,7 +37,6 @@ pub async fn send_email_verification(email: &String) -> Result<(), NotificationE
     let mut user_link = String::from(EMAIL_BASE_PATH);
     user_link.push_str(&code);
     let subject = "Verify Your Thavalon Account".to_string();
-    let body = format!("<p>Please click this <a href={}>link</a> to verify your account. This link expires in {} days.</p>", user_link, EXPIRATION_DAYS);
-    send_email(email, &subject, &body).await;
-    Ok(())
+    let body = format!("<html><p>Please click this <a href=\"{}\">link</a> to verify your account. This link expires in {} days. Backup link={}.</p></html>", user_link, EXPIRATION_DAYS, user_link);
+    send_email(email, subject, body).await
 }

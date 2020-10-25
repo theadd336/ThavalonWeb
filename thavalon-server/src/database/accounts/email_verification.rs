@@ -1,8 +1,8 @@
 use super::account_errors::AccountError;
 use super::get_database;
 use mongodb::{
-    bson::{self, doc, oid::ObjectId, Document},
-    options::{FindOneOptions, UpdateOptions},
+    bson::{self, doc, Document},
+    options::UpdateOptions,
 };
 use serde::Deserialize;
 
