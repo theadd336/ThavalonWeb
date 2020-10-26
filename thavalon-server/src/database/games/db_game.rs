@@ -3,9 +3,15 @@ use crate::database::get_database;
 
 use std::collections::HashSet;
 
+use async_trait::async_trait;
 use chrono::Utc;
+#[cfg(test)]
+use mockall::*;
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Document},
+    error::Error,
+    options::{InsertOneOptions, ReplaceOptions, UpdateModifications, UpdateOptions},
+    results::{InsertOneResult, UpdateResult},
     Collection,
 };
 use serde::{Deserialize, Serialize};
@@ -13,6 +19,31 @@ use thiserror::Error;
 
 const GAME_COLLECTION: &str = "thavalon_games";
 const FRIEND_CODE_LENGTH: usize = 4;
+
+// TODO: All of this for testing.
+#[cfg_attr(test, automock)]
+#[async_trait]
+trait MongoCollection {
+    async fn insert_one(
+        &self,
+        doc: Document,
+        options: impl Into<Option<InsertOneOptions>>,
+    ) -> Result<InsertOneResult, Error>;
+
+    async fn replace_one(
+        &self,
+        query: Document,
+        replacement: Document,
+        options: impl Into<Option<ReplaceOptions>>,
+    ) -> Result<UpdateResult, Error>;
+
+    async fn update_one(
+        &self,
+        query: Document,
+        update: impl Into<UpdateModifications>,
+        options: impl Into<Option<UpdateOptions>>,
+    ) -> Result<UpdateResult, Error>;
+}
 
 /// Contains errors related to database games.
 #[derive(PartialEq, Error, Debug)]
@@ -133,10 +164,14 @@ impl DatabaseGame {
     ///
     /// Empty type on success, `DBGameError` on failure.
     pub async fn end_game(&mut self) -> Result<(), DBGameError> {
+        // Remove friend code, since games can only be looked up by friend
+        // code while active.
+        self.friend_code.clear();
         self.end_time = Some(Utc::now().timestamp());
         self.status = DBGameStatus::Finished;
         let update_doc = doc! {
             "$set": {
+                "friend_code": bson::to_bson(&self.friend_code).unwrap(),
                 "end_time": bson::to_bson(&self.end_time).unwrap(),
                 "status": bson::to_bson(&self.status).unwrap()
             }

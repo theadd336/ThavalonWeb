@@ -5,6 +5,7 @@ use fern::colors::{Color, ColoredLevelConfig};
 mod connections;
 mod database;
 mod game;
+mod lobby;
 mod notifications;
 
 fn setup_logger() -> Result<(), fern::InitError> {

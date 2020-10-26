@@ -4,6 +4,7 @@
 //#region Modules and Use Statements
 mod account_handlers;
 mod errors;
+mod game_handlers;
 mod validation;
 use std::convert::Infallible;
 use validation::TokenManager;
@@ -27,12 +28,15 @@ impl Reject for InvalidTokenRejection {}
 /// or the server is being shut down.
 pub async fn serve_connections() {
     let token_manager = TokenManager::new();
+
+    // TEST ROUTES
     let path_test = warp::path("hi").map(|| "Hello, World!");
 
     let restricted_path_test = warp::path("restricted_hi")
         .and(authorize_request(&token_manager))
         .map(|_| "Hello, restricted world!");
 
+    // Account and Security
     let add_user_route = warp::path!("add" / "user")
         .and(body::json())
         .and(with_token_manager(token_manager.clone()))
@@ -70,6 +74,14 @@ pub async fn serve_connections() {
         .and(body::json())
         .and_then(account_handlers::verify_account);
 
+    // Game routes
+
+    let create_game_route = warp::path!("add" / "game")
+        .and(body::json())
+        .and(authorize_request(&token_manager))
+        .and_then(game_handlers::create_game);
+
+    // Putting everything together
     let get_routes = warp::get().and(path_test.or(restricted_path_test).or(get_user_info_route));
     let post_routes = warp::post().and(
         add_user_route
