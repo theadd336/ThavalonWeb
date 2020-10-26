@@ -42,9 +42,6 @@ function App() {
           (_) => <Login setLoggedIn={setLoggedIn} />
         }>
         </Route>
-        <Route path="/account">
-          <Account />
-        </Route>
         <Route path="/logout">
           <Logout setLoggedIn={() => setLoggedIn(false)} />
         </Route>
