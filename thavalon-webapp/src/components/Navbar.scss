@@ -1,0 +1,113 @@
+$color-selected: #4CAF50;
+$color-text-selected: #fff;
+
+#navbarContainer {
+    background-color: #333;
+    overflow: hidden;
+
+    #rightContainer {
+        float: right;
+
+        @media screen and (max-width: 600px) {
+            float: none;
+            width: 100%;
+        }
+    }
+
+    .navbarItemLeft {
+        display: block;
+        color: #F2F2F2;
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+        font-size: 17px;
+    
+        &:hover {
+            background-color: #DDD;
+            color: #000;
+        }
+    
+        &:active {
+            background-color: $color-selected;
+            color: $color-text-selected;
+        }
+    
+        &.active {
+            background-color: $color-selected;
+            color: $color-text-selected;
+        }
+
+        float: left;
+    
+        @media screen and (max-width: 600px) {
+            &:not(:first-child) {
+                display: none;
+            }
+
+            
+            &.subNavbarItemLeft {
+                display: none;
+            }
+        }
+    }
+
+    .navbarItemRight {
+        display: block;
+        color: #F2F2F2;
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+        font-size: 17px;
+    
+        &:hover {
+            background-color: #DDD;
+            color: #000;
+        }
+    
+        &:active {
+            background-color: $color-selected;
+            color: $color-text-selected;
+        }
+    
+        &.active {
+            background-color: $color-selected;
+            color: $color-text-selected;
+        }
+
+        &.icon {
+            display: none;
+        }
+    
+        float: right;
+
+        @media screen and (max-width: 600px) {
+            &:not(:first-child) {
+                display: none;
+            }
+    
+            &.icon {
+                float: right;
+                display: block;
+            }
+        }    
+    }
+
+    &.responsive {
+        @media screen and (max-width: 600px) {
+            .navbarItemLeft, .navbarItemRight  {
+                float: none;
+                display: block;
+                text-align: left;
+            }
+        
+            .icon {
+                display: block;
+                float: none;
+                text-align: left;
+                position: absolute;
+                right: 0;
+                top: 0;
+            }
+        }
+    }
+}
