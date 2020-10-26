@@ -1,8 +1,9 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
 import { Link, Redirect } from 'react-router-dom';
 import { log_in, say_hello } from '../utils/account_utils';
+import { FormButton } from "./formButton";
 
 import "./modal.scss";
 type LoginProps = {
@@ -13,7 +14,8 @@ ReactModal.setAppElement("#root");
 
 function Login(props: LoginProps) {
     const [modalIsOpen, setModalIsOpen] = useState(true);
-    const {register, handleSubmit, errors} = useForm();
+    const { register, handleSubmit, errors } = useForm();
+    const [isLoading, setIsLoading] = useState(false);
     function closeModal() {
         setModalIsOpen(false);
     }
@@ -21,7 +23,7 @@ function Login(props: LoginProps) {
     function OnError(data: any, event: any) {
         console.log(data);
         console.log("ERROR");
-
+        setIsLoading(false);
         // prevent page from reloading
         event.preventDefault();
     }
@@ -29,7 +31,7 @@ function Login(props: LoginProps) {
     function OnSubmit(data: any, event: any) {
         console.log("SUBMIT");
         console.log(data);
-
+        setIsLoading(true);
         // try logging in, if it works update page to reflect that
         let loggedIn = log_in();
         useEffect(() => props.setLoggedIn(log_in()));
@@ -39,6 +41,7 @@ function Login(props: LoginProps) {
     }
 
     // log in without throwing a warning by using useEffect
+
     return (
         <ReactModal
             isOpen={modalIsOpen}
@@ -53,22 +56,24 @@ function Login(props: LoginProps) {
                     type="text"
                     placeholder="Email"
                     name="email"
-                    ref={register({required: true, maxLength: 80, pattern: {
-                        value: /^\S+@\S+\.\S+$/i,
-                        message: "Invalid email address."
-                    }})} />
+                    ref={register({
+                        required: true, maxLength: 80, pattern: {
+                            value: /^\S+@\S+\.\S+$/i,
+                            message: "Invalid email address."
+                        }
+                    })} />
                 {errors.email && <span className="errorMsg">{errors.email.message}</span>}
                 <br />
                 <input
                     type="text"
                     placeholder="Password"
                     name="password"
-                    ref={register({required: true})} />
+                    ref={register({ required: true })} />
                 {errors.password && <span className="errorMsg">Password required.</span>}
                 <br />
                 <Link to="/register" className="formLink">Create Account?</Link>
                 <br />
-                <input type="submit" value="Log In" />
+                <FormButton label="Log In" isLoading={isLoading} />
             </form>
         </ReactModal>
     )

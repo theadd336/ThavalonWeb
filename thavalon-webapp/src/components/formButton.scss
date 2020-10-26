@@ -1,0 +1,74 @@
+$buttonColor: #4CAF50;
+$backgroundColor: #ffffff;
+$successColor: #3BB873;
+	
+@mixin dimensions($width: null, $height: $width) { width: $width; height: $height; }
+%reset { margin: 0; padding: 0; }
+%flex { display: flex; justify-content: center;	align-items: center; }
+*, *:before, *:after { box-sizing: border-box; }
+
+
+.inner-body {
+	@include dimensions($width: 100%);
+	@extend %reset;
+	font-family: 'Assistant', sans-serif;
+}
+
+.inner-body {
+	@extend %reset;
+	@extend %flex;
+	@include dimensions($width:100%);
+	overflow: hidden;
+	background: $backgroundColor;
+	background-size: 20px 20px;
+}
+
+button[type="submit"] {
+	@extend %flex;
+	@include dimensions($width: 100px, $height: 50px);
+	background: transparent;
+	border-radius: 10px;
+	will-change: transform;
+	transition: all .2s ease;
+	border: 2px solid $buttonColor;
+	cursor: pointer;
+	color: #ffffff;
+	font-size: 16px;
+	color: $buttonColor;
+	outline: none;
+	text-align: center;
+	
+	&:hover {
+		background: $buttonColor;
+		color: #ffffff;
+	}
+	&:active {
+		font-size: 15px;
+		transform: translateY(1px);
+	}
+	&.active {
+		font-size: 0;
+		border-radius: 25px;
+		width: 50px;
+		background: transparent;
+	}
+	&.loader {
+		border-right: 2px solid #ffffff;
+		animation: loader .4s linear;
+	}
+	&.success {
+		background: $successColor;
+		border-color: $successColor;
+		font-size: 14px;
+		color: #ffffff;
+	}
+}
+
+@keyframes loader {
+	0% {
+		transform: rotateZ(0);
+    }
+	100% {
+		transform: rotateZ(360deg);
+	}
+}
