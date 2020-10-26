@@ -33,6 +33,9 @@ function App() {
           <Home />
         </Route>
         <Route path="/rules">
+          <h1>Rules</h1>
+        </Route>
+        <Route path="/account">
           <Account />
         </Route>
         <Route path="/login" render={
