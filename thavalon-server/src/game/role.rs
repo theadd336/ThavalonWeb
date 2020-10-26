@@ -29,13 +29,13 @@ pub enum Team {
 /// Information a player receives based on their role.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct RoleDetails {
-    /// The team the player is on
+    /// The team the player is on.
     team: Team,
-    /// The player's role
+    /// The player's role.
     role: Role,
-    /// A high-level description of the role
+    /// A high-level description of the role.
     description: String,
-    /// Other players that this player sees
+    /// Other players that this player sees.
     seen_players: Vec<String>,
     /// Other members of this player's team, empty if the player is not evil.
     team_members: Vec<String>,
@@ -43,7 +43,7 @@ pub struct RoleDetails {
     other_info: String,
     /// Special abilities the player has.
     abilities: String,
-    /// Whether or not the player can be assassinated
+    /// Whether or not the player can be assassinated.
     assassinatable: bool,
 }
 
@@ -139,7 +139,7 @@ impl Role {
             Role::Tristan | Role::Iseult => {
                 let _ = writeln!(
                     &mut description,
-                    "You may or may not have a Lover in the game. Once you and your Lover go on a mission together, you will be revealed to each other. Until then, you will be told after each mission if it contained your Lover."
+                    "You may or may not see your Lover at some point I guess? Once you and your Lover go on a mission together, you will be revealed to each other. Until then, you will be told after each mission if it contained your Lover."
                 );
             }
             Role::Mordred => {
