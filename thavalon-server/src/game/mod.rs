@@ -11,6 +11,7 @@ mod engine;
 mod interactions;
 mod messages;
 mod role;
+pub mod snapshot;
 
 pub use self::messages::*;
 pub use self::role::*;
