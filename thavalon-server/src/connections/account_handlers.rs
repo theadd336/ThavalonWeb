@@ -353,10 +353,6 @@ pub async fn verify_account(
     let info = match accounts::pop_info_by_code(verification_code).await {
         Ok(info) => info,
         Err(e) => {
-            // log::warn!(
-            //     "An error occurred while loading verification information. {}.",
-            //     e
-            // );
             if e == AccountError::UnknownError {
                 log::error!(
                     "An unknown error occurred while loading verification info. {}",

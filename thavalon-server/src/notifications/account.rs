@@ -21,10 +21,14 @@ const EMAIL_BASE_PATH: &str = "http://localhost:8001/api/verify_email/";
 /// * Empty type on success, `NotificationError` on failure.
 pub async fn send_email_verification(email: &String) -> Result<(), NotificationError> {
     log::info!("Sending a verification email for a new account.");
-    let code: String = iter::repeat(())
-        .map(|()| rand::thread_rng().sample(Alphanumeric))
-        .take(32)
-        .collect();
+    let code: String;
+    {
+        let mut rng = rand::thread_rng();
+        code = iter::repeat(())
+            .map(|()| rng.sample(Alphanumeric))
+            .take(32)
+            .collect();
+    }
     let expires_at = Utc::now()
         .checked_add_signed(Duration::days(EXPIRATION_DAYS))
         .expect("Could not create expires time for the verification email link.")

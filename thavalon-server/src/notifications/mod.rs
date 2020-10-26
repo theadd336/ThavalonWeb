@@ -12,7 +12,7 @@ use mailgun_rs::{EmailAddress, Mailgun, Message};
 use std::env;
 
 const SMTP_DOMAIN: &str = "mg.bennavetta.com";
-const SMTP_USER: &str = "thavalon@mg.bennavetta.com";
+const SMTP_USER: &str = "no-reply@mg.bennavetta.com";
 
 lazy_static! {
     static ref SMTP_API_KEY: String =
@@ -47,11 +47,11 @@ async fn send_email(
         message,
     };
 
-    let sender = EmailAddress::name_address("no-reply", SMTP_USER);
+    let sender = EmailAddress::name_address("ThavalonWeb", SMTP_USER);
 
     if let Err(e) = client.send(&sender) {
         log::error!("ERROR: Failed to send the message to the recipient. {}.", e);
-        return Err(NotificationError::SMTPError);
+        return Err(NotificationError::MailServerError);
     }
 
     log::info!("Successfully sent an email to the recipient.");
