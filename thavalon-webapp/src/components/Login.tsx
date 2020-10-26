@@ -1,43 +1,62 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
 import { Link, Redirect } from 'react-router-dom';
-import { log_in, say_hello } from '../utils/account_utils';
-import { FormButton } from "./formButton";
+import { AccountManager } from '../utils/AccountManager';
+import "./Modal.scss";
 
-import "./modal.scss";
-type LoginProps = {
-    setLoggedIn: any
+interface LoginProps {
+    setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 };
 
-ReactModal.setAppElement("#root");
+interface LoginData {
+    "email": string,
+    "password": string
+};
 
-function Login(props: LoginProps) {
+export function Login(props: LoginProps) {
+    // if set, register modal is open
     const [modalIsOpen, setModalIsOpen] = useState(true);
-    const { register, handleSubmit, errors } = useForm();
-    const [isLoading, setIsLoading] = useState(false);
+    // hook for register form
+    const { register, handleSubmit, errors } = useForm<LoginData>();
+    // state for setting if register button is disabled
+    const [disable, setDisabled] = useState(false);
+    // state for setting register error
+    const [formErrorMsg, setFormErrorMsg] = useState("");
+    // state for redirecting to home on successful login
+    const [redirectToHome, setRedirectToHome] = useState(false);
+
+    /**
+     * Called when register modal is closed.
+     */
     function closeModal() {
         setModalIsOpen(false);
     }
 
-    function OnError(data: any, event: any) {
-        console.log(data);
-        console.log("ERROR");
-        setIsLoading(false);
-        // prevent page from reloading
-        event.preventDefault();
+    /**
+     * On error, just prevent page reload - form handles showing errors.
+     * @param data The data being sent on submit.
+     * @param event The event caused by submission.
+     */
+    async function OnSubmit(data: LoginData) {
+        setDisabled(true);
+
+        const accountManager = AccountManager.getInstance();
+        let httpResponse = await accountManager.loginUser(data.email, data.password);
+
+        // on successful register, log in user to update navbar and redirect to home page.
+        // On fail, set error message and re-enable register button
+        if (httpResponse.result) {
+            props.setLoggedIn(true);
+            setRedirectToHome(true);
+        } else {
+            setFormErrorMsg(httpResponse.message);
+            setDisabled(false);
+        }
     }
 
-    function OnSubmit(data: any, event: any) {
-        console.log("SUBMIT");
-        console.log(data);
-        setIsLoading(true);
-        // try logging in, if it works update page to reflect that
-        let loggedIn = log_in();
-        useEffect(() => props.setLoggedIn(log_in()));
-
-        // prevent page from reloading
-        event.preventDefault();
+    if (redirectToHome) {
+        return <Redirect to="/" />;
     }
 
     // log in without throwing a warning by using useEffect
@@ -51,9 +70,9 @@ function Login(props: LoginProps) {
             overlayClassName="Overlay"
         >
             <h2 className="modalHeader">Log In</h2>
-            <form onSubmit={handleSubmit(OnSubmit, OnError)}>
+            <form onSubmit={handleSubmit(OnSubmit)}>
                 <input
-                    type="text"
+                    type="email"
                     placeholder="Email"
                     name="email"
                     ref={register({
@@ -65,18 +84,17 @@ function Login(props: LoginProps) {
                 {errors.email && <span className="errorMsg">{errors.email.message}</span>}
                 <br />
                 <input
-                    type="text"
+                    type="password"
                     placeholder="Password"
                     name="password"
-                    ref={register({ required: true })} />
+                    ref={register({ required: true, minLength: 8 })} />
                 {errors.password && <span className="errorMsg">Password required.</span>}
                 <br />
                 <Link to="/register" className="formLink">Create Account?</Link>
                 <br />
-                <FormButton label="Log In" isLoading={isLoading} />
+                <input type="submit" disabled={disable} value="Log In" />
+                <span className="errorMsg">{formErrorMsg}</span>
             </form>
         </ReactModal>
-    )
+    );
 }
-
-export default Login;
