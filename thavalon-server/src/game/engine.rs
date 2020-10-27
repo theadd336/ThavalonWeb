@@ -148,7 +148,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         );
         self.interactions
             .send(Message::NextProposal {
-                proposer: from,
+                proposer: self.to_name(from),
                 mission,
                 proposal,
             })
@@ -172,10 +172,12 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
             })
             .await?;
 
+        let player_ids = self.to_ids(players.iter())?;
+
         self.interactions
             .send(Message::ProposalMade {
-                proposer: from,
-                players: players.clone(),
+                proposer: self.to_name(from),
+                players,
                 mission,
                 proposal,
             })
@@ -183,7 +185,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
 
         let prop = Proposal {
             proposer: from,
-            players,
+            players: player_ids,
             game: self.game,
         };
 
@@ -223,8 +225,8 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         self.interactions
             .send(Message::VotingResults {
                 counts: VoteCounts::Public {
-                    upvotes: results.upvotes().collect(),
-                    downvotes: results.downvotes().collect(),
+                    upvotes: self.to_names(results.upvotes()),
+                    downvotes: self.to_names(results.downvotes()),
                 },
                 sent: results.sent,
             })
@@ -339,6 +341,21 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
 
         Ok(passed)
     }
+
+    fn to_name(&self, id: PlayerId) -> String {
+        self.game.name(id).to_owned()
+    }
+
+    fn to_names<T, U>(&self, iter: T) -> U where T: IntoIterator<Item=PlayerId>, U: iter::FromIterator<String> {
+        iter.into_iter().map(|id| self.to_name(id)).collect()
+    }
+
+    fn to_ids<T, U, S>(&self, iter: T) -> Result<U, GameError> where T: IntoIterator<Item=S>, U: iter::FromIterator<PlayerId>, S: AsRef<str> {
+        iter.into_iter().map(|name| match self.game.players.by_name(name.as_ref()) {
+            Some(id) => Ok(id),
+            None => Err(GameError::UnknownPlayer { name: name.as_ref().to_owned() })
+        }).collect()
+    }
 }
 
 // Maybe a typemap for per-role game state?
@@ -427,27 +444,27 @@ mod test {
     fn make_game() -> Game {
         let mut players = Players::new();
         players.add_player(Player {
-            id: 1,
+            id: 0,
             role: Role::Merlin,
             name: "Player 1".to_string(),
         });
         players.add_player(Player {
-            id: 2,
+            id: 1,
             role: Role::Lancelot,
             name: "Player 2".to_string(),
         });
         players.add_player(Player {
-            id: 3,
+            id: 2,
             role: Role::Iseult,
             name: "Player 3".to_string(),
         });
         players.add_player(Player {
-            id: 4,
+            id: 3,
             role: Role::Maelegant,
             name: "Player 4".to_string(),
         });
         players.add_player(Player {
-            id: 5,
+            id: 4,
             // Agravaine isn't supposed to be in 5-player but shhh
             role: Role::Agravaine,
             name: "Player 5".to_string(),
@@ -455,17 +472,17 @@ mod test {
 
         let mut rng = thread_rng();
         let info = hashmap! {
-            1 => Role::Merlin.generate_info(&mut rng, 1, &players),
-            2 => Role::Lancelot.generate_info(&mut rng, 2, &players),
-            3 => Role::Iseult.generate_info(&mut rng, 3, &players),
-            4 => Role::Maelegant.generate_info(&mut rng, 4, &players),
-            5 => Role::Agravaine.generate_info(&mut rng, 5, &players),
+            0 => Role::Merlin.generate_info(&mut rng, 0, &players),
+            1 => Role::Lancelot.generate_info(&mut rng, 1, &players),
+            2 => Role::Iseult.generate_info(&mut rng, 2, &players),
+            3 => Role::Maelegant.generate_info(&mut rng, 3, &players),
+            4 => Role::Agravaine.generate_info(&mut rng, 4, &players),
         };
 
         Game {
             players,
             info,
-            proposal_order: vec![1, 2, 3, 4, 5],
+            proposal_order: vec![0, 1, 2, 3, 4],
             spec: GameSpec::for_players(5),
         }
     }
@@ -567,19 +584,19 @@ mod test {
             (
                 1,
                 Action::Propose {
-                    players: hashset![1, 3],
+                    players: hashset!["Player 1".to_string(), "Player 3".to_string()],
                 },
             ),
             (
                 2,
                 Action::Propose {
-                    players: hashset![2, 4, 1],
+                    players: hashset!["Player 2".to_string(), "Player 4".to_string(), "Player 1".to_string()],
                 },
             ),
             (
                 2,
                 Action::Propose {
-                    players: hashset![2, 4],
+                    players: hashset!["Player 2".to_string(), "Player 4".to_string()],
                 },
             ),
         ]);
@@ -605,15 +622,15 @@ mod test {
             interactions.broadcasts(),
             &[
                 Message::NextProposal {
-                    proposer: 2,
+                    proposer: "Player 2".to_string(),
                     mission: 1,
                     proposal: 1
                 },
                 Message::ProposalMade {
-                    proposer: 2,
+                    proposer: "Player 2".to_string(),
                     mission: 1,
                     proposal: 1,
-                    players: hashset![2, 4]
+                    players: hashset!["Player 2".to_string(), "Player 4".to_string()]
                 }
             ]
         );
@@ -651,8 +668,8 @@ mod test {
                 Message::VotingResults {
                     sent: true,
                     counts: VoteCounts::Public {
-                        upvotes: hashset![2, 1, 5],
-                        downvotes: hashset![3, 4]
+                        upvotes: hashset!["Player 2".to_string(), "Player 1".to_string(), "Player 5".to_string()],
+                        downvotes: hashset!["Player 3".to_string(), "Player 4".to_string()]
                     }
                 }
             ]

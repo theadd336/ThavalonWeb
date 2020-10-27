@@ -15,8 +15,9 @@ mod role;
 pub use self::messages::*;
 pub use self::role::*;
 
-/// Key for identifying a player in the game. Cheaper to copy and move around than a String
-pub type PlayerId = usize;
+/// Key for identifying a player in the game. Cheaper to copy and move around than a String.
+/// This is intentionally not public to ensure we don't leak player IDs to the rest of the server.
+type PlayerId = usize;
 
 /// A mission number (from 1 to 5)
 pub type MissionNumber = u8;
@@ -52,6 +53,7 @@ pub struct Player {
 #[derive(Debug, Clone)]
 pub struct Players {
     players: HashMap<PlayerId, Player>,
+    by_name: HashMap<String, PlayerId>,
     roles: HashMap<Role, PlayerId>,
     good_players: Vec<PlayerId>,
     evil_players: Vec<PlayerId>,
@@ -73,7 +75,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn roll(mut names: Vec<(PlayerId, String)>) -> Game {
+    pub fn roll(mut names: Vec<String>) -> Game {
         let spec = GameSpec::for_players(names.len());
         let mut rng = thread_rng();
 
@@ -86,7 +88,7 @@ impl Game {
 
         names.shuffle(&mut rng);
         let mut players = Players::new();
-        for (role, (id, name)) in good_roles.chain(evil_roles).cloned().zip(names.into_iter()) {
+        for (id, (role, name)) in good_roles.chain(evil_roles).cloned().zip(names.into_iter()).enumerate() {
             players.add_player(Player { id, role, name });
         }
 
@@ -127,7 +129,7 @@ impl Game {
         }
     }
 
-    pub fn name(&self, player: usize) -> &str {
+    fn name(&self, player: PlayerId) -> &str {
         self.players[player].name.as_ref()
     }
 
@@ -141,6 +143,7 @@ impl Players {
     fn new() -> Players {
         Players {
             players: HashMap::new(),
+            by_name: HashMap::new(),
             roles: HashMap::new(),
             good_players: Vec::new(),
             evil_players: Vec::new(),
@@ -149,6 +152,7 @@ impl Players {
 
     fn add_player(&mut self, player: Player) {
         self.roles.insert(player.role, player.id);
+        self.by_name.insert(player.name.clone(), player.id);
         if player.role.is_good() {
             self.good_players.push(player.id);
         } else {
@@ -163,6 +167,10 @@ impl Players {
 
     fn has_role(&self, role: Role) -> bool {
         self.roles.contains_key(&role)
+    }
+
+    fn by_name(&self, name: &str) -> Option<PlayerId> {
+        self.by_name.get(name).cloned()
     }
 
     fn good_players(&self) -> &[PlayerId] {

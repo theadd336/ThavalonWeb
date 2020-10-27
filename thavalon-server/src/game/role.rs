@@ -96,7 +96,7 @@ impl Role {
     }
 
     /// Create role information for a player, `me`, given all `players` in the game.
-    pub fn generate_info<R: Rng>(
+    pub(super) fn generate_info<R: Rng>(
         self,
         rng: &mut R,
         me: PlayerId,
