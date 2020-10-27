@@ -30,6 +30,7 @@ export function Login(props: LoginProps) {
      * Called when register modal is closed.
      */
     function closeModal() {
+        // TODO: Redirect to prior page on modal close so can refresh
         setModalIsOpen(false);
     }
 

@@ -1,24 +1,28 @@
-import { read } from 'fs';
 import React, { ChangeEvent } from 'react';
 
 export function Account() {
     const profileImage = React.useRef<HTMLImageElement>(null);
     function handleImageUpload(event: ChangeEvent<HTMLInputElement>): void {
-        if (profileImage.current === null) {
-            console.log("Unable to access image element, cannot update profile picture");
-        }
-
         // get the chosen file. There should be only 1 because multiple choices disabled.
         const file = event.target.files;
-        if (file !== null && file.length === 1) {
-            console.log(file.item(0));
-            const reader = new FileReader();
-            let image: HTMLImageElement = profileImage.current;
-            
-            reader.onload = (e) => {
-                image?.src = e.target.result;
-            }
+        if (file === null || file.length !== 1) {
+            return;
         }
+        const fileItem = file.item(0);
+        if (fileItem === null) {
+            return;
+        }
+
+        let imageElement: HTMLImageElement | null = profileImage.current;
+        const reader = new FileReader();
+        reader.onload = (event: ProgressEvent<FileReader>) => {
+            // verify not accessing null elements on anything
+            if (imageElement === null || event.target === null || event.target.result === null) {
+                return;
+            }
+            imageElement.src = event.target.result as string;
+        }
+        reader.readAsDataURL(fileItem);
     }
 
     console.log("Rendering account!");
