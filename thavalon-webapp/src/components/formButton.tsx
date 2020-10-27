@@ -26,9 +26,9 @@ export interface FormButtonProps {
 export function FormButton(props: FormButtonProps): JSX.Element {
     // Handle loading state. If we should be loading, set a timeout to add the 
     // `loading-spin` class which spins. 
-    const [loadingSpin, setLoader] = useState("");
+    const [loadingSpin, setLoadingSpin] = useState("");
     if (props.isLoading === true && loadingSpin === "") {
-        setTimeout(() => setLoader("loading-spin"), 150);
+        setTimeout(() => setLoadingSpin("loading-spin"), 150);
     }
 
     // Add in classes. Only add "active" and "loader" if isLoading is true, since
