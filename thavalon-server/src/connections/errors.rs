@@ -1,6 +1,9 @@
+//! Module containing top-level server error handling. Errors here are
+//! formatted and sent back to a client.
+
 use crate::connections::account_handlers::{
-    DuplicateAccountRejection, InvalidLoginRejection, PasswordInsecureRejection,
-    ValidationRejection,
+    DuplicateAccountRejection, EmailVerificationRejection, InvalidLoginRejection,
+    PasswordInsecureRejection, ValidationRejection,
 };
 use serde::Serialize;
 use std::convert::Infallible;
@@ -20,6 +23,7 @@ enum ErrorCode {
     PasswordInsecure,
     InvalidLogin,
     MissingHeader,
+    InvalidAccountVerification,
     Unknown = 255,
 }
 
@@ -59,6 +63,10 @@ pub async fn recover_errors(err: Rejection) -> Result<impl Reply, Infallible> {
         http_response_code = StatusCode::UNAUTHORIZED;
         error_message = format!("Missing or invalid header: {}.", e.name());
         error_code = ErrorCode::MissingHeader;
+    } else if let Some(EmailVerificationRejection) = err.find() {
+        http_response_code = StatusCode::FORBIDDEN;
+        error_message = "Verification code expired or the account has been deleted.".to_string();
+        error_code = ErrorCode::InvalidAccountVerification;
     }
 
     if error_code == ErrorCode::Unknown {
