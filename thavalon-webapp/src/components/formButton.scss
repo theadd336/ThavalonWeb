@@ -3,8 +3,10 @@
 
 // Define mixins and classes
 @mixin dimensions($width: null, $height: $width) { width: $width; height: $height; }
+
 %reset { margin: 0; padding: 0; }
 %flex { display: flex; justify-content: center;	align-items: center; }
+
 *, *:before, *:after { box-sizing: border-box; }
 
 // Define the outer container. This resets any padding and defines the default
@@ -41,13 +43,13 @@
 		font-size: 1rem;
 		transform: translateY(1px);
 	}
-	&.active {
+	&.loading-start {
 		font-size: 0;
 		border-radius: 1.525rem;
 		width: 3rem;
 		background: transparent;
 	}
-	&.loader {
+	&.loading-spin {
 		border-right: 0.125rem solid $backgroundColor;
 		animation: loader .4s linear infinite;
 	}

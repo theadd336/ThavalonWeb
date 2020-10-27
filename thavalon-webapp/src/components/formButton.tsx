@@ -25,15 +25,15 @@ export interface FormButtonProps {
  */
 export function FormButton(props: FormButtonProps): JSX.Element {
     // Handle loading state. If we should be loading, set a timeout to add the 
-    // `loader` class which spins. 
-    const [loader, setLoader] = useState("");
-    if (props.isLoading === true && loader === "") {
-        setTimeout(() => setLoader("loader"), 150);
+    // `loading-spin` class which spins. 
+    const [loadingSpin, setLoader] = useState("");
+    if (props.isLoading === true && loadingSpin === "") {
+        setTimeout(() => setLoader("loading-spin"), 150);
     }
 
     // Add in classes. Only add "active" and "loader" if isLoading is true, since
     // these cause animations.
-    const classes = `form-button-${ props.color || "green" } ` + (props.isLoading ? `active ${ loader }` : "");
+    const classes = `form-button-${ props.color || "green" } ` + (props.isLoading ? `loading-start ${ loadingSpin }` : "");
     return (
         <div className={`button-container ${ props.size || "medium" }`}>
             <button
