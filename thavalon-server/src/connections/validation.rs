@@ -159,11 +159,14 @@ impl TokenManager {
     /// A RefreshTokenInfo struct with all required information.
     pub async fn create_refresh_token(&mut self, user: &String) -> RefreshTokenInfo {
         log::info!("Creating a refresh token for {}.", user);
-        let token: String = iter::repeat(())
-            .map(|()| rand::thread_rng().sample(Alphanumeric))
-            .take(32)
-            .collect();
-
+        let token: String;
+        {
+            let mut rng = rand::thread_rng();
+            token = iter::repeat(())
+                .map(|()| rng.sample(Alphanumeric))
+                .take(32)
+                .collect();
+        }
         let token_info = RefreshTokenInfo {
             token: token.clone(),
             expires_at: Utc::now()

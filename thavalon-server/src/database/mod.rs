@@ -1,9 +1,10 @@
+//! Contains all code related to the Thavalon database.
+
 use lazy_static::lazy_static;
 use mongodb::{options::ClientOptions, Client, Database};
 use std::sync::RwLock;
 
-mod accounts;
-pub use self::accounts::*;
+pub mod accounts;
 
 const MONGO_HOST: &str = "mongodb://admin:secret@database:27017";
 const THAVALON_DB: &str = "thavalon_db";

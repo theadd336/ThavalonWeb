@@ -1,7 +1,11 @@
+//! Main entry point into ThavalonWeb's backend API
+
 use fern::colors::{Color, ColoredLevelConfig};
 
 mod connections;
 mod database;
+mod game;
+mod notifications;
 
 fn setup_logger() -> Result<(), fern::InitError> {
     let colors = ColoredLevelConfig::new()
