@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
 import { Link, Redirect } from 'react-router-dom';
@@ -18,7 +18,7 @@ export function Login(props: LoginProps) {
     // if set, register modal is open
     const [modalIsOpen, setModalIsOpen] = useState(true);
     // hook for register form
-    const { register, handleSubmit, errors } = useForm<LoginData>();
+    const {register, handleSubmit, errors} = useForm<LoginData>();
     // state for setting if register button is disabled
     const [disable, setDisabled] = useState(false);
     // state for setting register error
@@ -87,7 +87,7 @@ export function Login(props: LoginProps) {
                     type="password"
                     placeholder="Password"
                     name="password"
-                    ref={register({ required: true, minLength: 8 })} />
+                    ref={register({required: true, minLength: 8})} />
                 {errors.password && <span className="errorMsg">Password required.</span>}
                 <br />
                 <Link to="/register" className="formLink">Create Account?</Link>
