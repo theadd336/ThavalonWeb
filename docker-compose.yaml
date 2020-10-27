@@ -22,6 +22,7 @@ services:
         build:
             context: ./thavalon-server
             dockerfile: Dockerfile.local
+        env_file: env_vars
         ports:
             - "127.0.0.1:8001:8001"
         volumes:

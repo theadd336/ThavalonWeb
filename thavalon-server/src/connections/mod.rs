@@ -66,6 +66,10 @@ pub async fn serve_connections() {
         .and(authorize_request(&token_manager))
         .and_then(account_handlers::update_user);
 
+    let verify_account_route = warp::path!("update" / "verifed_email")
+        .and(body::json())
+        .and_then(account_handlers::verify_account);
+
     let get_routes = warp::get().and(path_test.or(restricted_path_test).or(get_user_info_route));
     let post_routes = warp::post().and(
         add_user_route
@@ -74,7 +78,7 @@ pub async fn serve_connections() {
             .or(logout_route),
     );
     let delete_routes = warp::delete().and(delete_user_route);
-    let put_routes = warp::put().and(update_user_route);
+    let put_routes = warp::put().and(update_user_route.or(verify_account_route));
 
     let cors = warp::cors()
         .allow_any_origin()

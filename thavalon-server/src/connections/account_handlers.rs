@@ -1,7 +1,8 @@
 //! Rest handlers for account-based calls
 use super::validation::{self, JWTResponse, RefreshTokenInfo, TokenManager, ValidationError};
 use super::REFRESH_TOKEN_COOKIE;
-use crate::database::{self, account_errors::AccountError, DatabaseAccount};
+use crate::database::accounts::{self, AccountError, DatabaseAccount};
+use crate::notifications::account;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -59,13 +60,19 @@ pub struct LoginRequestInfo {
 }
 
 /// Represents information required to create a new user account.
-/// Display name is optional for this request.
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NewUserInfo {
     email: String,
     password: String,
     display_name: String,
+}
+
+/// Represents information required to verify a user account.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VerifyAccountInfo {
+    verification_code: String,
 }
 
 #[derive(Debug)]
@@ -95,6 +102,10 @@ impl Reject for NoAccountRejection {}
 #[derive(Debug)]
 pub struct UnknownErrorRejection;
 impl Reject for UnknownErrorRejection {}
+
+#[derive(Debug)]
+pub struct EmailVerificationRejection;
+impl Reject for EmailVerificationRejection {}
 
 /// Handles a request to add a user to the database.
 ///
@@ -126,7 +137,7 @@ pub async fn handle_add_user(
     };
 
     let player_id =
-        match database::create_new_user(&new_user.email, &hash, &new_user.display_name).await {
+        match accounts::create_new_user(&new_user.email, &hash, &new_user.display_name).await {
             Ok(id) => id,
             Err(e) => {
                 log::info!("{:?}", e);
@@ -136,6 +147,16 @@ pub async fn handle_add_user(
     log::info!("Successfully added user to the database.");
     let (jwt, refresh_token) = token_manager.create_jwt(&player_id).await;
     let response = create_validated_response(jwt, refresh_token, StatusCode::CREATED).await;
+    if let Err(e) = account::send_email_verification(&new_user.email).await {
+        log::error!(
+            "ERROR: failed to send account verification email to {}. {}.",
+            player_id,
+            e
+        );
+        // TODO: Support resending email verification. We don't want to return
+        // an error, since the account was created succesfully, but we need to
+        // resend this email somehow.
+    }
     Ok(response)
 }
 
@@ -153,7 +174,7 @@ pub async fn handle_user_login(
     mut token_manager: TokenManager,
 ) -> Result<impl Reply, Rejection> {
     log::info!("Attempting to log a user in.");
-    let hashed_user = match database::load_user_by_email(&login_info.email).await {
+    let hashed_user = match accounts::load_user_by_email(&login_info.email).await {
         Ok(user) => user,
         Err(e) => {
             log::info!("An error occurred while looking up the user. {}", e);
@@ -200,7 +221,7 @@ pub async fn handle_logout(
 /// * JSON serialized ThavalonUser on success. Rejection on failure.
 pub async fn get_user_account_info(player_id: String) -> Result<impl Reply, Rejection> {
     log::info!("Loading user account info for the specified account.");
-    let user = match database::load_user_by_id(&player_id).await {
+    let user = match accounts::load_user_by_id(&player_id).await {
         Ok(user) => user,
         Err(e) => {
             log::error!(
@@ -227,17 +248,24 @@ pub async fn get_user_account_info(player_id: String) -> Result<impl Reply, Reje
 /// * Empty reply on success, descriptive rejection otherwise.
 pub async fn delete_user(player_id: String) -> Result<impl Reply, Rejection> {
     log::info!("Attempting to delete user {} from the database.", player_id);
-    if let Err(e) = database::remove_user(&player_id).await {
-        log::info!("Error while removing the user from the database. {}", e);
+    let user = match accounts::remove_user(&player_id).await {
+        Ok(user) => user,
+        Err(e) => {
+            log::info!("Error while removing the user from the database. {}", e);
 
-        if e == AccountError::UnknownError {
-            return Err(reject::custom(UnknownErrorRejection));
+            if e == AccountError::UnknownError {
+                return Err(reject::custom(UnknownErrorRejection));
+            }
+
+            // Return success even if the account doesn't exist. Account
+            // deletion should always succeed from the client perspective.
+            return Ok(StatusCode::NO_CONTENT);
         }
-    }
-    Ok(warp::reply::with_status(
-        warp::reply(),
-        StatusCode::NO_CONTENT,
-    ))
+    };
+
+    // Use _ here to avoid compiler warning about unusued result.
+    let _ = accounts::pop_info_by_email(&user.email).await;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 /// Updates a user with new information from the client.
@@ -270,7 +298,7 @@ pub async fn update_user(user: ThavalonUser, _: String) -> Result<impl Reply, Re
         };
     }
 
-    match database::update_user(user).await {
+    match accounts::update_user(user).await {
         Ok(_) => Ok(warp::reply()),
         Err(e) => {
             log::warn!("Failed to update user. {}", e);
@@ -305,6 +333,86 @@ pub async fn renew_refresh_token(
     log::info!("Refresh token validated. Sending new token to client.");
     let response = create_validated_response(jwt, refresh_token, StatusCode::OK).await;
     Ok(response)
+}
+
+/// Verifies an account's email using a verification code.
+///
+/// # Arguments
+///
+/// * `verification_request` - The request to verify a user's account
+///
+/// # Returns
+/// * `200 OK` on success, `EmailVerificationRejection` on failure
+pub async fn verify_account(
+    verification_request: VerifyAccountInfo,
+) -> Result<impl Reply, Rejection> {
+    let verification_code = &verification_request.verification_code;
+    log::info!("Verifying account using code {}.", verification_code);
+
+    // First, load the verification info from the database.
+    let info = match accounts::pop_info_by_code(verification_code).await {
+        Ok(info) => info,
+        Err(e) => {
+            if e == AccountError::UnknownError {
+                log::error!(
+                    "An unknown error occurred while loading verification info. {}",
+                    e
+                );
+                return Err(reject::custom(UnknownErrorRejection));
+            }
+            log::warn!("An error occurred while loading verification info. {}", e);
+            return Err(reject::custom(EmailVerificationRejection));
+        }
+    };
+
+    // Verify that it's not expired.
+    let now = chrono::Utc::now().timestamp();
+    if info.expires_at > now {
+        log::info!(
+            "The validation code {} has expired. Current time {}. Expiration time: {}.",
+            verification_code,
+            now,
+            info.expires_at
+        );
+
+        return Err(reject::custom(EmailVerificationRejection));
+    }
+
+    log::info!(
+        "Verification code {} is valid. Updating the user account.",
+        verification_code
+    );
+
+    // Update the user account. This technically is subject to race conditions
+    // since we have to load the account first. However, it's highly unlikely
+    // a user could do this fast enough to actually cause an issue.
+    // Notably, deleted accounts won't be recreated by this process.
+    let mut user = match accounts::load_user_by_email(&info.email).await {
+        Ok(user) => user,
+        Err(e) => {
+            if e == AccountError::UnknownError {
+                log::error!("An unknown error occurred while loading the user. {}", e);
+                return Err(reject::custom(UnknownErrorRejection));
+            }
+            log::warn!("Error occurred while loading the user. {}.", e);
+            return Err(reject::custom(EmailVerificationRejection));
+        }
+    };
+    user.email_verified = true;
+    if let Err(e) = accounts::update_user(user).await {
+        if e == AccountError::UnknownError {
+            log::error!(
+                "An unknown error occurred while marking the user account as verified. {}",
+                e
+            );
+            return Err(reject::custom(UnknownErrorRejection));
+        }
+        log::warn!("An error occurred while verifying the user account. {}.", e);
+        return Err(reject::custom(EmailVerificationRejection));
+    }
+
+    log::info!("Successfully validated the user's account.");
+    Ok(StatusCode::OK)
 }
 
 /// Creates a warp response with an authorization header for a JWT, a refresh
