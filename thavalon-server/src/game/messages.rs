@@ -4,8 +4,8 @@ use std::collections::HashSet;
 
 use thiserror::Error;
 
-use super::role::RoleDetails;
 use super::{Card, MissionNumber, ProposalNumber};
+use super::role::RoleDetails;
 
 // Game-related messages
 
@@ -78,12 +78,9 @@ pub enum VoteCounts {
 
 #[derive(Error, Debug)]
 pub enum GameError {
-    #[error("Can't reach player `{}`", name)]
+    #[error("Can't reach player '{}'", name)]
     PlayerUnavailable { name: String },
 
     #[error("All players have disconnected")]
     AllDisconnected,
-
-    #[error("No player with name `{}`", name)]
-    UnknownPlayer { name: String }
 }
