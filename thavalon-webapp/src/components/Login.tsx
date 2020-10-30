@@ -3,7 +3,8 @@ import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
 import { Link, Redirect } from 'react-router-dom';
 import { AccountManager } from '../utils/AccountManager';
-import "./Modal.scss";
+import "./Login.scss";
+import { InputElement } from './InputElement';
 
 interface LoginProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
@@ -69,30 +70,20 @@ export function Login(props: LoginProps) {
             className="Modal"
             overlayClassName="Overlay"
         >
-            <h2 className="modalHeader">Log In</h2>
-            <form onSubmit={handleSubmit(OnSubmit)}>
-                <input
-                    type="email"
-                    placeholder="Email"
-                    name="email"
-                    ref={register({required: true, maxLength: 80, pattern: {
-                        value: /^\S+@\S+\.\S+$/i,
-                        message: "Invalid email address."
-                    }})} />
-                {errors.email && <span className="errorMsg">{errors.email.message}</span>}
-                <br />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    name="password"
-                    ref={register({required: true, minLength: 8})} />
-                {errors.password && <span className="errorMsg">Password required.</span>}
-                <br />
-                <Link to="/register" className="formLink">Create Account?</Link>
-                <br />
-                <input type="submit" disabled={disable} value="Log In" />
-                <span className="errorMsg">{formErrorMsg}</span>
-            </form>
+            <div className="modalContainer">
+                <h2 className="modalHeader">Log In</h2>
+                <hr />
+                <form onSubmit={handleSubmit(OnSubmit)}>
+                    <InputElement type="email" label="Email Address" required={true} minLength={0} />
+                    <InputElement type="password" label="Password" required={true} minLength={8} />
+                    <div className="formSubmission">
+                        <input type="submit" disabled={disable} value="Log In" />
+                        <span className="errorMsg">{formErrorMsg}</span>
+                        <br />
+                        <Link to="/register" className="formLink">Create Account?</Link>
+                    </div>
+                </form>
+            </div>
         </ReactModal>
     );
 }

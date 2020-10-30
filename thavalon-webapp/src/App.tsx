@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { Switch, Route } from 'react-router-dom';
-import { Login } from './components/Login2';
+import { Login } from './components/Login';
 import { Logout } from './components/Logout';
 import { Register } from './components/Register';
 import { Home } from './components/Home';

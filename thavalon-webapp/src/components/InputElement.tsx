@@ -1,13 +1,17 @@
 import React from 'react';
 import "./InputElement.scss";
 
-interface InputElementProps {
+export interface InputElementProps {
     "type": string,
     "label": string,
     "required": boolean,
     "minLength": number,
 }
 
+/**
+ * A input component, with appropriate styling.
+ * @param props The props for the input element.
+ */
 export function InputElement(props: InputElementProps) {
     const inputElement = React.useRef<HTMLInputElement>(null);
     const [inputClassName, setinputClassName] = React.useState("noContent");

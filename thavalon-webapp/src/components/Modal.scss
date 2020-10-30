@@ -1,7 +1,5 @@
 .Modal {
     margin: auto;
-    width: 300px;
-    height: 200px;
     border: 1px solid #000000;
     overflow: auto;
     border-radius: 10px;
@@ -9,16 +7,12 @@
     padding: 20px;
     background-color: #ffffff;
     opacity: 100%;
-
-    @media only screen and (max-width: 600px) {
-        width: 225px;
-        height: 250px;
-        position: fixed;
-        top: 40px;
-        left: 40px;
-        right: 40px;
-        bottom: 40px;
-    }    
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    flex-wrap: wrap;
+    font-size: 1.2rem;
 }
 
 .Overlay {
@@ -33,9 +27,20 @@
     background-color: rgba(0, 0, 0, .5);
 }
 
+.errorMsg {
+    color: red;
+    font-size: 0.9rem;
+    font-style: italic;
+    display: inline-block;
+    padding-left: 5px;
+}
 
 .formLink {
-    font-size: 13px;
+    font-size: 0.9rem;
+}
+
+.formSubmission {
+    text-align: center;
 }
 
 .modalHeader {
@@ -44,4 +49,11 @@
 
 h2 {
     text-align: center;
+    margin: 0rem;
+    font-size: 2rem;
+}
+
+hr {
+    margin-top: 15px;
+    margin-bottom: 15px;
 }
