@@ -1,0 +1,92 @@
+// TODO: Import standard background color and green/red/grey colors for use
+// once they are standardized.
+
+// Define mixins and classes
+@mixin dimensions($width: null, $height: $width) { width: $width; height: $height; }
+
+%reset { margin: 0; padding: 0; }
+%flex { display: flex; justify-content: center;	align-items: center; }
+
+*, *:before, *:after { box-sizing: border-box; }
+
+// Define the outer container. This resets any padding and defines the default
+// dimensions and overflow handling.
+.button-container {
+	@extend %reset;
+	@extend %flex;
+	@include dimensions($width: 6rem, $height: 3rem);
+	overflow: hidden;
+}
+
+// Define the base of the form button. This mixin handles setting up the button,
+// defining states for hover and active, and defining the loader animation.
+@mixin form-button-base($buttonColor, $backgroundColor) {
+	@extend %reset;
+	@extend %flex;
+	@include dimensions($width: 6rem, $height: 3rem);
+	background: transparent;
+	border-radius: 0.625rem;
+	will-change: transform;
+	transition: all .2s ease;
+	border: 0.125rem solid $buttonColor;
+	cursor: pointer;
+	font-size: 1rem;
+	color: $buttonColor;
+	outline: none;
+	text-align: center;
+	
+	&:hover {
+		background: $buttonColor;
+		color: $backgroundColor;
+	}
+	&:active {
+		font-size: 1rem;
+		transform: translateY(1px);
+	}
+	&.loading-start {
+		font-size: 0;
+		border-radius: 1.525rem;
+		width: 3rem;
+		background: transparent;
+	}
+	&.loading-spin {
+		border-right: 0.125rem solid $backgroundColor;
+		animation: loader .4s linear infinite;
+	}
+
+	@keyframes loader {
+		0% {
+			transform: rotateZ(0);
+		}
+		100% {
+			transform: rotateZ(360deg);
+		}
+	}
+}
+
+// Define actual styles for red, green, and blue buttons.
+.form-button-red {
+	@include form-button-base(#ff0000, #ffffff)
+}
+
+.form-button-green {
+	@include form-button-base(#05b605, #ffffff)
+}
+
+.form-button-grey {
+	@include form-button-base(#A9A9A9, #ffffff)
+}
+
+// Define different sizes with scaling. Large currently ... does nothing
+// but is kept in case we need to change in the future.
+.small {
+	transform: scale(0.5);
+}
+
+.medium {
+	transform: scale(0.75);
+}
+
+.large {
+	transform: scale(1);
+}
