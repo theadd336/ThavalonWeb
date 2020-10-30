@@ -62,6 +62,7 @@ export function Login(props: LoginProps) {
     }
 
     // log in without throwing a warning by using useEffect
+
     return (
         <ReactModal
             isOpen={modalIsOpen}
