@@ -4,7 +4,7 @@ import { DeepMap, FieldError, Resolver, useForm } from 'react-hook-form';
 import { AccountManager, HttpResponse } from '../utils/AccountManager';
 import { Redirect } from 'react-router-dom';
 import { InputElement } from './formComponents/InputElement';
-import { FormButton } from './formComponents/formButton';
+import { FormButton } from './formComponents/FormButton';
 import "../styles/Modal.scss";
 
 interface RegisterProps {

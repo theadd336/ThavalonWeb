@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { Link, Redirect } from 'react-router-dom';
 import { AccountManager } from '../utils/AccountManager';
 import { InputElement } from './formComponents/InputElement';
-import { FormButton } from './formComponents/formButton';
+import { FormButton } from './formComponents/FormButton';
 import "../styles/Modal.scss";
 
 interface LoginProps {
