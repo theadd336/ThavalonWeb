@@ -77,6 +77,8 @@ pub async fn join_game(
         }
     };
 
+    game
+
     Ok(warp::reply())
 }
 
