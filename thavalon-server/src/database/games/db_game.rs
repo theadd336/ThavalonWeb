@@ -81,19 +81,11 @@ pub struct DatabaseGame {
 impl DatabaseGame {
     /// Creates a new DB game entry and returns a DatabaseGame
     ///
-    /// # Arguments
-    ///
-    /// * `creating_player_id` - The player ID of the creating player.
-    /// * `creating_player_display_name` - The display name of the creating player.
-    ///
     /// # Returns
     ///
     /// * `DatabaseGame` on success. `GameError::CreationError` on failure.
-    pub async fn new(
-        creating_player_id: String,
-        creating_player_display_name: String,
-    ) -> Result<Self, DBGameError> {
-        log::info!("Creating a new game for player {}.", creating_player_id);
+    pub async fn new() -> Result<Self, DBGameError> {
+        log::info!("Creating a new database game.");
         let collection = get_database().await.collection(GAME_COLLECTION);
         let _id: ObjectId = match collection.insert_one(doc! {}, None).await {
             Ok(result) => {
@@ -105,16 +97,11 @@ impl DatabaseGame {
             }
         };
 
-        let mut players = HashSet::with_capacity(10);
-        let mut display_names = HashSet::with_capacity(10);
-        players.insert(creating_player_id);
-        display_names.insert(creating_player_display_name);
-
         let game = DatabaseGame {
             friend_code: String::from(&_id.to_hex()[..FRIEND_CODE_LENGTH + 1]).to_uppercase(),
             _id,
-            players,
-            display_names,
+            players: HashSet::with_capacity(10),
+            display_names: HashSet::with_capacity(10),
             status: DBGameStatus::Lobby,
             created_time: Utc::now().timestamp(),
             start_time: None,
@@ -298,5 +285,14 @@ impl DatabaseGame {
 
         log::info!("DB game {} updated successfully.", self._id);
         Ok(())
+    }
+
+    /// Getter for the friend_code field.
+    ///
+    /// # Returns
+    ///
+    /// A `string` representing the friend code
+    pub fn get_friend_code(&self) -> &String {
+        &self.friend_code
     }
 }
