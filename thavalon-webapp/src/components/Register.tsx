@@ -1,9 +1,12 @@
 import React, {useState} from 'react';
 import ReactModal from 'react-modal';
-import { Resolver, useForm } from 'react-hook-form';
+import { DeepMap, FieldError, Resolver, useForm } from 'react-hook-form';
 import "./Modal.scss";
+import "./Register.scss";
 import { AccountManager, HttpResponse } from '../utils/AccountManager';
 import { Redirect } from 'react-router-dom';
+import { InputElement } from './InputElement';
+import { FormButton } from './formButton';
 
 interface RegisterProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
@@ -35,8 +38,8 @@ export function Register(props: RegisterProps) {
     const {register, handleSubmit, errors} = useForm<RegisterData, Event>({
         resolver: registerResolver
     });
-    // state for setting if register button is disabled
-    const [disable, setDisabled] = useState(false);
+    // state for setting if form is being submitted or not
+    const [formSubmitting, setFormSubmitting] = useState(false);
     // state for setting register error
     const [formErrorMsg, setFormErrorMsg] = useState("");
     // state for redirecting to home on successful login
@@ -50,14 +53,27 @@ export function Register(props: RegisterProps) {
     }
 
     /**
+     * Function for handling errors from the resolver. Currently if called, only error should
+     * have the key confirmPassword.
+     * @param data The errors caused by the resolver.
+     */
+    function onError(data: DeepMap<RegisterData, FieldError>) {
+        if (data.confirmPassword === undefined || data.confirmPassword.message === undefined) {
+            console.log("Form onError called with no errors.");
+            return;
+        }
+        setFormErrorMsg(data.confirmPassword.message);
+    }
+
+    /**
      * On error, just prevent page reload - form handles showing errors.
      * @param data The data being sent on submit.
      * @param event The event caused by submission.
      */
     async function onSubmit(data: RegisterData) {
         // disable button on start of submit
-        // TODO: Also add loading image
-        setDisabled(true);
+        console.log("onSubmit");
+        setFormSubmitting(true);
         setFormErrorMsg("");
 
         // attempt registering of user
@@ -71,7 +87,7 @@ export function Register(props: RegisterProps) {
             setRedirectToHome(true);
         } else {
             setFormErrorMsg(httpResponse.message);
-            setDisabled(false);
+            setFormSubmitting(false);
         }
     }
 
@@ -87,43 +103,20 @@ export function Register(props: RegisterProps) {
             className="Modal"
             overlayClassName="Overlay"
         >
-            <h2 className="modalHeader">Register</h2>
-            <form onSubmit={handleSubmit(onSubmit)}>
-                <input
-                    type="text"
-                    placeholder="Name"
-                    name="name"
-                    ref={register({required: true})}
-                    />
-                {errors.name && <span className="errorMsg">Name required.</span>}
-                <br />
-                <input
-                    type="email"
-                    placeholder="Email"
-                    name="email"
-                    ref={register({required: true, maxLength: 80, pattern: {
-                        value: /^\S+@\S+\.\S+$/i,
-                        message: "Invalid email address."
-                    }})} />
-                {errors.email && <span className="errorMsg">{errors.email.message}</span>}
-                <br />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    name="password"
-                    ref={register({required: true, minLength: 8})} />
-                {errors.password && <span className="errorMsg">{errors.password.message}.</span>}
-                <br />
-                <input
-                    type="password"
-                    placeholder="Confirm Password"
-                    name="confirmPassword"
-                    ref={register({required: true, minLength: 8})} />
-                {errors.confirmPassword && <span className="errorMsg">{errors.confirmPassword.message}</span>}
-                <br />
-                <input type="submit" disabled={disable} value="Register" />
-                <span className="errorMsg">{formErrorMsg}</span>
-            </form>
+            <div className="modalContainer">
+                <h2 className="modalHeader">Register</h2>
+                <hr />
+                <form onSubmit={handleSubmit(onSubmit, onError)}>
+                    <InputElement formRef={register} type="text" label="Name" name="name" required={true} minLength={1} />
+                    <InputElement formRef={register} type="email" label="Email Address" name="email" required={true} minLength={1} />
+                    <InputElement formRef={register} type="password" label="Password" name="password" required={true} minLength={8} />
+                    <InputElement formRef={register} type="password" label="Confirm Password" name="confirmPassword" required={true} minLength={8} />
+                    <div className="formSubmission">
+                        <FormButton label="Register" isLoading={formSubmitting} color="green" size="large" />
+                        <span className="errorMsg">{formErrorMsg}</span>
+                    </div>
+                </form>
+            </div>
         </ReactModal>
     );
 }

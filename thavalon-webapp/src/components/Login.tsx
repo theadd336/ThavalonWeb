@@ -20,8 +20,8 @@ export function Login(props: LoginProps) {
     // if set, register modal is open
     const [modalIsOpen, setModalIsOpen] = useState(true);
     // hook for register form
-    const {register, handleSubmit, errors} = useForm<LoginData>();
-    // state for setting if register button is disabled
+    const {register, handleSubmit} = useForm<LoginData>();
+    // state for setting if form is being submitted or not
     const [formSubmitting, setFormSubmitting] = useState(false);
     // state for setting register error
     const [formErrorMsg, setFormErrorMsg] = useState("");
