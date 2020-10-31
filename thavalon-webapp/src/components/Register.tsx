@@ -1,12 +1,11 @@
 import React, {useState} from 'react';
 import ReactModal from 'react-modal';
 import { DeepMap, FieldError, Resolver, useForm } from 'react-hook-form';
-import "./Modal.scss";
-import "./Register.scss";
 import { AccountManager, HttpResponse } from '../utils/AccountManager';
 import { Redirect } from 'react-router-dom';
-import { InputElement } from './InputElement';
-import { FormButton } from './formButton';
+import { InputElement } from './formComponents/InputElement';
+import { FormButton } from './formComponents/formButton';
+import "../styles/Modal.scss";
 
 interface RegisterProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
@@ -35,7 +34,7 @@ export function Register(props: RegisterProps) {
     // if set, register modal is open
     const [modalIsOpen, setModalIsOpen] = useState(true);
     // hook for register form
-    const {register, handleSubmit, errors} = useForm<RegisterData, Event>({
+    const {register, handleSubmit} = useForm<RegisterData, Event>({
         resolver: registerResolver
     });
     // state for setting if form is being submitted or not

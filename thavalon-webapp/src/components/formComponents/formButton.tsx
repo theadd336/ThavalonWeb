@@ -2,7 +2,7 @@
 // submitting forms that might require loading.
 
 import React, { useState } from 'react';
-import './formButton.scss';
+import '../../styles/formStyles/formButton.scss';
 
 /**
  * Properties for the form button.

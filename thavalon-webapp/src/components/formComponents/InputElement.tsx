@@ -1,6 +1,5 @@
 import React from 'react';
-import { propTypes } from 'react-bootstrap/esm/Image';
-import "./InputElement.scss";
+import "../../styles/formStyles/InputElement.scss";
 
 export interface InputElementProps {
     "type": string,

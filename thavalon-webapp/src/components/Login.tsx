@@ -3,9 +3,9 @@ import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
 import { Link, Redirect } from 'react-router-dom';
 import { AccountManager } from '../utils/AccountManager';
-import "./Login.scss";
-import { InputElement } from './InputElement';
-import { FormButton } from './formButton';
+import { InputElement } from './formComponents/InputElement';
+import { FormButton } from './formComponents/formButton';
+import "../styles/Modal.scss";
 
 interface LoginProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>

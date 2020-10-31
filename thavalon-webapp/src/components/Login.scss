@@ -1,9 +1,0 @@
-@import "./Modal.scss"; 
-
-.Modal {
-    width: 30rem;
-
-    @media only screen and (max-width: 600px) {
-        width: 50vw;
-    }
-}
