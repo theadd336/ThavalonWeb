@@ -16,7 +16,7 @@ export interface InputElementProps {
  */
 export function InputElement(props: InputElementProps) {
     const inputElement = React.useRef<HTMLInputElement>(null);
-    const [inputClassName, setinputClassName] = React.useState("noContent");
+    const [inputClassName, setInputClassName] = React.useState("noContent");
 
     /**
      * Set the input element's class. Needed for scss selectors, because there's no way in css for determining
@@ -34,9 +34,9 @@ export function InputElement(props: InputElementProps) {
         }
 
         if (input.value === "") {
-            setinputClassName("noContent");
+            setInputClassName("noContent");
         } else {
-            setinputClassName("content");
+            setInputClassName("content");
         }
     }
 
