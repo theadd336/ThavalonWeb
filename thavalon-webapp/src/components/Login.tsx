@@ -5,6 +5,7 @@ import { Link, Redirect } from 'react-router-dom';
 import { AccountManager } from '../utils/AccountManager';
 import "./Login.scss";
 import { InputElement } from './InputElement';
+import { FormButton } from './formButton';
 
 interface LoginProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
@@ -21,7 +22,7 @@ export function Login(props: LoginProps) {
     // hook for register form
     const {register, handleSubmit, errors} = useForm<LoginData>();
     // state for setting if register button is disabled
-    const [disable, setDisabled] = useState(false);
+    const [formSubmitting, setFormSubmitting] = useState(false);
     // state for setting register error
     const [formErrorMsg, setFormErrorMsg] = useState("");
     // state for redirecting to home on successful login
@@ -41,8 +42,8 @@ export function Login(props: LoginProps) {
      * @param event The event caused by submission.
      */
     async function OnSubmit(data: LoginData) {
-        setDisabled(true);
-
+        console.log(data);
+        setFormSubmitting(true);
         const accountManager = AccountManager.getInstance();
         let httpResponse = await accountManager.loginUser(data.email, data.password);
 
@@ -53,7 +54,7 @@ export function Login(props: LoginProps) {
             setRedirectToHome(true);
         } else {
             setFormErrorMsg(httpResponse.message);
-            setDisabled(false);
+            setFormSubmitting(false);
         }
     }
 
@@ -75,13 +76,12 @@ export function Login(props: LoginProps) {
                 <h2 className="modalHeader">Log In</h2>
                 <hr />
                 <form onSubmit={handleSubmit(OnSubmit)}>
-                    <InputElement type="email" label="Email Address" required={true} minLength={0} />
-                    <InputElement type="password" label="Password" required={true} minLength={8} />
+                    <InputElement formRef={register} type="email" label="Email Address" name="email" required={true} minLength={0} />
+                    <InputElement formRef={register} type="password" label="Password" name="password" required={true} minLength={8} />
                     <div className="formSubmission">
-                        <input type="submit" disabled={disable} value="Log In" />
-                        <span className="errorMsg">{formErrorMsg}</span>
-                        <br />
-                        <Link to="/register" className="formLink">Create Account?</Link>
+                        <FormButton label="Log In" isLoading={formSubmitting} color="green" size="large" />
+                        <div className="errorMsg">{formErrorMsg}</div>
+                        <Link to="/register" className="formLink">Create Account</Link>
                     </div>
                 </form>
             </div>

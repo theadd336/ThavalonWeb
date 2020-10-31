@@ -1,11 +1,14 @@
 import React from 'react';
+import { propTypes } from 'react-bootstrap/esm/Image';
 import "./InputElement.scss";
 
 export interface InputElementProps {
     "type": string,
     "label": string,
+    "name": string,
     "required": boolean,
     "minLength": number,
+    "formRef": any, // not fully clear what the type of register from react-hook-form is
 }
 
 /**
@@ -40,7 +43,7 @@ export function InputElement(props: InputElementProps) {
 
     return (
         <>
-            <input type={props.type} required={props.required} onChange={setLabelElementClass} className={inputClassName} ref={inputElement} minLength={props.minLength} />
+            <input ref={props.formRef} type={props.type} required={props.required} onChange={setLabelElementClass} name={props.name} className={inputClassName} minLength={props.minLength} />
             <label placeholder={props.label} />
         </>
     );
