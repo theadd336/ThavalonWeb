@@ -87,11 +87,11 @@ pub async fn serve_connections() {
         .and(with_game_collection(game_collection.clone()))
         .and_then(game_handlers::create_game);
 
-    let join_game_route = warp::path!("join" / "game")
-        .and(body::json())
-        .and(authorize_request(&token_manager))
-        .and(with_game_collection(game_collection.clone()))
-        .and_then(game_handlers::join_game);
+    // let join_game_route = warp::path!("join" / "game")
+    //     .and(body::json())
+    //     .and(authorize_request(&token_manager))
+    //     .and(with_game_collection(game_collection.clone()))
+    //     .and_then(game_handlers::join_game);
 
     // Putting everything together
     let get_routes = warp::get().and(path_test.or(restricted_path_test).or(get_user_info_route));
