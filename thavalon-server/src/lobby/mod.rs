@@ -1,6 +1,7 @@
 use crate::database::games::{DBGameError, DBGameStatus, DatabaseGame};
 use crate::game::{builder::GameBuilder, Action, Message};
 
+use futures::{FutureExt, SinkExt, StreamExt};
 use thiserror::Error;
 use tokio::{
     sync::{
@@ -9,8 +10,10 @@ use tokio::{
     },
     task,
 };
+use warp::filters::ws::WebSocket;
 
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 pub type ResponseChannel = oneshot::Sender<LobbyResponse>;
 
@@ -29,22 +32,27 @@ pub enum LobbyCommand {
         player_id: String,
         display_name: String,
     },
-    UpdatePlayerConnection {
+    GetFriendCode,
+    IsPlayerRegistered {
         player_id: String,
     },
-    GetFriendCode,
+    ConnectClientChannels {
+        player_id: String,
+        ws: WebSocket,
+    },
 }
 
 #[derive(Debug)]
 pub enum LobbyResponse {
     Standard(Result<(), LobbyError>),
     FriendCode(String),
+    IsPlayerRegistered(bool),
 }
 
+#[derive(Debug)]
 pub struct PlayerClient {
-    to_client: Option<mpsc::UnboundedSender<Result<String, warp::Error>>>,
     to_game: Sender<Action>,
-    from_game: Receiver<Message>,
+    from_game: Arc<Mutex<Receiver<Message>>>,
 }
 
 pub struct Lobby {
@@ -101,9 +109,8 @@ impl Lobby {
         }
         let (sender, receiver) = self.builder.as_mut().unwrap().add_player(display_name);
         let client = PlayerClient {
-            to_client: None,
             to_game: sender,
-            from_game: receiver,
+            from_game: Arc::new(Mutex::new(receiver)),
         };
 
         self.players.insert(player_id.clone(), client);
@@ -112,6 +119,31 @@ impl Lobby {
             player_id,
             self.friend_code
         );
+        LobbyResponse::Standard(Ok(()))
+    }
+
+    pub async fn update_player_connections(
+        &mut self,
+        player_id: String,
+        ws: WebSocket,
+    ) -> LobbyResponse {
+        let client = self.players.get(&player_id).unwrap();
+        let (to_player_client, from_player_client) = ws.split();
+        let to_game = client.to_game.clone();
+        let from_game = client.from_game.clone();
+        tokio::task::spawn(async move {
+            from_player_client.forward(to_game);
+        });
+
+        tokio::task::spawn(async move {
+            while let Some(msg) = from_game.lock().unwrap().recv().await {
+                if let Err(e) = to_player_client.send(msg).await {
+                    log::warn!("Connection lost. {}", e);
+                    break;
+                }
+            }
+        });
+
         LobbyResponse::Standard(Ok(()))
     }
 
@@ -125,7 +157,12 @@ impl Lobby {
                 } => self.add_player(player_id, display_name).await,
 
                 LobbyCommand::GetFriendCode => self.get_friend_code(),
-                LobbyCommand::UpdatePlayerConnection { player_id } => self.get_friend_code(),
+                LobbyCommand::IsPlayerRegistered { player_id } => {
+                    LobbyResponse::IsPlayerRegistered(self.players.contains_key(&player_id))
+                }
+                LobbyCommand::ConnectClientChannels { player_id, ws } => {
+                    self.update_player_connections(player_id, ws).await
+                }
             };
 
             result_channel

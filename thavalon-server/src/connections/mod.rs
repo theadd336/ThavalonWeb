@@ -81,17 +81,23 @@ pub async fn serve_connections() {
         .and_then(account_handlers::verify_account);
 
     // Game routes
-
     let create_game_route = warp::path!("add" / "game")
         .and(authorize_request(&token_manager))
         .and(with_game_collection(game_collection.clone()))
         .and_then(game_handlers::create_game);
 
-    // let join_game_route = warp::path!("join" / "game")
-    //     .and(body::json())
-    //     .and(authorize_request(&token_manager))
-    //     .and(with_game_collection(game_collection.clone()))
-    //     .and_then(game_handlers::join_game);
+    let join_game_route = warp::path!("join" / "game")
+        .and(body::json())
+        .and(authorize_request(&token_manager))
+        .and(with_game_collection(game_collection.clone()))
+        .and_then(game_handlers::join_game);
+
+    let ws_route = warp::path("ws")
+        .and(warp::ws())
+        .and(warp::path::param())
+        .and(authorize_request(&token_manager))
+        .and(with_game_collection(game_collection.clone()))
+        .and_then(game_handlers::connect_ws);
 
     // Putting everything together
     let get_routes = warp::get().and(path_test.or(restricted_path_test).or(get_user_info_route));
@@ -100,7 +106,8 @@ pub async fn serve_connections() {
             .or(login_route)
             .or(refresh_jwt_route)
             .or(logout_route)
-            .or(create_game_route),
+            .or(create_game_route)
+            .or(join_game_route),
     );
     let delete_routes = warp::delete().and(delete_user_route);
     let put_routes = warp::put().and(update_user_route.or(verify_account_route));

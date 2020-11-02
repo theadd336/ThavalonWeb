@@ -2,10 +2,15 @@ use crate::database::{accounts, games::DatabaseGame};
 use crate::lobby::{Lobby, LobbyCommand, LobbyError, LobbyResponse};
 
 use serde::{Deserialize, Serialize};
-use tokio::sync::{mpsc::Sender, oneshot};
+use tokio::sync::{
+    mpsc::{self, Sender},
+    oneshot,
+};
 use warp::{
     reject::{self, Reject},
-    reply, Rejection, Reply,
+    reply,
+    ws::{WebSocket, Ws},
+    Rejection, Reply,
 };
 
 use std::collections::HashMap;
@@ -125,6 +130,75 @@ pub async fn join_game(
     let socket_url = String::from("ws://localhost:8001/ws/") + &info.friend_code;
     let response = JoinGameResponse { socket_url };
     Ok(reply::json(&response))
+}
+
+pub async fn connect_ws(
+    ws: Ws,
+    friend_code: String,
+    player_id: String,
+    game_collection: GameCollection,
+) -> Result<impl Reply, Rejection> {
+    let mut lobby_channel = match game_collection.lock().unwrap().get(&player_id) {
+        Some(channel) => channel.clone(),
+        None => {
+            log::error!("Attempted to connect to a non-existent game.");
+            return Err(warp::reject());
+        }
+    };
+
+    let (oneshot_tx, oneshot_rx) = oneshot::channel();
+    lobby_channel
+        .send((
+            LobbyCommand::IsPlayerRegistered {
+                player_id: player_id.clone(),
+            },
+            oneshot_tx,
+        ))
+        .await;
+
+    match oneshot_rx.await.unwrap() {
+        LobbyResponse::IsPlayerRegistered(is_registered) => {
+            if !is_registered {
+                log::error!("This player is not registered for the game.");
+                return Err(warp::reject());
+            }
+        }
+        _ => {
+            log::error!("Did not receive the expected lobby response.");
+            return Err(warp::reject());
+        }
+    };
+
+    Ok(ws.on_upgrade(move |socket| client_connection(socket, player_id, lobby_channel)))
+}
+
+async fn client_connection(
+    socket: WebSocket,
+    player_id: String,
+    mut lobby_channel: Sender<(LobbyCommand, oneshot::Sender<LobbyResponse>)>,
+) {
+    let (oneshot_tx, oneshot_rx) = oneshot::channel();
+    lobby_channel
+        .send((
+            LobbyCommand::ConnectClientChannels {
+                player_id,
+                ws: socket,
+            },
+            oneshot_tx,
+        ))
+        .await;
+
+    match oneshot_rx.await.unwrap() {
+        LobbyResponse::Standard(result) => {
+            if let Err(e) = result {
+                log::error!("Error while updating player channels. {}", e);
+                return;
+            }
+        }
+        _ => {
+            log::error!("Error while updating player channels.");
+        }
+    }
 }
 
 // /// Helper function to check if a player's email is verified or not.
