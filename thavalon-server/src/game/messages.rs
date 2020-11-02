@@ -78,9 +78,6 @@ pub enum VoteCounts {
 
 #[derive(Error, Debug)]
 pub enum GameError {
-    #[error("Can't reach player '{}'", name)]
-    PlayerUnavailable { name: String },
-
-    #[error("All players have disconnected")]
-    AllDisconnected,
+    #[error("Could not communicate with player")]
+    PlayerDisconnected,
 }

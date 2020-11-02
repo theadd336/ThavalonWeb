@@ -202,15 +202,15 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         while votes.len() != self.game.size() {
             self.interactions
                 .receive(|player, action| match action {
-                    Action::Vote { upvote } => match votes.entry(player.to_string()) {
+                    Action::Vote { upvote } => match votes.entry(player) {
                         Entry::Occupied(_) => Err("You already voted".to_string()),
                         Entry::Vacant(entry) => {
-                            entry.insert(upvote);
                             log::debug!(
                                 "{} {}",
-                                player,
+                                entry.key(),
                                 if upvote { "upvoted" } else { "downvoted" }
                             );
+                            entry.insert(upvote);
                             Ok(())
                         }
                     },
@@ -223,8 +223,8 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         self.interactions
             .send(Message::VotingResults {
                 counts: VoteCounts::Public {
-                    upvotes: results.upvotes().map(|s| s.to_string()).collect(),
-                    downvotes: results.downvotes().map(|s| s.to_string()).collect(),
+                    upvotes: results.upvotes().map(|s| s.to_owned()).collect(),
+                    downvotes: results.downvotes().map(|s| s.to_owned()).collect(),
                 },
                 sent: results.sent,
             })
@@ -248,17 +248,17 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         while cards.len() != proposal.players.len() {
             self.interactions
                 .receive(|player, action| {
-                    if proposal.players.contains(player) {
+                    if proposal.players.contains(&player) {
                         match action {
-                            Action::Play { card } => match cards.entry(player.to_string()) {
+                            Action::Play { card } => match cards.entry(player) {
                                 Entry::Occupied(entry) => {
                                     Err(format!("You already played a {}", entry.get()))
                                 }
                                 Entry::Vacant(entry) => {
-                                    let role = game.players.by_name(player).unwrap().role;
+                                    let role = game.players.by_name(entry.key()).unwrap().role;
                                     if role.can_play(card) {
+                                        log::debug!("{} played a {}", entry.key(), card);
                                         entry.insert(card);
-                                        log::debug!("{} played a {}", player, card);
                                         Ok(())
                                     } else {
                                         Err(format!("You can't play a {}", card))
@@ -311,7 +311,11 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
             let agravaine_declared = match time::timeout(
                 DECLARE_DELAY,
                 self.interactions.receive(|player, action| {
-                    let role = game.players.by_name(player).unwrap().role;
+                    if !proposal.players.contains(&player) {
+                        return Err("You can't do that right now".to_string());
+                    }
+
+                    let role = game.players.by_name(&player).unwrap().role;
                     match action {
                         Action::Declare if role == Role::Agravaine => Ok(true),
                         _ => Err("You can't do that right now".to_string()),

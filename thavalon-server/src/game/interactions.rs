@@ -24,7 +24,7 @@ pub trait Interactions {
     async fn receive<F, R>(&mut self, mut f: F) -> Result<R, GameError>
     where
         R: Send,
-        F: FnMut(&str, Action) -> Result<R, String> + Send;
+        F: FnMut(String, Action) -> Result<R, String> + Send;
 }
 
 /// An Interactions that uses per-player MPSC channels
@@ -60,14 +60,14 @@ impl Interactions for ChannelInteractions {
             .unwrap()
             .send(message)
             .await
-            .map_err(|_| GameError::PlayerUnavailable { name: player.to_string() })
+            .map_err(|_| GameError::PlayerDisconnected)
     }
 
     async fn send(&mut self, message: Message) -> Result<(), GameError> {
         let sends = self.outbox.iter_mut().map(|(name, sender)| {
             sender
                 .send(message.clone())
-                .map_err(move |_| GameError::PlayerUnavailable { name: name.clone() })
+                .map_err(move |_| GameError::PlayerDisconnected)
         });
         future::join_all(sends).await.into_iter().collect()
     }
@@ -75,15 +75,18 @@ impl Interactions for ChannelInteractions {
     async fn receive<F, R>(&mut self, mut f: F) -> Result<R, GameError>
     where
         R: Send,
-        F: FnMut(&str, Action) -> Result<R, String> + Send,
+        F: FnMut(String, Action) -> Result<R, String> + Send,
     {
         loop {
             match self.inbox.next().await {
-                Some((player, action)) => match f(&player, action) {
-                    Ok(result) => return Ok(result),
-                    Err(msg) => self.send_to(&player, Message::Error(msg)).await?,
+                Some((player, action)) => {
+                    let out = self.outbox.get_mut(&player).unwrap();
+                    match f(player, action) {
+                        Ok(result) => return Ok(result),
+                        Err(msg) => out.send(Message::Error(msg)).map_err(|_| GameError::PlayerDisconnected).await?
+                    }
                 },
-                None => return Err(GameError::AllDisconnected),
+                None => return Err(GameError::PlayerDisconnected),
             }
         }
     }
@@ -158,15 +161,15 @@ pub(super) mod test {
         async fn receive<F, R>(&mut self, mut f: F) -> Result<R, GameError>
         where
             R: Send,
-            F: FnMut(&str, Action) -> Result<R, String> + Send,
+            F: FnMut(String, Action) -> Result<R, String> + Send,
         {
             loop {
                 match self.actions.pop_front() {
-                    Some((player, action)) => match f(&player, action) {
+                    Some((player, action)) => match f(player.clone(), action) {
                         Ok(result) => return Ok(result),
                         Err(msg) => self.messages.push((player, Message::Error(msg))),
                     },
-                    None => return Err(GameError::AllDisconnected),
+                    None => return Err(GameError::PlayerDisconnected),
                 }
             }
         }
