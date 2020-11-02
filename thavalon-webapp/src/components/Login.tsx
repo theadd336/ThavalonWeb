@@ -60,6 +60,7 @@ export function Login(props: LoginProps) {
     }
 
     // log in without throwing a warning by using useEffect
+
     return (
         <ReactModal
             isOpen={modalIsOpen}
@@ -74,10 +75,12 @@ export function Login(props: LoginProps) {
                     type="email"
                     placeholder="Email"
                     name="email"
-                    ref={register({required: true, maxLength: 80, pattern: {
-                        value: /^\S+@\S+\.\S+$/i,
-                        message: "Invalid email address."
-                    }})} />
+                    ref={register({
+                        required: true, maxLength: 80, pattern: {
+                            value: /^\S+@\S+\.\S+$/i,
+                            message: "Invalid email address."
+                        }
+                    })} />
                 {errors.email && <span className="errorMsg">{errors.email.message}</span>}
                 <br />
                 <input
