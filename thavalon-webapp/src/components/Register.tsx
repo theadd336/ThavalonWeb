@@ -30,7 +30,7 @@ const registerResolver: Resolver<RegisterData> = async (values: RegisterData) =>
         }
     }
 
-export function Register(props: RegisterProps) {
+export function Register(props: RegisterProps): JSX.Element {
     // if set, register modal is open
     const [modalIsOpen, setModalIsOpen] = useState(true);
     // hook for register form
@@ -71,7 +71,6 @@ export function Register(props: RegisterProps) {
      */
     async function onSubmit(data: RegisterData) {
         // disable button on start of submit
-        console.log("onSubmit");
         setFormSubmitting(true);
         setFormErrorMsg("");
 

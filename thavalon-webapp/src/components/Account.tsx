@@ -1,6 +1,6 @@
 import React, { ChangeEvent } from 'react';
 
-export function Account() {
+export function Account(): JSX.Element {
     const profileImage = React.useRef<HTMLImageElement>(null);
     function handleImageUpload(event: ChangeEvent<HTMLInputElement>): void {
         // get the chosen file. There should be only 1 because multiple choices disabled.

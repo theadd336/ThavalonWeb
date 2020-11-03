@@ -1,4 +1,5 @@
 import React from 'react';
+import { JsxElement } from 'typescript';
 import "../../styles/formStyles/InputElement.scss";
 
 export interface InputElementProps {
@@ -14,7 +15,7 @@ export interface InputElementProps {
  * A input component, with appropriate styling.
  * @param props The props for the input element.
  */
-export function InputElement(props: InputElementProps) {
+export function InputElement(props: InputElementProps): JSX.Element {
     const inputElement = React.useRef<HTMLInputElement>(null);
     const [inputClassName, setInputClassName] = React.useState("noContent");
 
@@ -24,16 +25,7 @@ export function InputElement(props: InputElementProps) {
      * content.
      */
     function setLabelElementClass(): void {
-        if (inputElement === null) {
-            return;
-        }
-
-        const input = inputElement.current;
-        if (input === null) {
-            return;
-        }
-
-        if (input.value === "") {
+        if (inputElement?.current?.value === "") {
             setInputClassName("noContent");
         } else {
             setInputClassName("content");

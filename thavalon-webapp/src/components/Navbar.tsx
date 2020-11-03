@@ -10,7 +10,7 @@ interface NavbarProps {
     setUseMobileMenu: React.Dispatch<React.SetStateAction<boolean>>
 };
 
-export function Navbar(props: NavbarProps) {
+export function Navbar(props: NavbarProps): JSX.Element {
     // handle mobile menu functionality
     let topnavClasses: string = "topnav"
     if (props.useMobileMenu) {

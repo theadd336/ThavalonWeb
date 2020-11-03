@@ -16,7 +16,7 @@ interface LoginData {
     "password": string
 };
 
-export function Login(props: LoginProps) {
+export function Login(props: LoginProps): JSX.Element {
     // if set, register modal is open
     const [modalIsOpen, setModalIsOpen] = useState(true);
     // hook for register form
