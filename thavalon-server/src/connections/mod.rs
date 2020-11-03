@@ -100,7 +100,12 @@ pub async fn serve_connections() {
         .and_then(game_handlers::connect_ws);
 
     // Putting everything together
-    let get_routes = warp::get().and(path_test.or(restricted_path_test).or(get_user_info_route));
+    let get_routes = warp::get().and(
+        path_test
+            .or(restricted_path_test)
+            .or(get_user_info_route)
+            .or(ws_route),
+    );
     let post_routes = warp::post().and(
         add_user_route
             .or(login_route)

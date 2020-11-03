@@ -1,7 +1,7 @@
 //! Game collection related functions and structs
 use crate::database::get_database;
 
-use std::collections::HashSet;
+use std::{collections::HashSet, iter};
 
 use async_trait::async_trait;
 use chrono::Utc;
@@ -14,6 +14,7 @@ use mongodb::{
     results::{InsertOneResult, UpdateResult},
     Collection,
 };
+use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -97,8 +98,18 @@ impl DatabaseGame {
             }
         };
 
+        let friend_code;
+        {
+            let mut rng = rand::thread_rng();
+            friend_code = iter::repeat(())
+                .map(|()| rng.sample(Alphanumeric))
+                .take(4)
+                .collect::<String>()
+                .to_uppercase();
+        }
+
         let game = DatabaseGame {
-            friend_code: String::from(&_id.to_hex()[..FRIEND_CODE_LENGTH + 1]).to_uppercase(),
+            friend_code,
             _id,
             players: HashSet::with_capacity(10),
             display_names: HashSet::with_capacity(10),

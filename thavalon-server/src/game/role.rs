@@ -1,11 +1,12 @@
 use std::fmt::{self, Write};
 
 use rand::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use super::{Card, PlayerId, Players};
 
 /// A THavalon role
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize)]
 pub enum Role {
     Merlin,
     Lancelot,
@@ -19,7 +20,7 @@ pub enum Role {
     Agravaine,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize)]
 pub enum Team {
     Good,
     /// "Misunderstood"
@@ -27,7 +28,7 @@ pub enum Team {
 }
 
 /// Information a player receives based on their role.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 pub struct RoleDetails {
     /// The team the player is on.
     team: Team,

@@ -127,7 +127,7 @@ pub async fn join_game(
         }
     }
 
-    let socket_url = String::from("ws://localhost:8001/ws/") + &info.friend_code;
+    let socket_url = String::from("ws://localhost:8001/api/ws/") + &info.friend_code;
     let response = JoinGameResponse { socket_url };
     Ok(reply::json(&response))
 }
@@ -138,7 +138,7 @@ pub async fn connect_ws(
     player_id: String,
     game_collection: GameCollection,
 ) -> Result<impl Reply, Rejection> {
-    let mut lobby_channel = match game_collection.lock().unwrap().get(&player_id) {
+    let mut lobby_channel = match game_collection.lock().unwrap().get(&friend_code) {
         Some(channel) => channel.clone(),
         None => {
             log::error!("Attempted to connect to a non-existent game.");

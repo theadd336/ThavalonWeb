@@ -6,14 +6,14 @@ use thiserror::Error;
 use tokio::{
     sync::{
         mpsc::{self, Receiver, Sender},
-        oneshot,
+        oneshot, Mutex,
     },
     task,
 };
-use warp::filters::ws::WebSocket;
+use warp::filters::ws::{self, WebSocket};
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 pub type ResponseChannel = oneshot::Sender<LobbyResponse>;
 
@@ -128,15 +128,21 @@ impl Lobby {
         ws: WebSocket,
     ) -> LobbyResponse {
         let client = self.players.get(&player_id).unwrap();
-        let (to_player_client, from_player_client) = ws.split();
-        let to_game = client.to_game.clone();
+        let (mut to_player_client, mut from_player_client) = ws.split();
+        let mut to_game = client.to_game.clone();
         let from_game = client.from_game.clone();
         tokio::task::spawn(async move {
-            from_player_client.forward(to_game);
+            while let Some(msg) = from_player_client.next().await {
+                let msg = msg.unwrap();
+                let action: Action = serde_json::from_str(msg.to_str().unwrap()).unwrap();
+                to_game.send(action).await;
+            }
         });
 
         tokio::task::spawn(async move {
-            while let Some(msg) = from_game.lock().unwrap().recv().await {
+            while let Some(msg) = from_game.lock().await.recv().await {
+                let msg = serde_json::to_string(&msg).expect("Could not serialize game message.");
+                let msg = ws::Message::text(msg);
                 if let Err(e) = to_player_client.send(msg).await {
                     log::warn!("Connection lost. {}", e);
                     break;

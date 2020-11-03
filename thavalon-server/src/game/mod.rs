@@ -5,6 +5,7 @@ use std::fmt;
 use std::ops::Index;
 
 use rand::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub mod builder;
 mod engine;
@@ -57,7 +58,7 @@ pub struct Players {
     evil_players: Vec<PlayerId>,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Card {
     Success,
     Fail,
