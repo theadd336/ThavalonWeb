@@ -4,15 +4,15 @@ use std::collections::HashSet;
 
 use thiserror::Error;
 
+use super::{Card, MissionNumber, ProposalNumber};
 use super::role::RoleDetails;
-use super::{Card, MissionNumber, PlayerId, ProposalNumber};
 
 // Game-related messages
 
 /// Something the player tries to do
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Action {
-    Propose { players: HashSet<PlayerId> },
+    Propose { players: HashSet<String> },
     Vote { upvote: bool },
     Play { card: Card },
     QuestingBeast,
@@ -30,17 +30,17 @@ pub enum Message {
 
     /// Announces that a new player is proposing
     NextProposal {
-        proposer: PlayerId,
+        proposer: String,
         mission: MissionNumber,
         proposal: ProposalNumber,
     },
 
     /// Announces that a player made a proposal
     ProposalMade {
-        proposer: PlayerId,
+        proposer: String,
         mission: MissionNumber,
         proposal: ProposalNumber,
-        players: HashSet<PlayerId>,
+        players: HashSet<String>,
     },
 
     /// Announces that players should submit votes for the latest proposal.
@@ -67,8 +67,8 @@ pub enum Message {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum VoteCounts {
     Public {
-        upvotes: HashSet<PlayerId>,
-        downvotes: HashSet<PlayerId>,
+        upvotes: HashSet<String>,
+        downvotes: HashSet<String>,
     },
     Obscured {
         upvotes: u32,
@@ -78,9 +78,6 @@ pub enum VoteCounts {
 
 #[derive(Error, Debug)]
 pub enum GameError {
-    #[error("Can't reach player {}", id)]
-    PlayerUnavailable { id: PlayerId },
-
-    #[error("All players have disconnected")]
-    AllDisconnected,
+    #[error("Could not communicate with player")]
+    PlayerDisconnected,
 }

@@ -12,7 +12,7 @@ use tokio::time::{self, Duration};
 use super::interactions::Interactions;
 use super::messages::{Action, GameError, Message, VoteCounts};
 use super::role::Role;
-use super::{Card, Game, GameSpec, MissionNumber, PlayerId};
+use super::{Card, Game, GameSpec, MissionNumber};
 
 /// Amount of time to wait for a declaration, for declarations that have to happen within a certain timeframe.
 const DECLARE_DELAY: Duration = Duration::from_secs(30);
@@ -24,21 +24,21 @@ struct GameEngine<'a, I: Interactions> {
 
     /// Infinite iterator over proposal order for the game. It's... a little unfortunate we can't (yet) use impl Trait here, but if
     /// it gets hairy enough, we can always box the iterator.
-    proposers: iter::Skip<iter::Cycle<iter::Cloned<slice::Iter<'a, usize>>>>,
+    proposers: iter::Skip<iter::Cycle<iter::Cloned<slice::Iter<'a, String>>>>,
 }
 
 /// A proposal
 #[derive(Debug)]
 struct Proposal<'a> {
     game: &'a Game,
-    proposer: PlayerId,
-    players: HashSet<PlayerId>,
+    proposer: String,
+    players: HashSet<String>,
 }
 
 /// The results of a vote
 struct VotingResults {
     /// How each player voted
-    votes: HashMap<PlayerId, bool>,
+    votes: HashMap<String, bool>,
     /// Whether or not the mission was sent. A mission is sent if there are strictly more upvotes than downvotes. Ties are not sent.
     sent: bool,
 }
@@ -50,9 +50,9 @@ pub async fn run_game<I: Interactions>(game: &Game, interactions: &mut I) -> Res
     for player in ge.game.players.iter() {
         ge.interactions
             .send_to(
-                player.id,
+                &player.name,
                 Message::RoleInformation {
-                    details: game.info[&player.id].clone(),
+                    details: game.info[&player.name].clone(),
                 },
             )
             .await?;
@@ -62,8 +62,8 @@ pub async fn run_game<I: Interactions>(game: &Game, interactions: &mut I) -> Res
     let second_proposer = ge.proposers.next().unwrap();
     log::debug!(
         "{} and {} are proposing mission 1",
-        game.name(first_proposer),
-        game.name(second_proposer)
+        first_proposer,
+        second_proposer
     );
 
     let first_proposal = ge.get_proposal(first_proposer, 1, 1).await?;
@@ -136,19 +136,19 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
     /// Obtain a valid proposal from the proposing player. This will continue asking them until they make a valid proposal.
     async fn get_proposal(
         &mut self,
-        from: PlayerId,
+        from: String,
         mission: u8,
         proposal: u8,
     ) -> Result<Proposal<'a>, GameError> {
         log::debug!(
             "Getting a proposal from {} for mission {}, proposal {}",
-            self.game.name(from),
+            from,
             mission,
             proposal
         );
         self.interactions
             .send(Message::NextProposal {
-                proposer: from,
+                proposer: from.clone(),
                 mission,
                 proposal,
             })
@@ -174,7 +174,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
 
         self.interactions
             .send(Message::ProposalMade {
-                proposer: from,
+                proposer: from.clone(),
                 players: players.clone(),
                 mission,
                 proposal,
@@ -205,12 +205,12 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
                     Action::Vote { upvote } => match votes.entry(player) {
                         Entry::Occupied(_) => Err("You already voted".to_string()),
                         Entry::Vacant(entry) => {
-                            entry.insert(upvote);
                             log::debug!(
                                 "{} {}",
-                                game.name(player),
+                                entry.key(),
                                 if upvote { "upvoted" } else { "downvoted" }
                             );
+                            entry.insert(upvote);
                             Ok(())
                         }
                     },
@@ -223,8 +223,8 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         self.interactions
             .send(Message::VotingResults {
                 counts: VoteCounts::Public {
-                    upvotes: results.upvotes().collect(),
-                    downvotes: results.downvotes().collect(),
+                    upvotes: results.upvotes().map(|s| s.to_owned()).collect(),
+                    downvotes: results.downvotes().map(|s| s.to_owned()).collect(),
                 },
                 sent: results.sent,
             })
@@ -255,10 +255,10 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
                                     Err(format!("You already played a {}", entry.get()))
                                 }
                                 Entry::Vacant(entry) => {
-                                    let role = game.players[player].role;
+                                    let role = game.players.by_name(entry.key()).unwrap().role;
                                     if role.can_play(card) {
+                                        log::debug!("{} played a {}", entry.key(), card);
                                         entry.insert(card);
-                                        log::debug!("{} played a {}", game.name(player), card);
                                         Ok(())
                                     } else {
                                         Err(format!("You can't play a {}", card))
@@ -267,7 +267,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
                             },
                             Action::QuestingBeast => {
                                 questing_beasts += 1;
-                                log::debug!("{} sent the Questing Beast", game.name(player));
+                                log::debug!("{} sent the Questing Beast", player);
                                 Ok(())
                             }
                             // TODO: fun on-mission actions
@@ -311,7 +311,11 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
             let agravaine_declared = match time::timeout(
                 DECLARE_DELAY,
                 self.interactions.receive(|player, action| {
-                    let role = game.players[player].role;
+                    if !proposal.players.contains(&player) {
+                        return Err("You can't do that right now".to_string());
+                    }
+
+                    let role = game.players.by_name(&player).unwrap().role;
                     match action {
                         Action::Declare if role == Role::Agravaine => Ok(true),
                         _ => Err("You can't do that right now".to_string()),
@@ -371,7 +375,7 @@ fn is_failure<'a, I: IntoIterator<Item = &'a Card>>(
 }
 
 impl VotingResults {
-    fn new(votes: HashMap<PlayerId, bool>) -> VotingResults {
+    fn new(votes: HashMap<String, bool>) -> VotingResults {
         let mut net = 0; // Will be above 0 if there are more upvotes than downvotes
         for vote in votes.values() {
             if *vote {
@@ -388,17 +392,17 @@ impl VotingResults {
     }
 
     /// Players who upvoted the proposal
-    fn upvotes<'a>(&'a self) -> impl Iterator<Item = PlayerId> + 'a {
+    fn upvotes<'a>(&'a self) -> impl Iterator<Item = &'a str> + 'a {
         self.votes
             .iter()
-            .filter_map(|(player, vote)| if *vote { Some(*player) } else { None })
+            .filter_map(|(player, vote)| if *vote { Some(player.as_ref()) } else { None })
     }
 
     /// Players who downvoted the proposal
-    fn downvotes<'a>(&'a self) -> impl Iterator<Item = PlayerId> + 'a {
+    fn downvotes<'a>(&'a self) -> impl Iterator<Item = &'a str> + 'a {
         self.votes
             .iter()
-            .filter_map(|(player, vote)| if !*vote { Some(*player) } else { None })
+            .filter_map(|(player, vote)| if !*vote { Some(player.as_ref()) } else { None })
     }
 }
 
@@ -406,9 +410,9 @@ impl<'a> fmt::Display for Proposal<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.players
             .iter()
-            .format_with(", ", |id, f| f(&self.game.name(*id)))
+            .format_with(", ", |name, f| f(name))
             .fmt(f)?;
-        write!(f, " (proposed by {})", self.game.name(self.proposer))
+        write!(f, " (proposed by {})", self.proposer)
     }
 }
 
@@ -421,51 +425,30 @@ mod test {
     use super::super::interactions::test::TestInteractions;
     use super::super::messages::{Action, Message};
     use super::super::role::Role;
-    use super::super::{Player, Players};
+    use super::super::Players;
     use super::*;
 
     fn make_game() -> Game {
         let mut players = Players::new();
-        players.add_player(Player {
-            id: 1,
-            role: Role::Merlin,
-            name: "Player 1".to_string(),
-        });
-        players.add_player(Player {
-            id: 2,
-            role: Role::Lancelot,
-            name: "Player 2".to_string(),
-        });
-        players.add_player(Player {
-            id: 3,
-            role: Role::Iseult,
-            name: "Player 3".to_string(),
-        });
-        players.add_player(Player {
-            id: 4,
-            role: Role::Maelegant,
-            name: "Player 4".to_string(),
-        });
-        players.add_player(Player {
-            id: 5,
-            // Agravaine isn't supposed to be in 5-player but shhh
-            role: Role::Agravaine,
-            name: "Player 5".to_string(),
-        });
+        players.add_player("Player 1".to_string(), Role::Merlin);
+        players.add_player("Player 2".to_string(), Role::Lancelot);
+        players.add_player("Player 3".to_string(), Role::Iseult);
+        players.add_player("Player 4".to_string(), Role::Maelegant);
+        players.add_player("Player 5".to_string(), Role::Agravaine);
 
         let mut rng = thread_rng();
         let info = hashmap! {
-            1 => Role::Merlin.generate_info(&mut rng, 1, &players),
-            2 => Role::Lancelot.generate_info(&mut rng, 2, &players),
-            3 => Role::Iseult.generate_info(&mut rng, 3, &players),
-            4 => Role::Maelegant.generate_info(&mut rng, 4, &players),
-            5 => Role::Agravaine.generate_info(&mut rng, 5, &players),
+            "Player 1".to_string() => Role::Merlin.generate_info(&mut rng, "Player 1", &players),
+            "Player 2".to_string() => Role::Lancelot.generate_info(&mut rng, "Player 2", &players),
+            "Player 3".to_string() => Role::Iseult.generate_info(&mut rng, "Player 3", &players),
+            "Player 4".to_string() => Role::Maelegant.generate_info(&mut rng, "Player 4", &players),
+            "Player 5".to_string() => Role::Agravaine.generate_info(&mut rng, "Player 5", &players),
         };
 
         Game {
             players,
             info,
-            proposal_order: vec![1, 2, 3, 4, 5],
+            proposal_order: vec!["Player 1".to_string(), "Player 2".to_string(), "Player 3".to_string(), "Player 4".to_string(), "Player 5".to_string()],
             spec: GameSpec::for_players(5),
         }
     }
@@ -565,37 +548,37 @@ mod test {
 
         engine.interactions.extend_actions(vec![
             (
-                1,
+                "Player 1".to_string(),
                 Action::Propose {
-                    players: hashset![1, 3],
+                    players: hashset!["Player 1".to_string(), "Player 3".to_string()],
                 },
             ),
             (
-                2,
+                "Player 2".to_string(),
                 Action::Propose {
-                    players: hashset![2, 4, 1],
+                    players: hashset!["Player 2".to_string(), "Player 1".to_string(), "Player 4".to_string()],
                 },
             ),
             (
-                2,
+                "Player 2".to_string(),
                 Action::Propose {
-                    players: hashset![2, 4],
+                    players: hashset!["Player 2".to_string(), "Player 4".to_string()],
                 },
             ),
         ]);
 
-        let proposal = block_on(engine.get_proposal(2, 1, 1)).unwrap();
+        let proposal = block_on(engine.get_proposal("Player 2".to_string(), 1, 1)).unwrap();
 
-        assert_eq!(proposal.proposer, 2);
-        assert_eq!(proposal.players, hashset![2, 4]);
+        assert_eq!(proposal.proposer, "Player 2".to_string());
+        assert_eq!(proposal.players, hashset!["Player 2".to_string(), "Player 4".to_string()]);
 
         assert_eq!(
-            interactions.messages_for(1).collect::<Vec<_>>(),
+            interactions.messages_for("Player 1".to_string()).collect::<Vec<_>>(),
             vec![&Message::Error("It's not your proposal!".to_string())]
         );
 
         assert_eq!(
-            interactions.messages_for(2).collect::<Vec<_>>(),
+            interactions.messages_for("Player 2".to_string()).collect::<Vec<_>>(),
             vec![&Message::Error(
                 "Proposal must contain 2 players".to_string()
             )]
@@ -605,15 +588,15 @@ mod test {
             interactions.broadcasts(),
             &[
                 Message::NextProposal {
-                    proposer: 2,
+                    proposer: "Player 2".to_string(),
                     mission: 1,
                     proposal: 1
                 },
                 Message::ProposalMade {
-                    proposer: 2,
+                    proposer: "Player 2".to_string(),
                     mission: 1,
                     proposal: 1,
-                    players: hashset![2, 4]
+                    players: hashset!["Player 2".to_string(), "Player 4".to_string()]
                 }
             ]
         );
@@ -626,21 +609,21 @@ mod test {
         let mut engine = GameEngine::new(&game, &mut interactions);
 
         engine.interactions.extend_actions(vec![
-            (2, Action::Vote { upvote: true }),
-            (3, Action::Vote { upvote: false }),
-            (1, Action::Vote { upvote: true }),
-            (2, Action::Vote { upvote: false }),
-            (4, Action::Vote { upvote: false }),
-            (5, Action::Vote { upvote: true }),
+            ("Player 2".to_string(), Action::Vote { upvote: true }),
+            ("Player 3".to_string(), Action::Vote { upvote: false }),
+            ("Player 1".to_string(), Action::Vote { upvote: true }),
+            ("Player 2".to_string(), Action::Vote { upvote: false }),
+            ("Player 4".to_string(), Action::Vote { upvote: false }),
+            ("Player 5".to_string(), Action::Vote { upvote: true }),
         ]);
 
         let results = block_on(engine.vote()).unwrap();
         assert!(results.sent);
-        assert_eq!(results.upvotes().collect::<HashSet<_>>(), hashset![2, 1, 5]);
-        assert_eq!(results.downvotes().collect::<HashSet<_>>(), hashset![3, 4]);
+        assert_eq!(results.upvotes().collect::<HashSet<_>>(), hashset!["Player 2", "Player 1", "Player 5"]);
+        assert_eq!(results.downvotes().collect::<HashSet<_>>(), hashset!["Player 3", "Player 4"]);
 
         assert_eq!(
-            interactions.messages_for(2).collect::<Vec<_>>(),
+            interactions.messages_for("Player 2".to_string()).collect::<Vec<_>>(),
             vec![&Message::Error("You already voted".to_string())]
         );
 
@@ -651,8 +634,8 @@ mod test {
                 Message::VotingResults {
                     sent: true,
                     counts: VoteCounts::Public {
-                        upvotes: hashset![2, 1, 5],
-                        downvotes: hashset![3, 4]
+                        upvotes: hashset!["Player 2".to_string(), "Player 1".to_string(), "Player 5".to_string()],
+                        downvotes: hashset!["Player 3".to_string(), "Player 4".to_string()]
                     }
                 }
             ]
@@ -668,33 +651,33 @@ mod test {
         let mut engine = GameEngine::new(&game, &mut interactions);
 
         engine.interactions.extend_actions(vec![
-            (1, Action::Play { card: Card::Fail }),
+            ("Player 1".to_string(), Action::Play { card: Card::Fail }),
             (
-                1,
+                "Player 1".to_string(),
                 Action::Play {
                     card: Card::Success,
                 },
             ),
             (
-                2,
+                "Player 2".to_string(),
                 Action::Play {
                     card: Card::Reverse,
                 },
             ),
-            (1, Action::QuestingBeast),
+            ("Player 1".to_string(), Action::QuestingBeast),
             (
-                2,
+                "Player 2".to_string(),
                 Action::Play {
                     card: Card::Success,
                 },
             ),
-            (4, Action::Play { card: Card::Fail }),
+            ("Player 4".to_string(), Action::Play { card: Card::Fail }),
         ]);
 
         let proposal = Proposal {
             game: &game,
-            proposer: 1,
-            players: hashset![1, 2, 4],
+            proposer: "Player 1".to_string(),
+            players: hashset!["Player 1".to_string(), "Player 2".to_string(), "Player 4".to_string()],
         };
 
         let success = engine.send_mission(proposal, 3).await.unwrap();
@@ -713,11 +696,12 @@ mod test {
         );
 
         assert_eq!(
-            interactions.messages_for(1).next(),
+            // We've all been that Merlin before...
+            interactions.messages_for("Player 1".to_string()).next(),
             Some(&Message::Error("You can't play a Fail".to_string()))
         );
         assert_eq!(
-            interactions.messages_for(2).next(),
+            interactions.messages_for("Player 2".to_string()).next(),
             Some(&Message::Error("You already played a Reverse".to_string()))
         );
     }
@@ -730,25 +714,25 @@ mod test {
 
         engine.interactions.extend_actions(vec![
             (
-                1,
+                "Player 1".to_string(),
                 Action::Play {
                     card: Card::Success,
                 },
             ),
             (
-                2,
+                "Player 2".to_string(),
                 Action::Play {
                     card: Card::Reverse,
                 },
             ),
-            (5, Action::Play { card: Card::Fail }),
-            (5, Action::Declare),
+            ("Player 5".to_string(), Action::Play { card: Card::Fail }),
+            ("Player 5".to_string(), Action::Declare),
         ]);
 
         let proposal = Proposal {
             game: &game,
-            proposer: 1,
-            players: hashset![1, 2, 5],
+            proposer: "Player 1".to_string(),
+            players: hashset!["Player 1".to_string(), "Player 2".to_string(), "Player 5".to_string()],
         };
 
         let passed = engine.send_mission(proposal, 3).await.unwrap();
