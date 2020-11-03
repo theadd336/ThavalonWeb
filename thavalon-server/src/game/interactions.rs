@@ -8,12 +8,11 @@ use tokio::stream::{StreamExt, StreamMap};
 use tokio::sync::mpsc;
 
 use super::messages::{Action, GameError, Message};
-use super::PlayerId;
 
 #[async_trait]
 pub trait Interactions {
     /// Send a message to a specific player
-    async fn send_to(&mut self, player: PlayerId, message: Message) -> Result<(), GameError>;
+    async fn send_to(&mut self, player: &str, message: Message) -> Result<(), GameError>;
 
     /// Send a message to all players
     async fn send(&mut self, message: Message) -> Result<(), GameError>;
@@ -25,13 +24,13 @@ pub trait Interactions {
     async fn receive<F, R>(&mut self, mut f: F) -> Result<R, GameError>
     where
         R: Send,
-        F: FnMut(PlayerId, Action) -> Result<R, String> + Send;
+        F: FnMut(String, Action) -> Result<R, String> + Send;
 }
 
 /// An Interactions that uses per-player MPSC channels
 pub struct ChannelInteractions {
-    inbox: StreamMap<PlayerId, mpsc::Receiver<Action>>,
-    outbox: HashMap<PlayerId, mpsc::Sender<Message>>,
+    inbox: StreamMap<String, mpsc::Receiver<Action>>,
+    outbox: HashMap<String, mpsc::Sender<Message>>,
 }
 
 impl ChannelInteractions {
@@ -44,31 +43,31 @@ impl ChannelInteractions {
 
     pub fn add_player(
         &mut self,
-        id: PlayerId,
+        name: String,
         incoming: mpsc::Receiver<Action>,
         outgoing: mpsc::Sender<Message>,
     ) {
-        self.inbox.insert(id, incoming);
-        self.outbox.insert(id, outgoing);
+        self.inbox.insert(name.clone(), incoming);
+        self.outbox.insert(name, outgoing);
     }
 }
 
 #[async_trait]
 impl Interactions for ChannelInteractions {
-    async fn send_to(&mut self, player: PlayerId, message: Message) -> Result<(), GameError> {
+    async fn send_to(&mut self, player: &str, message: Message) -> Result<(), GameError> {
         self.outbox
-            .get_mut(&player)
+            .get_mut(player)
             .unwrap()
             .send(message)
             .await
-            .map_err(|_| GameError::PlayerUnavailable { id: player })
+            .map_err(|_| GameError::PlayerDisconnected)
     }
 
     async fn send(&mut self, message: Message) -> Result<(), GameError> {
-        let sends = self.outbox.iter_mut().map(|(id, sender)| {
+        let sends = self.outbox.iter_mut().map(|(name, sender)| {
             sender
                 .send(message.clone())
-                .map_err(move |_| GameError::PlayerUnavailable { id: *id })
+                .map_err(move |_| GameError::PlayerDisconnected)
         });
         future::join_all(sends).await.into_iter().collect()
     }
@@ -76,15 +75,18 @@ impl Interactions for ChannelInteractions {
     async fn receive<F, R>(&mut self, mut f: F) -> Result<R, GameError>
     where
         R: Send,
-        F: FnMut(PlayerId, Action) -> Result<R, String> + Send,
+        F: FnMut(String, Action) -> Result<R, String> + Send,
     {
         loop {
             match self.inbox.next().await {
-                Some((player, action)) => match f(player, action) {
-                    Ok(result) => return Ok(result),
-                    Err(msg) => self.send_to(player, Message::Error(msg)).await?,
+                Some((player, action)) => {
+                    let out = self.outbox.get_mut(&player).unwrap();
+                    match f(player, action) {
+                        Ok(result) => return Ok(result),
+                        Err(msg) => out.send(Message::Error(msg)).map_err(|_| GameError::PlayerDisconnected).await?
+                    }
                 },
-                None => return Err(GameError::AllDisconnected),
+                None => return Err(GameError::PlayerDisconnected),
             }
         }
     }
@@ -97,13 +99,12 @@ pub(super) mod test {
     use async_trait::async_trait;
 
     use super::super::messages::{Action, GameError, Message};
-    use super::super::PlayerId;
     use super::Interactions;
 
     pub struct TestInteractions {
         broadcasts: Vec<Message>,
-        messages: Vec<(PlayerId, Message)>,
-        actions: VecDeque<(PlayerId, Action)>,
+        messages: Vec<(String, Message)>,
+        actions: VecDeque<(String, Action)>,
     }
 
     #[cfg(test)]
@@ -116,11 +117,11 @@ pub(super) mod test {
             }
         }
 
-        pub fn push_action(&mut self, player: PlayerId, action: Action) {
+        pub fn push_action(&mut self, player: String, action: Action) {
             self.actions.push_back((player, action));
         }
 
-        pub fn extend_actions<I: IntoIterator<Item = (PlayerId, Action)>>(&mut self, iter: I) {
+        pub fn extend_actions<I: IntoIterator<Item = (String, Action)>>(&mut self, iter: I) {
             self.actions.extend(iter);
         }
 
@@ -128,11 +129,11 @@ pub(super) mod test {
             self.broadcasts.as_slice()
         }
 
-        pub fn messages(&self) -> &[(PlayerId, Message)] {
+        pub fn messages(&self) -> &[(String, Message)] {
             self.messages.as_slice()
         }
 
-        pub fn messages_for(&self, player: PlayerId) -> impl Iterator<Item = &Message> {
+        pub fn messages_for(&self, player: String) -> impl Iterator<Item = &Message> {
             self.messages
                 .iter()
                 .filter_map(move |(recipient, message)| {
@@ -147,8 +148,8 @@ pub(super) mod test {
 
     #[async_trait]
     impl Interactions for TestInteractions {
-        async fn send_to(&mut self, player: PlayerId, message: Message) -> Result<(), GameError> {
-            self.messages.push((player, message));
+        async fn send_to(&mut self, player: &str, message: Message) -> Result<(), GameError> {
+            self.messages.push((player.to_string(), message));
             Ok(())
         }
 
@@ -160,15 +161,15 @@ pub(super) mod test {
         async fn receive<F, R>(&mut self, mut f: F) -> Result<R, GameError>
         where
             R: Send,
-            F: FnMut(PlayerId, Action) -> Result<R, String> + Send,
+            F: FnMut(String, Action) -> Result<R, String> + Send,
         {
             loop {
                 match self.actions.pop_front() {
-                    Some((player, action)) => match f(player, action) {
+                    Some((player, action)) => match f(player.clone(), action) {
                         Ok(result) => return Ok(result),
                         Err(msg) => self.messages.push((player, Message::Error(msg))),
                     },
-                    None => return Err(GameError::AllDisconnected),
+                    None => return Err(GameError::PlayerDisconnected),
                 }
             }
         }
