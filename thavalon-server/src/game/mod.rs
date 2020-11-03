@@ -2,7 +2,6 @@
 
 use std::collections::HashMap;
 use std::fmt;
-use std::ops::Index;
 
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -15,9 +14,6 @@ mod role;
 
 pub use self::messages::*;
 pub use self::role::*;
-
-/// Key for identifying a player in the game. Cheaper to copy and move around than a String
-pub type PlayerId = usize;
 
 /// A mission number (from 1 to 5)
 pub type MissionNumber = u8;
@@ -44,7 +40,6 @@ pub struct GameSpec {
 /// Fixed information about a player, decided at startup
 #[derive(Debug, Clone)]
 pub struct Player {
-    pub id: PlayerId,
     pub name: String,
     pub role: Role,
 }
@@ -52,10 +47,10 @@ pub struct Player {
 /// A collection of players, indexed in various useful ways.
 #[derive(Debug, Clone)]
 pub struct Players {
-    players: HashMap<PlayerId, Player>,
-    roles: HashMap<Role, PlayerId>,
-    good_players: Vec<PlayerId>,
-    evil_players: Vec<PlayerId>,
+    players: HashMap<String, Player>,
+    roles: HashMap<Role, String>,
+    good_players: Vec<String>,
+    evil_players: Vec<String>,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
@@ -68,13 +63,13 @@ pub enum Card {
 #[derive(Debug, Clone)]
 pub struct Game {
     players: Players,
-    info: HashMap<PlayerId, RoleDetails>,
-    proposal_order: Vec<PlayerId>,
+    info: HashMap<String, RoleDetails>,
+    proposal_order: Vec<String>,
     spec: &'static GameSpec,
 }
 
 impl Game {
-    pub fn roll(mut names: Vec<(PlayerId, String)>) -> Game {
+    pub fn roll(mut names: Vec<String>) -> Game {
         let spec = GameSpec::for_players(names.len());
         let mut rng = thread_rng();
 
@@ -87,15 +82,15 @@ impl Game {
 
         names.shuffle(&mut rng);
         let mut players = Players::new();
-        for (role, (id, name)) in good_roles.chain(evil_roles).cloned().zip(names.into_iter()) {
-            players.add_player(Player { id, role, name });
+        for (role, name) in good_roles.chain(evil_roles).cloned().zip(names.into_iter()) {
+            players.add_player(name, role);
         }
 
         let mut info = HashMap::with_capacity(players.len());
         for player in players.iter() {
             info.insert(
-                player.id,
-                player.role.generate_info(&mut rng, player.id, &players),
+                player.name.clone(),
+                player.role.generate_info(&mut rng, &player.name, &players),
             );
         }
 
@@ -110,26 +105,22 @@ impl Game {
         }
     }
 
-    pub fn proposal_order(&self) -> &[PlayerId] {
+    pub fn proposal_order(&self) -> &[String] {
         self.proposal_order.as_slice()
     }
 
     /// Find the next player in proposal order after the given one.
-    pub fn next_proposer(&self, player: PlayerId) -> PlayerId {
+    pub fn next_proposer(&self, player: &str) -> &str {
         let index = self
             .proposal_order
             .iter()
             .position(|p| *p == player)
             .unwrap();
         if index == self.proposal_order.len() - 1 {
-            self.proposal_order[0]
+            &self.proposal_order[0]
         } else {
-            self.proposal_order[index + 1]
+            &self.proposal_order[index + 1]
         }
-    }
-
-    pub fn name(&self, player: usize) -> &str {
-        self.players[player].name.as_ref()
     }
 
     /// The number of players in the game
@@ -148,29 +139,34 @@ impl Players {
         }
     }
 
-    fn add_player(&mut self, player: Player) {
-        self.roles.insert(player.role, player.id);
-        if player.role.is_good() {
-            self.good_players.push(player.id);
+    fn add_player(&mut self, name: String, role: Role) {
+        self.roles.insert(role, name.clone());
+        if role.is_good() {
+            self.good_players.push(name.clone());
         } else {
-            self.evil_players.push(player.id);
+            self.evil_players.push(name.clone());
         }
-        self.players.insert(player.id, player);
+        self.players.insert(name.clone(), Player { name, role });
     }
 
+
     fn by_role(&self, role: Role) -> Option<&Player> {
-        self.roles.get(&role).map(|id| &self[*id])
+        self.roles.get(&role).map(|name| &self.players[name])
     }
 
     fn has_role(&self, role: Role) -> bool {
         self.roles.contains_key(&role)
     }
 
-    fn good_players(&self) -> &[PlayerId] {
+    fn by_name(&self, name: &str) -> Option<&Player> {
+        self.players.get(name)
+    }
+
+    fn good_players(&self) -> &[String] {
         self.good_players.as_slice()
     }
 
-    fn evil_players(&self) -> &[PlayerId] {
+    fn evil_players(&self) -> &[String] {
         self.evil_players.as_slice()
     }
 
@@ -180,14 +176,6 @@ impl Players {
 
     fn len(&self) -> usize {
         self.players.len()
-    }
-}
-
-impl Index<PlayerId> for Players {
-    type Output = Player;
-
-    fn index(&self, player_id: usize) -> &Self::Output {
-        &self.players[&player_id]
     }
 }
 

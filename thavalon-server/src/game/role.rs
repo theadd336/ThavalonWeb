@@ -3,7 +3,7 @@ use std::fmt::{self, Write};
 use rand::prelude::*;
 use serde::Serialize;
 
-use super::{Card, PlayerId, Players};
+use super::{Card, Players};
 
 /// A THavalon role
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize)]
@@ -100,7 +100,7 @@ impl Role {
     pub fn generate_info<R: Rng>(
         self,
         rng: &mut R,
-        me: PlayerId,
+        me: &str,
         players: &Players,
     ) -> RoleDetails {
         let mut seen_players = Vec::new();
@@ -169,7 +169,7 @@ impl Role {
                 .evil_players()
                 .iter()
                 .filter(|player| **player != me)
-                .map(|player| players[*player].name.clone())
+                .cloned()
                 .collect()
         } else {
             Vec::new()
