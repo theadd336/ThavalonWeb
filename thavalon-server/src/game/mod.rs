@@ -208,6 +208,13 @@ impl GameSpec {
         (self.players - self.good_players) as usize
     }
 
+    /// The maximum number of proposals allowed before Force activates. Once Force is active, all proposals
+    /// are immediately sent without voting.
+    pub fn max_proposals(&self) -> u8 {
+        // TODO: actual number
+        self.players * 2
+    }
+
     /// The number of proposals in a round (after the first, which only has two)
     pub fn proposals(&self) -> usize {
         self.evil_players() + 1

@@ -41,6 +41,8 @@ pub enum Message {
         mission: MissionNumber,
         proposal: ProposalNumber,
         players: HashSet<String>,
+        /// If true, this proposal was made with force and will not be voted on.
+        force: bool,
     },
 
     /// Announces that players should submit votes for the latest proposal.

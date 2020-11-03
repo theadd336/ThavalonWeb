@@ -25,6 +25,9 @@ struct GameEngine<'a, I: Interactions> {
     /// Infinite iterator over proposal order for the game. It's... a little unfortunate we can't (yet) use impl Trait here, but if
     /// it gets hairy enough, we can always box the iterator.
     proposers: iter::Skip<iter::Cycle<iter::Cloned<slice::Iter<'a, String>>>>,
+
+    /// The number of proposals that have been made
+    proposals: u8,
 }
 
 /// A proposal
@@ -80,17 +83,19 @@ pub async fn run_game<I: Interactions>(game: &Game, interactions: &mut I) -> Res
     let mut passed_missions = 1 - failed_missions;
 
     'missions: for mission in 2..=5 {
-        'proposals: for proposal_num in 1..=game.spec.proposals() {
+        'proposals: loop {
             let proposer = ge.proposers.next().unwrap();
             let proposal = ge
-                .get_proposal(proposer, mission, proposal_num as u8)
+                .get_proposal(proposer, mission, ge.proposals + 1)
                 .await?;
 
             // If this proposal has force, skip voting
             // Otherwise, vote on the mission
-            if proposal_num != game.spec.proposals() {
+            if !ge.is_force() {
                 let votes = ge.vote().await?;
                 if !votes.sent {
+                    // Only rejected proposals count towards the total number of used proposals.
+                    ge.proposals += 1;
                     continue 'proposals;
                 }
             }
@@ -109,6 +114,8 @@ pub async fn run_game<I: Interactions>(game: &Game, interactions: &mut I) -> Res
             } else if failed_missions == 3 {
                 log::debug!("3 missions have failed");
                 break 'missions;
+            } else {
+                continue 'missions;
             }
         }
     }
@@ -130,7 +137,13 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
             game,
             interactions,
             proposers,
+            proposals: 0,
         }
+    }
+
+    /// `true` if Force is active
+    fn is_force(&self) -> bool {
+        self.proposals > self.game.spec.max_proposals()
     }
 
     /// Obtain a valid proposal from the proposing player. This will continue asking them until they make a valid proposal.
@@ -178,6 +191,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
                 players: players.clone(),
                 mission,
                 proposal,
+                force: self.is_force()
             })
             .await?;
 
