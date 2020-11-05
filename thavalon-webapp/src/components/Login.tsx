@@ -8,7 +8,8 @@ import { FormButton } from './formComponents/FormButton';
 import "../styles/Modal.scss";
 
 interface LoginProps {
-    setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
+    setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>,
+    history: any // it's any because i don't understand error "type 'history' is not a generic"
 };
 
 interface LoginData {
@@ -29,11 +30,12 @@ export function Login(props: LoginProps): JSX.Element {
     const [redirectToHome, setRedirectToHome] = useState(false);
 
     /**
-     * Called when register modal is closed.
+     * Called when register modal is closed. Redirects to most recent non-modal page.
      */
     function closeModal() {
-        // TODO: Redirect to prior page on modal close so can refresh
         setModalIsOpen(false);
+        // go -1 is equal to going back to prior page, which for login will not be a modal
+        props.history.go(-1);
     }
 
     /**
@@ -57,6 +59,9 @@ export function Login(props: LoginProps): JSX.Element {
             setFormSubmitting(false);
         }
     }
+
+    console.log("HISTORY");
+    console.log(props.history);
 
     if (redirectToHome) {
         return <Redirect to="/" />;

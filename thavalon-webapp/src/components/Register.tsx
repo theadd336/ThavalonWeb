@@ -9,6 +9,7 @@ import "../styles/Modal.scss";
 
 interface RegisterProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
+    history: any // it's any because i don't understand error "type 'history' is not a generic"
 };
 
 interface RegisterData {
@@ -45,10 +46,12 @@ export function Register(props: RegisterProps): JSX.Element {
     const [redirectToHome, setRedirectToHome] = useState(false);
 
     /**
-     * Called when register modal is closed.
+     * Called when register modal is closed. Redirects to most recent non-modal page.
      */
     function closeModal() {
         setModalIsOpen(false);
+        // For register, prior page (-1) is always login modal. When closing, should go back 2 pages as a result.
+        props.history.go(-2);
     }
 
     /**
