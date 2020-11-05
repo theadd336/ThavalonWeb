@@ -1,5 +1,4 @@
 import React from 'react';
-import { JsxElement } from 'typescript';
 import "../../styles/formStyles/InputElement.scss";
 
 export interface InputElementProps {
@@ -7,7 +6,7 @@ export interface InputElementProps {
     "label": string,
     "name": string,
     "required": boolean,
-    "minLength": number,
+    "minLength"?: number,
     "formRef": any, // not fully clear what the type of register from react-hook-form is
 }
 

@@ -105,8 +105,8 @@ export function Register(props: RegisterProps): JSX.Element {
                 <h2 className="modalHeader">Register</h2>
                 <hr />
                 <form onSubmit={handleSubmit(onSubmit, onError)}>
-                    <InputElement formRef={register} type="text" label="Name" name="name" required={true} minLength={1} />
-                    <InputElement formRef={register} type="email" label="Email Address" name="email" required={true} minLength={1} />
+                    <InputElement formRef={register} type="text" label="Name" name="name" required={true} />
+                    <InputElement formRef={register} type="email" label="Email Address" name="email" required={true} />
                     <InputElement formRef={register} type="password" label="Password" name="password" required={true} minLength={8} />
                     <InputElement formRef={register} type="password" label="Confirm Password" name="confirmPassword" required={true} minLength={8} />
                     <div className="formSubmission">

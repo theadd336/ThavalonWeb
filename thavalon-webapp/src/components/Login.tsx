@@ -76,7 +76,7 @@ export function Login(props: LoginProps): JSX.Element {
                 <h2 className="modalHeader">Log In</h2>
                 <hr />
                 <form onSubmit={handleSubmit(OnSubmit)}>
-                    <InputElement formRef={register} type="email" label="Email Address" name="email" required={true} minLength={0} />
+                    <InputElement formRef={register} type="email" label="Email Address" name="email" required={true} />
                     <InputElement formRef={register} type="password" label="Password" name="password" required={true} minLength={8} />
                     <div className="formSubmission">
                         <FormButton label="Log In" isLoading={formSubmitting} color="green" size="large" />
