@@ -6,7 +6,7 @@ interface LogoutProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
 };
 
-export function Logout(props: LogoutProps) {
+export function Logout(props: LogoutProps): JSX.Element {
     useEffect(() => {
         const accountManager = AccountManager.getInstance();
         accountManager.logoutUser().then((httpResponse: HttpResponse) => {
