@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import React, {MouseEvent} from 'react';
-import {NavLink} from 'react-router-dom';
-import {faBars} from '@fortawesome/free-solid-svg-icons';
+import React, { MouseEvent } from 'react';
+import { NavLink } from 'react-router-dom';
+import { faBars } from '@fortawesome/free-solid-svg-icons';
 import "./Navbar.scss";
 
 interface NavbarProps {
@@ -32,11 +32,12 @@ export function Navbar(props: NavbarProps) {
         <div id="navbarContainer" className={topnavClasses}>
             <NavLink exact to="/" className="navbarItemLeft" activeClassName="active" id="homeLink">Home</NavLink>
             <NavLink to="/rules" className="navbarItemLeft" activeClassName="active">Rules</NavLink>
+            <NavLink to="/play" className="navbarItemLeft" activeClassName="active">Play</NavLink>
             {!props.loggedIn &&
                 <NavLink to="/login" className="navbarItemRight" activeClassName="active">Log In</NavLink>
             }
             <NavLink to="" className="icon navbarItemRight" onClick={openMenu}>
-                    <FontAwesomeIcon icon={faBars} />
+                <FontAwesomeIcon icon={faBars} />
             </NavLink>
             {props.loggedIn &&
                 <span id="rightContainer">

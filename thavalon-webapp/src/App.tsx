@@ -7,6 +7,7 @@ import { Register } from './components/Register';
 import { Home } from './components/Home';
 import { AccountManager, HttpResponse } from './utils/AccountManager';
 import { Account } from './components/Account';
+import { CreateJoinGameModal } from './components/gameCreation';
 import ReactModal from 'react-modal';
 
 // Used by react modal for screen readers
@@ -21,7 +22,7 @@ function App() {
     accountManager.checkLoggedIn().then((httpResponse: HttpResponse) => {
       // calling set logged in will, on success, trigger a timer to regularly check refresh token
       setLoggedIn(httpResponse.result);
-    });  
+    });
   })
 
 
@@ -38,6 +39,9 @@ function App() {
         <Route path="/account">
           <Account />
         </Route>
+        <Route path="/play">
+          <CreateJoinGameModal />
+        </Route>
         <Route path="/login" render={
           (_) => <Login setLoggedIn={setLoggedIn} />
         }>
@@ -50,7 +54,7 @@ function App() {
         }>
         </Route>
       </Switch>
-    </div>
+    </div >
   );
 }
 
