@@ -123,7 +123,7 @@ export class AccountManager {
      **/
     private checkRefreshTokenOnTimer(): void {
         const currUnixTime = Math.floor(Date.now() / 1000);
-        const refreshTimeout = (this.expiresAt - currUnixTime) - 898;
+        const refreshTimeout = (this.expiresAt - currUnixTime) - 60;
         // in timeout, use anonymous function so checkRefreshToken has access to this
         // when timer ends, will check refresh token and call this function again if
         // refresh token was valid

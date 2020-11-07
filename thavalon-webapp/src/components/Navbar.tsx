@@ -2,7 +2,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { MouseEvent } from 'react';
 import { NavLink } from 'react-router-dom';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
-import "./Navbar.scss";
+import "../styles/Navbar.scss";
 
 interface NavbarProps {
     loggedIn: boolean
@@ -10,7 +10,7 @@ interface NavbarProps {
     setUseMobileMenu: React.Dispatch<React.SetStateAction<boolean>>
 };
 
-export function Navbar(props: NavbarProps) {
+export function Navbar(props: NavbarProps): JSX.Element {
     // handle mobile menu functionality
     let topnavClasses: string = "topnav"
     if (props.useMobileMenu) {
