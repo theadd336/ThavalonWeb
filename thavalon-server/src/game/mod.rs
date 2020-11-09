@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 use rand::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub mod builder;
 mod engine;
@@ -53,7 +54,7 @@ pub struct Players {
     evil_players: Vec<String>,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Deserialize, Serialize)]
 pub enum Card {
     Success,
     Fail,
