@@ -2,6 +2,7 @@
 
 use std::collections::HashSet;
 
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use super::{Card, MissionNumber, ProposalNumber};
@@ -10,7 +11,7 @@ use super::role::RoleDetails;
 // Game-related messages
 
 /// Something the player tries to do
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
 pub enum Action {
     Propose { players: HashSet<String> },
     Vote { upvote: bool },
@@ -20,7 +21,7 @@ pub enum Action {
 }
 
 /// A message from the game to a player
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 pub enum Message {
     /// Error message, usually when a player does something wrong
     Error(String),
@@ -64,7 +65,7 @@ pub enum Message {
 }
 
 /// How players voted on a proposal
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 pub enum VoteCounts {
     Public {
         upvotes: HashSet<String>,
