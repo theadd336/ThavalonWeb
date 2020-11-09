@@ -4,8 +4,8 @@ use std::collections::HashSet;
 
 use thiserror::Error;
 
-use super::{Card, MissionNumber, ProposalNumber};
 use super::role::RoleDetails;
+use super::{Card, MissionNumber};
 
 // Game-related messages
 
@@ -30,19 +30,24 @@ pub enum Message {
 
     /// Announces that a new player is proposing
     NextProposal {
+        /// The player who will be proposing
         proposer: String,
+        /// The mission this proposal is for
         mission: MissionNumber,
-        proposal: ProposalNumber,
+        /// The number of proposals made so far, excluding mission 1 and sent proposals
+        proposals_made: usize,
+        /// The maximum number of unsent proposals before force activates
+        max_proposals: usize,
     },
 
     /// Announces that a player made a proposal
     ProposalMade {
+        /// The player who made the proposal
         proposer: String,
+        /// The mission they're proposing for
         mission: MissionNumber,
-        proposal: ProposalNumber,
+        /// The players on the mission
         players: HashSet<String>,
-        /// If true, this proposal was made with force and will not be voted on.
-        force: bool,
     },
 
     /// Announces that players should submit votes for the latest proposal.
@@ -68,10 +73,12 @@ pub enum Message {
 /// How players voted on a proposal
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum VoteCounts {
+    /// Public mission votes, where it is known who up- or downvoted.
     Public {
         upvotes: HashSet<String>,
         downvotes: HashSet<String>,
     },
+    /// Obscured mission votes, where it is not known who up- or downvoted.
     Obscured {
         upvotes: u32,
         downvotes: u32,

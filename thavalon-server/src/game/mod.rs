@@ -17,9 +17,6 @@ pub use self::role::*;
 /// A mission number (from 1 to 5)
 pub type MissionNumber = u8;
 
-/// A proposal number (starts at 0)
-pub type ProposalNumber = u8;
-
 /// Game rules determined by the number of players
 #[derive(Debug, Clone)]
 pub struct GameSpec {
@@ -33,6 +30,9 @@ pub struct GameSpec {
     pub evil_roles: &'static [Role],
     /// The number of players on the good team
     pub good_players: u8,
+    /// The maximum number of proposals allowed before force activates. Proposals on mission 1 and proposals that are
+    /// sent do not count towards this limit.
+    pub max_proposals: usize,
     /// True if mission 4 requires at least two failures
     double_fail_mission_four: bool,
 }
@@ -148,7 +148,6 @@ impl Players {
         self.players.insert(name.clone(), Player { name, role });
     }
 
-
     fn by_role(&self, role: Role) -> Option<&Player> {
         self.roles.get(&role).map(|name| &self.players[name])
     }
@@ -208,13 +207,6 @@ impl GameSpec {
         (self.players - self.good_players) as usize
     }
 
-    /// The maximum number of proposals allowed before Force activates. Once Force is active, all proposals
-    /// are immediately sent without voting.
-    pub fn max_proposals(&self) -> u8 {
-        // TODO: actual number
-        self.players * 2
-    }
-
     /// The number of proposals in a round (after the first, which only has two)
     pub fn proposals(&self) -> usize {
         self.evil_players() + 1
@@ -242,5 +234,6 @@ static FIVE_PLAYER: GameSpec = GameSpec {
         Role::Agravaine,
     ],
     good_players: 3,
+    max_proposals: 5,
     double_fail_mission_four: false,
 };
