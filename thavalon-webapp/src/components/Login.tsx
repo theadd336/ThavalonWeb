@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
-import { Link, Redirect } from 'react-router-dom';
+import { Link, Redirect, useHistory } from 'react-router-dom';
 import { AccountManager } from '../utils/AccountManager';
 import { InputElement } from './formComponents/InputElement';
 import { FormButton } from './formComponents/FormButton';
@@ -9,7 +9,6 @@ import "../styles/Modal.scss";
 
 interface LoginProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>,
-    history: any // it's any because i don't understand error "type 'history' is not a generic"
 };
 
 interface LoginData {
@@ -28,6 +27,8 @@ export function Login(props: LoginProps): JSX.Element {
     const [formErrorMsg, setFormErrorMsg] = useState("");
     // state for redirecting to home on successful login
     const [redirectToHome, setRedirectToHome] = useState(false);
+    // react router history
+    const history = useHistory();
 
     /**
      * Called when register modal is closed. Redirects to most recent non-modal page.
@@ -35,7 +36,7 @@ export function Login(props: LoginProps): JSX.Element {
     function closeModal() {
         setModalIsOpen(false);
         // go -1 is equal to going back to prior page, which for login will not be a modal
-        props.history.go(-1);
+        history.go(-1);
     }
 
     /**
@@ -44,7 +45,6 @@ export function Login(props: LoginProps): JSX.Element {
      * @param event The event caused by submission.
      */
     async function OnSubmit(data: LoginData) {
-        console.log(data);
         setFormSubmitting(true);
         const accountManager = AccountManager.getInstance();
         let httpResponse = await accountManager.loginUser(data.email, data.password);
@@ -59,9 +59,6 @@ export function Login(props: LoginProps): JSX.Element {
             setFormSubmitting(false);
         }
     }
-
-    console.log("HISTORY");
-    console.log(props.history);
 
     if (redirectToHome) {
         return <Redirect to="/" />;

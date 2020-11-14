@@ -2,14 +2,13 @@ import React, {useState} from 'react';
 import ReactModal from 'react-modal';
 import { DeepMap, FieldError, Resolver, useForm } from 'react-hook-form';
 import { AccountManager, HttpResponse } from '../utils/AccountManager';
-import { Redirect } from 'react-router-dom';
+import { Redirect, useHistory } from 'react-router-dom';
 import { InputElement } from './formComponents/InputElement';
 import { FormButton } from './formComponents/FormButton';
 import "../styles/Modal.scss";
 
 interface RegisterProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
-    history: any // it's any because i don't understand error "type 'history' is not a generic"
 };
 
 interface RegisterData {
@@ -44,6 +43,8 @@ export function Register(props: RegisterProps): JSX.Element {
     const [formErrorMsg, setFormErrorMsg] = useState("");
     // state for redirecting to home on successful login
     const [redirectToHome, setRedirectToHome] = useState(false);
+    // react router history
+    const history = useHistory();
 
     /**
      * Called when register modal is closed. Redirects to most recent non-modal page.
@@ -51,7 +52,7 @@ export function Register(props: RegisterProps): JSX.Element {
     function closeModal() {
         setModalIsOpen(false);
         // For register, prior page (-1) is always login modal. When closing, should go back 2 pages as a result.
-        props.history.go(-2);
+        history.go(-2);
     }
 
     /**
