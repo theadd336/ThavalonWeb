@@ -1,3 +1,6 @@
+//! Module for all game lobby code. The Lobby represents the interface between
+//! the actual game, the database, and player connections.
+
 use crate::database::games::{DBGameError, DBGameStatus, DatabaseGame};
 use crate::game::{builder::GameBuilder, Action, Message};
 
@@ -15,8 +18,13 @@ use warp::filters::ws::{self, WebSocket};
 use std::collections::HashMap;
 use std::sync::Arc;
 
+/// Type repreesenting a channel to the lobby to issue commands.
+pub type LobbyChannel = Sender<(LobbyCommand, ResponseChannel)>;
+
+/// Type representing a oneshot sender back to the caller.
 pub type ResponseChannel = oneshot::Sender<LobbyResponse>;
 
+/// Enum of possible lobby-related errors.
 #[derive(Debug, Error)]
 pub enum LobbyError {
     #[error("An error occurred while updating the database.")]
@@ -27,6 +35,7 @@ pub enum LobbyError {
     InvalidStateError,
 }
 
+/// Enum of available commands to send to the lobby.
 pub enum LobbyCommand {
     AddPlayer {
         player_id: String,
@@ -42,6 +51,7 @@ pub enum LobbyCommand {
     },
 }
 
+/// Enum of possible responses from the lobby.
 #[derive(Debug)]
 pub enum LobbyResponse {
     Standard(Result<(), LobbyError>),
@@ -49,12 +59,16 @@ pub enum LobbyResponse {
     IsPlayerRegistered(bool),
 }
 
+/// Represents connections to and from the game for an individual player.
 #[derive(Debug)]
 pub struct PlayerClient {
     to_game: Sender<Action>,
     from_game: Arc<Mutex<Receiver<Message>>>,
 }
 
+/// A lobby for an individual game. The Lobby acts as an interface between the 
+/// Thavalon game instance, the DatabaseGame which keeps the game state in sync
+/// with the database, and all players connected to the game.
 pub struct Lobby {
     database_game: DatabaseGame,
     friend_code: String,
@@ -65,7 +79,12 @@ pub struct Lobby {
 }
 
 impl Lobby {
-    pub async fn new() -> Sender<(LobbyCommand, ResponseChannel)> {
+    /// Creates a new lobby instance on a separate Tokio thread.
+    /// 
+    /// # Returns
+    ///
+    /// * `LobbyChannel` to communicate with the lobby.
+    pub async fn new() -> LobbyChannel {
         let (mut tx, rx) = mpsc::channel(10);
 
         task::spawn(async move {
@@ -85,11 +104,13 @@ impl Lobby {
         tx
     }
 
-    pub fn get_friend_code(&self) -> LobbyResponse {
+    /// Gets the friend code for the lobby in question.
+    fn get_friend_code(&self) -> LobbyResponse {
         LobbyResponse::FriendCode(self.friend_code.clone())
     }
 
-    pub async fn add_player(&mut self, player_id: String, display_name: String) -> LobbyResponse {
+    /// Adds a player to the lobby and all associated games.
+    async fn add_player(&mut self, player_id: String, display_name: String) -> LobbyResponse {
         if self.status != DBGameStatus::Lobby {
             log::warn!(
                 "Player {} attempted to join in-progress of finished game {}.",
@@ -122,7 +143,9 @@ impl Lobby {
         LobbyResponse::Standard(Ok(()))
     }
 
-    pub async fn update_player_connections(
+    /// Updates a player's connections to and from the game and to and from the
+    /// client.
+    async fn update_player_connections(
         &mut self,
         player_id: String,
         ws: WebSocket,
@@ -153,6 +176,9 @@ impl Lobby {
         LobbyResponse::Standard(Ok(()))
     }
 
+    /// Begins a loop for the lobby to listen for incoming commands.
+    /// This function should only return when the game ends or when a fatal
+    /// error occurs.
     async fn listen(mut self) {
         while let Some(msg) = self.receiver.recv().await {
             let (msg_contents, mut result_channel) = msg;

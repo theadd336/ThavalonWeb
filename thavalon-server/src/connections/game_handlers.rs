@@ -1,5 +1,8 @@
+//! Module for all game-related REST endpoint handlers. This module also handles
+//! all websocket related functions.
+
 use crate::database::{accounts, games::DatabaseGame};
-use crate::lobby::{Lobby, LobbyCommand, LobbyError, LobbyResponse};
+use crate::lobby::{Lobby, LobbyCommand, LobbyError, LobbyResponse, LobbyChannel};
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::{
@@ -16,20 +19,18 @@ use warp::{
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+/// Type used for a global GameCollection of all active games.
 pub type GameCollection =
     Arc<Mutex<HashMap<String, Sender<(LobbyCommand, oneshot::Sender<LobbyResponse>)>>>>;
 
-#[derive(Deserialize)]
-pub struct PlayerDisplayName {
-    display_name: String,
-}
-
+/// Serializeable response for a new game. Contains the friend code to join the game.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NewGameResponse {
     friend_code: String,
 }
 
+/// Deserializeable request to join a specified game.
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JoinGameRequest {
@@ -37,16 +38,34 @@ pub struct JoinGameRequest {
     display_name: String,
 }
 
+/// Serializable response from the server to a player attempting to join a game
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JoinGameResponse {
     socket_url: String,
 }
 
+/// Rejection for when a player does not have a verified email address.
 #[derive(Debug)]
 pub struct UnverifiedEmailRejection;
 impl Reject for UnverifiedEmailRejection {}
 
+/// Rejection for when a player attempts to join a nonexistant game.
+#[derive(Debug)]
+pub struct NonexistentGameRejection;
+impl Reject for NonexistentGameRejection {}
+
+/// Creates a new game for the given player ID.
+/// 
+/// # Arguments
+///
+/// * `player_id` - The Player ID of the game creator.
+/// * `game_collection` - The global store of active games.
+///
+/// # Returns
+///
+/// * `NewGameResponse` on success.
+/// * `UnverifiedEmailRejection` if the player's email isn't verified.
 pub async fn create_game(
     player_id: String,
     game_collection: GameCollection,
@@ -63,6 +82,7 @@ pub async fn create_game(
     // }
 
     // Verify that player is not in any games. Need an efficient way to do this somehow.
+    // TODO: Implement a database check to confirm the player isn't in a game.
 
     // Create a new game and add the player.
     let mut lobby_channel = Lobby::new().await;
@@ -88,6 +108,18 @@ pub async fn create_game(
     Ok(reply::json(&response))
 }
 
+/// Adds a player to an existing game
+///
+/// # Arguments
+///
+/// * `info` - The info required to join the game.
+/// * `player_id` - The ID of the joining player.
+/// * `game_collection` - The global collection of active games.
+///
+/// # Returns
+///
+/// * `JoinGameResponse` on success
+/// * `NonexistentGameRejection` if the game doesn't exist
 pub async fn join_game(
     info: JoinGameRequest,
     player_id: String,
@@ -99,7 +131,7 @@ pub async fn join_game(
         Some(channel) => channel.clone(),
         None => {
             log::warn!("Game {} does not exist.", info.friend_code);
-            return Err(warp::reject());
+            return Err(reject::custom(NonexistentGameRejection));
         }
     };
 
@@ -127,11 +159,28 @@ pub async fn join_game(
         }
     }
 
+    log::info!("Successfully added player {} to game {}.", player_id, info.friend_code);
     let socket_url = String::from("ws://localhost:8001/api/ws/") + &info.friend_code;
     let response = JoinGameResponse { socket_url };
     Ok(reply::json(&response))
 }
 
+
+/// Handles the initial WS connection. Checks to confirm the player is registered.
+/// If they are, will attempt to promote the WS connection and establish a new
+/// thread. Otherwise, the connection is rejected. 
+///
+/// # Arguments
+///
+/// * `ws` - The unupgraded WS connection.
+/// * `friend_code` - The friend code of the game the player is joining.
+/// * `player_id` - The player ID connecting to the WS.
+/// * `game_collection` - The global collection of active games.
+///
+/// # Returns
+///
+/// * Upgraded WS connection for Warp on success
+/// * 
 pub async fn connect_ws(
     ws: Ws,
     friend_code: String,
@@ -172,10 +221,18 @@ pub async fn connect_ws(
     Ok(ws.on_upgrade(move |socket| client_connection(socket, player_id, lobby_channel)))
 }
 
+/// Establishes connections with the player channels to the game and the existing
+/// websocket.
+///
+/// # Arguments
+///
+/// * `socket` - The upgraded WebSocket connection
+/// * `player_id` - The player ID connecting to the game.
+/// * `lobby_channel` - The channel to the lobby.
 async fn client_connection(
     socket: WebSocket,
     player_id: String,
-    mut lobby_channel: Sender<(LobbyCommand, oneshot::Sender<LobbyResponse>)>,
+    mut lobby_channel: LobbyChannel,
 ) {
     let (oneshot_tx, oneshot_rx) = oneshot::channel();
     lobby_channel
@@ -192,7 +249,6 @@ async fn client_connection(
         LobbyResponse::Standard(result) => {
             if let Err(e) = result {
                 log::error!("Error while updating player channels. {}", e);
-                return;
             }
         }
         _ => {
