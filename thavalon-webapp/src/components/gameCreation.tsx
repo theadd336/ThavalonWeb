@@ -38,21 +38,21 @@ export function CreateJoinGameModal() {
                 <hr />
                 <button onClick={() => setShowFriendCodeEntry(true)}>Join Game</button>
                 <form>
-                    <div className="join-game-txtbox">
-                        <InputElement
-                            formRef={register}
-                            type="text"
-                            label="Friend Code"
-                            name="friendCode"
-                            required={true}
-                            minLength={4}
-                            maxLength={4}
-                            autoCapitalize={true}
-                            autoComplete="off" />
-                    </div>
-                    <div className="formSubmission">
+                    <div className="join-game-horiz-fields">
+                        <div>
+                            <InputElement
+                                formRef={register}
+                                type="text"
+                                label="Friend Code"
+                                name="friendCode"
+                                required={true}
+                                minLength={4}
+                                maxLength={4}
+                                autoCapitalize={true}
+                                autoComplete="off" />
+                        </div>
                         <div className="join-game-submit-btn">
-                            <FormButton label="Join Game" isLoading={false} color="green" />
+                            <FormButton label="Join" isLoading={false} color="green" size="small" />
                         </div>
                         <div className="errorMsg">{formErrorMsg}</div>
                     </div>
