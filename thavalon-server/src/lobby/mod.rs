@@ -33,6 +33,8 @@ pub enum LobbyError {
     DuplicatePlayerError,
     #[error("A lobby update was attemped in a state that doesn't permit this update.")]
     InvalidStateError,
+    #[error("An unknown error occurred. See logs for details.")]
+    UnknownError,
 }
 
 /// Enum of available commands to send to the lobby.
@@ -66,7 +68,7 @@ pub struct PlayerClient {
     from_game: Arc<Mutex<Receiver<Message>>>,
 }
 
-/// A lobby for an individual game. The Lobby acts as an interface between the 
+/// A lobby for an individual game. The Lobby acts as an interface between the
 /// Thavalon game instance, the DatabaseGame which keeps the game state in sync
 /// with the database, and all players connected to the game.
 pub struct Lobby {
@@ -80,7 +82,7 @@ pub struct Lobby {
 
 impl Lobby {
     /// Creates a new lobby instance on a separate Tokio thread.
-    /// 
+    ///
     /// # Returns
     ///
     /// * `LobbyChannel` to communicate with the lobby.
@@ -111,6 +113,11 @@ impl Lobby {
 
     /// Adds a player to the lobby and all associated games.
     async fn add_player(&mut self, player_id: String, display_name: String) -> LobbyResponse {
+        log::info!(
+            "Attempting to add player {} to lobby {}.",
+            player_id,
+            self.friend_code
+        );
         if self.status != DBGameStatus::Lobby {
             log::warn!(
                 "Player {} attempted to join in-progress of finished game {}.",
@@ -120,15 +127,39 @@ impl Lobby {
             return LobbyResponse::Standard(Err(LobbyError::InvalidStateError));
         }
 
+        if self.players.contains_key(&player_id) {
+            log::warn!(
+                "Player {} is already in game {}.",
+                player_id,
+                self.friend_code
+            );
+            return LobbyResponse::Standard(Err(LobbyError::DuplicatePlayerError));
+        }
+
         if let Err(e) = self
             .database_game
             .add_player(player_id.clone(), display_name.clone())
             .await
         {
-            log::error!("Error adding player to the DB game. {}.", e);
-            return LobbyResponse::Standard(Err(LobbyError::InvalidStateError));
+            log::error!(
+                "Error while adding player {} to game {}. {}",
+                player_id,
+                self.friend_code,
+                e
+            );
+            let return_err = match e {
+                DBGameError::UpdateError => Err(LobbyError::DatabaseError),
+                DBGameError::InvalidStateError => Err(LobbyError::InvalidStateError),
+                _ => {
+                    log::error!("An unknown error occurred in game {}.", self.friend_code);
+                    Err(LobbyError::UnknownError)
+                }
+            };
+
+            return LobbyResponse::Standard(return_err);
         }
         let (sender, receiver) = self.builder.as_mut().unwrap().add_player(display_name);
+
         let client = PlayerClient {
             to_game: sender,
             from_game: Arc::new(Mutex::new(receiver)),
@@ -150,18 +181,52 @@ impl Lobby {
         player_id: String,
         ws: WebSocket,
     ) -> LobbyResponse {
+        log::info!("Updating connections for player {}.", player_id);
+
+        // Get the client and create the four connection endpoints.
         let client = self.players.get(&player_id).unwrap();
         let (mut to_player_client, mut from_player_client) = ws.split();
         let mut to_game = client.to_game.clone();
         let from_game = client.from_game.clone();
+
+        // Spawn a new task to listen for incoming commands from the player.
+        let client_id = player_id.clone();
         tokio::task::spawn(async move {
             while let Some(msg) = from_player_client.next().await {
-                let msg = msg.unwrap();
-                let action: Action = serde_json::from_str(msg.to_str().unwrap()).unwrap();
-                to_game.send(action).await;
+                let msg = match msg {
+                    Ok(message) => message.to_str().unwrap().to_owned(),
+                    Err(e) => {
+                        // It's not entirely clear what an error here means, so
+                        // probably best to just close the entire connection.
+                        log::error!(
+                            "An error occurred while waiting for messages from player {}. {}",
+                            client_id,
+                            e
+                        );
+                        break;
+                    }
+                };
+
+                log::debug!("Received message {} from player {}.", msg, client_id);
+                let action: Action = match serde_json::from_str(&msg) {
+                    Ok(action) => action,
+                    Err(e) => {
+                        log::warn!(
+                            "Could not deserialize message from player {}. Message: {}",
+                            client_id,
+                            msg
+                        );
+                        // TODO: For now, just kill the connection.
+                        break;
+                    }
+                };
+                to_game.send(action).await.unwrap();
             }
         });
 
+        // Spawn a new task to forward messages from the game to the player.
+        // The lock may appear weird, but it is needed to get send + sync on
+        // the channel. The channel will only be held by one person ever.
         tokio::task::spawn(async move {
             while let Some(msg) = from_game.lock().await.recv().await {
                 let msg = serde_json::to_string(&msg).expect("Could not serialize game message.");
@@ -181,7 +246,7 @@ impl Lobby {
     /// error occurs.
     async fn listen(mut self) {
         while let Some(msg) = self.receiver.recv().await {
-            let (msg_contents, mut result_channel) = msg;
+            let (msg_contents, result_channel) = msg;
             let results = match msg_contents {
                 LobbyCommand::AddPlayer {
                     player_id,

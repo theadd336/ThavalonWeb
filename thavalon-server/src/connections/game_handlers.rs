@@ -2,7 +2,7 @@
 //! all websocket related functions.
 
 use crate::database::{accounts, games::DatabaseGame};
-use crate::lobby::{Lobby, LobbyCommand, LobbyError, LobbyResponse, LobbyChannel};
+use crate::lobby::{Lobby, LobbyChannel, LobbyCommand, LobbyError, LobbyResponse};
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::{
@@ -20,8 +20,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 /// Type used for a global GameCollection of all active games.
-pub type GameCollection =
-    Arc<Mutex<HashMap<String, Sender<(LobbyCommand, oneshot::Sender<LobbyResponse>)>>>>;
+pub type GameCollection = Arc<Mutex<HashMap<String, LobbyChannel>>>;
 
 /// Serializeable response for a new game. Contains the friend code to join the game.
 #[derive(Serialize)]
@@ -56,7 +55,7 @@ pub struct NonexistentGameRejection;
 impl Reject for NonexistentGameRejection {}
 
 /// Creates a new game for the given player ID.
-/// 
+///
 /// # Arguments
 ///
 /// * `player_id` - The Player ID of the game creator.
@@ -89,7 +88,8 @@ pub async fn create_game(
     let (oneshot_tx, oneshot_rx) = oneshot::channel();
     lobby_channel
         .send((LobbyCommand::GetFriendCode, oneshot_tx))
-        .await;
+        .await
+        .unwrap();
 
     let friend_code = match oneshot_rx.await.unwrap() {
         LobbyResponse::FriendCode(code) => code,
@@ -144,7 +144,8 @@ pub async fn join_game(
             },
             oneshot_tx,
         ))
-        .await;
+        .await
+        .unwrap();
 
     match oneshot_rx.await.unwrap() {
         LobbyResponse::Standard(result) => {
@@ -159,16 +160,19 @@ pub async fn join_game(
         }
     }
 
-    log::info!("Successfully added player {} to game {}.", player_id, info.friend_code);
+    log::info!(
+        "Successfully added player {} to game {}.",
+        player_id,
+        info.friend_code
+    );
     let socket_url = String::from("ws://localhost:8001/api/ws/") + &info.friend_code;
     let response = JoinGameResponse { socket_url };
     Ok(reply::json(&response))
 }
 
-
 /// Handles the initial WS connection. Checks to confirm the player is registered.
 /// If they are, will attempt to promote the WS connection and establish a new
-/// thread. Otherwise, the connection is rejected. 
+/// thread. Otherwise, the connection is rejected.
 ///
 /// # Arguments
 ///
@@ -180,7 +184,7 @@ pub async fn join_game(
 /// # Returns
 ///
 /// * Upgraded WS connection for Warp on success
-/// * 
+/// *
 pub async fn connect_ws(
     ws: Ws,
     friend_code: String,
@@ -229,11 +233,7 @@ pub async fn connect_ws(
 /// * `socket` - The upgraded WebSocket connection
 /// * `player_id` - The player ID connecting to the game.
 /// * `lobby_channel` - The channel to the lobby.
-async fn client_connection(
-    socket: WebSocket,
-    player_id: String,
-    mut lobby_channel: LobbyChannel,
-) {
+async fn client_connection(socket: WebSocket, player_id: String, mut lobby_channel: LobbyChannel) {
     let (oneshot_tx, oneshot_rx) = oneshot::channel();
     lobby_channel
         .send((
@@ -243,7 +243,8 @@ async fn client_connection(
             },
             oneshot_tx,
         ))
-        .await;
+        .await
+        .unwrap();
 
     match oneshot_rx.await.unwrap() {
         LobbyResponse::Standard(result) => {
