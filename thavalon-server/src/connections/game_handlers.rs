@@ -86,10 +86,11 @@ pub async fn create_game(
     // Create a new game and add the player.
     let mut lobby_channel = Lobby::new().await;
     let (oneshot_tx, oneshot_rx) = oneshot::channel();
-    lobby_channel
+
+    // TODO: Error handling here.
+    let _ = lobby_channel
         .send((LobbyCommand::GetFriendCode, oneshot_tx))
-        .await
-        .unwrap();
+        .await;
 
     let friend_code = match oneshot_rx.await.unwrap() {
         LobbyResponse::FriendCode(code) => code,
@@ -136,7 +137,10 @@ pub async fn join_game(
     };
 
     let (oneshot_tx, oneshot_rx) = oneshot::channel();
-    lobby_channel
+
+    // TODO: Figure out if this needs error handling.
+    // Can't use .unwrap() here since SendError doesn't implement Debug
+    let _ = lobby_channel
         .send((
             LobbyCommand::AddPlayer {
                 player_id: player_id.clone(),
@@ -144,8 +148,7 @@ pub async fn join_game(
             },
             oneshot_tx,
         ))
-        .await
-        .unwrap();
+        .await;
 
     match oneshot_rx.await.unwrap() {
         LobbyResponse::Standard(result) => {
@@ -200,7 +203,9 @@ pub async fn connect_ws(
     };
 
     let (oneshot_tx, oneshot_rx) = oneshot::channel();
-    lobby_channel
+
+    // TODO: Error handling here.
+    let _ = lobby_channel
         .send((
             LobbyCommand::IsPlayerRegistered {
                 player_id: player_id.clone(),
@@ -235,7 +240,9 @@ pub async fn connect_ws(
 /// * `lobby_channel` - The channel to the lobby.
 async fn client_connection(socket: WebSocket, player_id: String, mut lobby_channel: LobbyChannel) {
     let (oneshot_tx, oneshot_rx) = oneshot::channel();
-    lobby_channel
+
+    // TODO: Error handling may be needed here.
+    let _ = lobby_channel
         .send((
             LobbyCommand::ConnectClientChannels {
                 player_id,
@@ -243,8 +250,7 @@ async fn client_connection(socket: WebSocket, player_id: String, mut lobby_chann
             },
             oneshot_tx,
         ))
-        .await
-        .unwrap();
+        .await;
 
     match oneshot_rx.await.unwrap() {
         LobbyResponse::Standard(result) => {

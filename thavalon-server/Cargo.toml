@@ -45,6 +45,3 @@ version = "0.8.1"
 features = [
     "v4",
 ]
-
-[dev-dependencies]
-mockall = "0.8.3"

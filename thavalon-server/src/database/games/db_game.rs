@@ -5,8 +5,6 @@ use std::{collections::HashSet, iter};
 
 use async_trait::async_trait;
 use chrono::Utc;
-#[cfg(test)]
-use mockall::*;
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Document},
     error::Error,
@@ -20,31 +18,6 @@ use thiserror::Error;
 
 const GAME_COLLECTION: &str = "thavalon_games";
 const FRIEND_CODE_LENGTH: usize = 4;
-
-// TODO: All of this for testing.
-#[cfg_attr(test, automock)]
-#[async_trait]
-trait MongoCollection {
-    async fn insert_one(
-        &self,
-        doc: Document,
-        options: impl Into<Option<InsertOneOptions>>,
-    ) -> Result<InsertOneResult, Error>;
-
-    async fn replace_one(
-        &self,
-        query: Document,
-        replacement: Document,
-        options: impl Into<Option<ReplaceOptions>>,
-    ) -> Result<UpdateResult, Error>;
-
-    async fn update_one(
-        &self,
-        query: Document,
-        update: impl Into<UpdateModifications>,
-        options: impl Into<Option<UpdateOptions>>,
-    ) -> Result<UpdateResult, Error>;
-}
 
 /// Contains errors related to database games.
 #[derive(PartialEq, Error, Debug)]
