@@ -80,10 +80,7 @@ pub enum VoteCounts {
         downvotes: HashSet<String>,
     },
     /// Obscured mission votes, where it is not known who up- or downvoted.
-    Obscured {
-        upvotes: u32,
-        downvotes: u32,
-    },
+    Obscured { upvotes: u32, downvotes: u32 },
 }
 
 #[derive(Error, Debug)]
