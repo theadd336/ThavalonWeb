@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navbar } from './components/Navbar';
-import { Switch, Route } from 'react-router-dom';
+import { Switch, Route, Redirect } from 'react-router-dom';
 import { Login } from './components/Login';
 import { Logout } from './components/Logout';
 import { Register } from './components/Register';
@@ -13,21 +13,39 @@ import ReactModal from 'react-modal';
 ReactModal.setAppElement("#root");
 
 function App() {
+  // state for checking if logged in
   const [loggedIn, setLoggedIn] = useState(false);
+  // state for checking if logged in already checked via useEffect, to prevent it from briefly loading
+  // the register page before redirect to account page if user is logged in
+  const [checkedLoggedIn, setCheckedLoggedIn] = useState(false);
+  // state for checking if should display mobile navbar menu
   const [useMobileMenu, setUseMobileMenu] = useState(false);
+  // state for determining if login modal shown, controlled by navbar click
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   // check logged in status within useEffect to not enter render loop
   useEffect(() => {
     const accountManager = AccountManager.getInstance();
     accountManager.checkLoggedIn().then((httpResponse: HttpResponse) => {
       // calling set logged in will, on success, trigger a timer to regularly check refresh token
       setLoggedIn(httpResponse.result);
-    });  
+      setCheckedLoggedIn(true);
+    });
   })
 
+  // check if should redirect from register to account page
+  let registerPage: JSX.Element = <></>;
+  if (checkedLoggedIn) {
+    if (loggedIn) {
+      registerPage = <Redirect to="/account" />;
+    } else {
+      registerPage = <Register setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} />;
+    }
+  }
 
   return (
     <div>
-      <Navbar loggedIn={loggedIn} useMobileMenu={useMobileMenu} setUseMobileMenu={setUseMobileMenu} />
+      <Navbar loggedIn={loggedIn} useMobileMenu={useMobileMenu} setUseMobileMenu={setUseMobileMenu} setShowLoginModal={setShowLoginModal} />
       <Switch>
         <Route path="/" exact>
           <Home />
@@ -38,18 +56,12 @@ function App() {
         <Route path="/account">
           <Account />
         </Route>
-        <Route path="/login" render={
-          (_) => <Login setLoggedIn={setLoggedIn} />
-        }>
-        </Route>
         <Route path="/logout">
           <Logout setLoggedIn={() => setLoggedIn(false)} />
         </Route>
-        <Route path="/register" render={
-          (_) => <Register setLoggedIn={setLoggedIn} />
-        }>
-        </Route>
+        <Route path="/register" render={() => registerPage} />
       </Switch>
+      {showLoginModal && <Login setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} showLoginModal={showLoginModal} />}
     </div>
   );
 }
