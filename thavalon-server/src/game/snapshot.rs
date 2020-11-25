@@ -7,7 +7,7 @@ use thiserror::Error;
 
 use super::messages::{Message, VoteCounts};
 use super::role::{Role, RoleDetails};
-use super::{MissionNumber, PlayerId};
+use super::MissionNumber;
 
 /// Snapshot of game state.
 #[derive(Debug, Clone)]
@@ -53,8 +53,8 @@ pub struct MissionResults {
 
 #[derive(Debug, Clone)]
 pub struct Proposal {
-    pub proposed_by: PlayerId,
-    pub players: HashSet<PlayerId>,
+    pub proposed_by: String,
+    pub players: HashSet<String>,
 }
 
 /// Results of voting on a mission. Normally, this includes exactly who upvoted or downvoted. If Maeve obscured the mission,
@@ -62,8 +62,8 @@ pub struct Proposal {
 #[derive(Debug, Clone)]
 pub enum VotingResults {
     Public {
-        upvotes: HashSet<PlayerId>,
-        downvotes: HashSet<PlayerId>,
+        upvotes: HashSet<String>,
+        downvotes: HashSet<String>,
     },
     Obscured {
         upvotes: u32,
@@ -80,18 +80,26 @@ impl GameSnapshot {
         }
     }
 
-    pub fn mission(&self, mission: MissionNumber) -> &Mission {
-        &self.missions[(mission - 1) as usize]
+    /// Looks up mission information by number. If the game has not reached `mission` yet, returns `None`.
+    pub fn mission(&self, mission: MissionNumber) -> Option<&Mission> {
+        self.missions.get((mission - 1) as usize)
     }
 
+    /// Like [`Self::mission`], but returns a mutable reference
     fn mission_mut(&mut self, mission: MissionNumber) -> &mut Mission {
         &mut self.missions[(mission - 1) as usize]
     }
 
+    /// The number of the mission currently in progress
     pub fn current_mission(&self) -> MissionNumber {
         self.missions.len() as MissionNumber
     }
 
+    /// Get a mutable reference to the current mission.alloc
+    /// 
+    /// # Panics
+    /// If there is *no* current mission, which would only happen if messages were received in an invalid
+    /// order.
     fn current_mut(&mut self) -> &mut Mission {
         self.missions.last_mut().unwrap()
     }
