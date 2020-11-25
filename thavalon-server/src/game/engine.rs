@@ -196,7 +196,6 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
     /// except for on mission 1 where players choose between two proposals. Each player must vote exactly once.
     async fn vote(&mut self) -> Result<VotingResults, GameError> {
         log::debug!("Voting on a proposal!");
-        let game = self.game;
         self.interactions.send(Message::CommenceVoting).await?;
         let mut votes = HashMap::with_capacity(self.game.size());
         while votes.len() != self.game.size() {

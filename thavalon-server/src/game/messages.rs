@@ -81,4 +81,7 @@ pub enum VoteCounts {
 pub enum GameError {
     #[error("Could not communicate with player")]
     PlayerDisconnected,
+
+    #[error("Internal interaction error")]
+    Internal(#[from] Box<dyn std::error::Error + Send + 'static>),
 }

@@ -1,12 +1,15 @@
 //! Snapshots of the current state of a game. These can be persisted or sent to clients.
 #![allow(dead_code)]
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex};
 
+use async_trait::async_trait;
 use thiserror::Error;
 
-use super::messages::{Message, VoteCounts};
+use super::messages::{Action, Message, VoteCounts, GameError};
 use super::role::{Role, RoleDetails};
+use super::interactions::Interactions;
 use super::MissionNumber;
 
 /// Snapshot of game state.
@@ -226,4 +229,90 @@ impl GameSnapshot {
 pub enum SnapshotError {
     #[error("Unexpected message: {0:?}")]
     UnexpectedMessage(Message),
+}
+
+impl From<SnapshotError> for GameError {
+    fn from(error: SnapshotError) -> GameError {
+        GameError::Internal(Box::new(error))
+    }
+}
+
+/// An [`Interactions`] wrapper which snapshots all messages in addition to forwarding them to another [`Interactions`]
+pub struct SnapshotInteractions<I: Interactions> {
+    inner: I,
+    snapshots: Arc<Mutex<HashMap<String, Arc<Mutex<GameSnapshot>>>>>,
+}
+
+/// Handle to the per-player snapshots maintained by [`SnapshotInteractions`].
+#[derive(Debug, Clone)]
+pub struct Snapshots {
+    inner: Arc<Mutex<HashMap<String, Arc<Mutex<GameSnapshot>>>>>
+}
+
+impl <I: Interactions> SnapshotInteractions<I> {
+    /// Create a new `SnapshotInteractions` that delegates to `inner`.
+    pub fn new(inner: I) -> SnapshotInteractions<I> {
+        SnapshotInteractions {
+            inner,
+            snapshots: Arc::new(Mutex::new(HashMap::new()))
+        }
+    }
+
+    /// Create a new [`Snapshots`] handle, which will have access to all game snapshots this creates.
+    pub fn snapshots(&self) -> Snapshots {
+        Snapshots { inner: self.snapshots.clone() }
+    }
+
+    fn snapshot(&mut self, player: &str) -> Arc<Mutex<GameSnapshot>> {
+        let mut snapshots = self.snapshots.lock().unwrap();
+
+        match snapshots.get(player) {
+            Some(s) => s.clone(),
+            None => {
+                let snapshot = Arc::new(Mutex::new(GameSnapshot::new()));
+                snapshots.insert(player.to_string(), snapshot.clone());
+                snapshot
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl <I: Interactions + Send> Interactions for SnapshotInteractions<I> {
+    async fn send_to(&mut self, player: &str, message: Message) -> Result<(), GameError> {
+        {
+            let snapshot = self.snapshot(player);
+            let mut snapshot = snapshot.lock().unwrap();
+            snapshot.on_message(message.clone())?;
+        }
+        self.inner.send_to(player, message).await
+    }
+
+    async fn send(&mut self, message: Message) -> Result<(), GameError> {
+        {
+            let snapshots = self.snapshots.lock().unwrap();
+            for snapshot in snapshots.values() {
+                let mut snapshot = snapshot.lock().unwrap();
+                snapshot.on_message(message.clone())?;
+            }
+        }
+        self.inner.send(message).await
+    }
+
+    async fn receive<F, R>(&mut self, f: F) -> Result<R, GameError>
+    where
+        R: Send,
+        F: FnMut(String, Action) -> Result<R, String> + Send {
+            self.inner.receive(f).await
+        }
+}
+
+impl Snapshots {
+    /// Gets a handle to the snapshot for a given player. This will return `None` if the player does not
+    /// exist or the game has not yet started. As the game progresses, the [`GameSnapshot`] inside the
+    /// [`Mutex`] will update.
+    pub fn get(&self, player: &str) -> Option<Arc<Mutex<GameSnapshot>>> {
+        let snapshots = self.inner.lock().unwrap();
+        snapshots.get(player).cloned()
+    }
 }
