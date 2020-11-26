@@ -77,7 +77,7 @@ pub enum VoteCounts {
     },
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Serialize)]
 pub enum GameError {
     #[error("Could not communicate with player")]
     PlayerDisconnected,
