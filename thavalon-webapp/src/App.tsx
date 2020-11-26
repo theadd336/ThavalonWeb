@@ -33,14 +33,15 @@ function App() {
     });
   })
 
-  // check if should redirect from register to account page
-  let registerPage: JSX.Element = <></>;
-  if (checkedLoggedIn) {
-    if (loggedIn) {
-      registerPage = <Redirect to="/account" />;
-    } else {
-      registerPage = <Register setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} />;
+  function registerPage(): JSX.Element {
+    if (checkedLoggedIn) {
+      if (loggedIn) {
+        return <Redirect to="/account" />;
+      } else {
+        return <Register setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} />;
+      }
     }
+    return <></>;
   }
 
   return (
@@ -59,7 +60,7 @@ function App() {
         <Route path="/logout">
           <Logout setLoggedIn={() => setLoggedIn(false)} />
         </Route>
-        <Route path="/register" render={() => registerPage} />
+        <Route path="/register" render={() => registerPage()} />
       </Switch>
       {showLoginModal && <Login setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} showLoginModal={showLoginModal} />}
     </div>
