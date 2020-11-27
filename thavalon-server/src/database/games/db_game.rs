@@ -1,7 +1,8 @@
 //! Game collection related functions and structs
 use crate::database::get_database;
+use crate::utils;
 
-use std::{collections::HashSet, iter};
+use std::collections::HashSet;
 
 use async_trait::async_trait;
 use chrono::Utc;
@@ -12,7 +13,6 @@ use mongodb::{
     results::{InsertOneResult, UpdateResult},
     Collection,
 };
-use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -60,7 +60,7 @@ impl DatabaseGame {
     /// * `DatabaseGame` on success. `GameError::CreationError` on failure.
     pub async fn new() -> Result<Self, DBGameError> {
         log::info!("Creating a new database game.");
-        let collection = get_database().await.collection(GAME_COLLECTION);
+        let collection = DatabaseGame::get_collection().await;
         let _id: ObjectId = match collection.insert_one(doc! {}, None).await {
             Ok(result) => {
                 bson::from_bson(result.inserted_id).expect("Could not deserialize new game _id.")
@@ -71,16 +71,7 @@ impl DatabaseGame {
             }
         };
 
-        let friend_code;
-        {
-            let mut rng = rand::thread_rng();
-            friend_code = iter::repeat(())
-                .map(|()| rng.sample(Alphanumeric))
-                .take(4)
-                .collect::<String>()
-                .to_uppercase();
-        }
-
+        let friend_code = utils::generate_random_string(4, true);
         let game = DatabaseGame {
             friend_code,
             _id,
@@ -260,10 +251,7 @@ impl DatabaseGame {
             .update_one(doc! {"_id": &self._id}, update_doc, None)
             .await
         {
-            log::error!(
-                "ERROR: failed to update database game while starting the game. {}.",
-                e
-            );
+            log::error!("ERROR: failed to update database game. {}.", e);
             return Err(DBGameError::UpdateError);
         }
 

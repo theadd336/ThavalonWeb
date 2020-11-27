@@ -120,7 +120,7 @@ impl Lobby {
         );
         if self.status != DBGameStatus::Lobby {
             log::warn!(
-                "Player {} attempted to join in-progress of finished game {}.",
+                "Player {} attempted to join in-progress or finished game {}.",
                 player_id,
                 self.friend_code
             );
@@ -216,7 +216,8 @@ impl Lobby {
                             client_id,
                             msg
                         );
-                        // TODO: For now, just kill the connection.
+                        // No way to recover if we get bad JSON, so just kill
+                        // the connection.
                         break;
                     }
                 };

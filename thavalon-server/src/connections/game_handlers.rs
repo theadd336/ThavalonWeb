@@ -95,8 +95,7 @@ pub async fn create_game(
     let friend_code = match oneshot_rx.await.unwrap() {
         LobbyResponse::FriendCode(code) => code,
         _ => {
-            log::error!("Failed to receive friend code from new lobby.");
-            return Err(warp::reject());
+            panic!("Failed to receive friend code from new lobby.");
         }
     };
 
@@ -158,8 +157,7 @@ pub async fn join_game(
             }
         }
         _ => {
-            log::error!("Failed to receive the expected LobbyResponse");
-            return Err(warp::reject());
+            panic!("Failed to receive the expected LobbyResponse");
         }
     }
 
@@ -168,7 +166,7 @@ pub async fn join_game(
         player_id,
         info.friend_code
     );
-    let socket_url = String::from("ws://localhost:8001/api/ws/") + &info.friend_code;
+    let socket_url = format!("ws://localhost:8001/api/ws/{}", info.friend_code);
     let response = JoinGameResponse { socket_url };
     Ok(reply::json(&response))
 }
@@ -222,8 +220,7 @@ pub async fn connect_ws(
             }
         }
         _ => {
-            log::error!("Did not receive the expected lobby response.");
-            return Err(warp::reject());
+            panic!("Did not receive the expected lobby response.");
         }
     };
 
@@ -259,7 +256,7 @@ async fn client_connection(socket: WebSocket, player_id: String, mut lobby_chann
             }
         }
         _ => {
-            log::error!("Error while updating player channels.");
+            panic!("Error while updating player channels.");
         }
     }
 }
