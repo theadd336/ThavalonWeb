@@ -10,12 +10,14 @@ import { Account } from './components/Account';
 import { CreateJoinGameModal } from './components/gameCreation';
 import ReactModal from 'react-modal';
 
+import "bootstrap/dist/css/bootstrap.min.css";
 // Used by react modal for screen readers
 ReactModal.setAppElement("#root");
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [useMobileMenu, setUseMobileMenu] = useState(false);
+  const [showCreatePlayModal, setShowCreatePlayModal] = useState(false);
   // check logged in status within useEffect to not enter render loop
   useEffect(() => {
     const accountManager = AccountManager.getInstance();
@@ -40,7 +42,7 @@ function App() {
           <Account />
         </Route>
         <Route path="/play">
-          <CreateJoinGameModal />
+          <CreateJoinGameModal show={showCreatePlayModal} />
         </Route>
         <Route path="/login" render={
           (_) => <Login setLoggedIn={setLoggedIn} />
