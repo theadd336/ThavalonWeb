@@ -139,11 +139,12 @@ export class AccountManager {
     /**
      * Checks whether user is logged in via refresh token. If so, will set a timer to check
      * refresh token regularly.
+     * @param setTimer if True, will set a timer to recheck the token regularly if the user is logged in
      * @returns A promise with an HttpResponse, indicating if user is logged in and any errors.
      */
-    public async checkLoggedIn(): Promise<HttpResponse> {
+    public async checkLoggedIn(setTimer=true): Promise<HttpResponse> {
         let httpResponse = await this.checkRefreshToken();
-        if (httpResponse.result) {
+        if (setTimer && httpResponse.result) {
             this.checkRefreshTokenOnTimer();
         }
         return httpResponse;

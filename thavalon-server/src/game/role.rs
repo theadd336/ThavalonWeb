@@ -1,11 +1,12 @@
 use std::fmt::{self, Write};
 
 use rand::prelude::*;
+use serde::Serialize;
 
 use super::{Card, Players};
 
 /// A THavalon role
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize)]
 pub enum Role {
     Merlin,
     Lancelot,
@@ -19,7 +20,7 @@ pub enum Role {
     Agravaine,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize)]
 pub enum Team {
     Good,
     /// "Misunderstood"
@@ -27,7 +28,7 @@ pub enum Team {
 }
 
 /// Information a player receives based on their role.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 pub struct RoleDetails {
     /// The team the player is on.
     team: Team,
@@ -96,12 +97,7 @@ impl Role {
     }
 
     /// Create role information for a player, `me`, given all `players` in the game.
-    pub fn generate_info<R: Rng>(
-        self,
-        rng: &mut R,
-        me: &str,
-        players: &Players,
-    ) -> RoleDetails {
+    pub fn generate_info<R: Rng>(self, rng: &mut R, me: &str, players: &Players) -> RoleDetails {
         let mut seen_players = Vec::new();
         let mut description = String::new();
         let mut abilities = String::new();

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navbar } from './components/Navbar';
-import { Switch, Route } from 'react-router-dom';
+import { Switch, Route, Redirect } from 'react-router-dom';
 import { Login } from './components/Login';
 import { Logout } from './components/Logout';
 import { Register } from './components/Register';
@@ -15,22 +15,48 @@ import "bootstrap/dist/css/bootstrap.min.css";
 ReactModal.setAppElement("#root");
 
 function App() {
+  // state for checking if logged in
   const [loggedIn, setLoggedIn] = useState(false);
+  // state for checking if logged in already checked via useEffect, to prevent it from briefly loading
+  // the register page before redirect to account page if user is logged in
+  const [checkedLoggedIn, setCheckedLoggedIn] = useState(false);
+  // state for checking if should display mobile navbar menu
   const [useMobileMenu, setUseMobileMenu] = useState(false);
-  const [showCreatePlayModal, setShowCreatePlayModal] = useState(false);
+  // state for determining if the login modal shown, controlled by navbar click
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  // state for determining if the create/join game modal is shown, controlled by navbar click.
+  const [showCreateJoinGameModal, setShowCreateJoinGameModal] = useState(false);
+
   // check logged in status within useEffect to not enter render loop
   useEffect(() => {
     const accountManager = AccountManager.getInstance();
     accountManager.checkLoggedIn().then((httpResponse: HttpResponse) => {
       // calling set logged in will, on success, trigger a timer to regularly check refresh token
       setLoggedIn(httpResponse.result);
+      setCheckedLoggedIn(true);
     });
   })
 
+  function registerPage(): JSX.Element {
+    if (checkedLoggedIn) {
+      if (loggedIn) {
+        return <Redirect to="/account" />;
+      } else {
+        return <Register setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} />;
+      }
+    }
+    return <></>;
+  }
 
   return (
     <div>
-      <Navbar loggedIn={loggedIn} useMobileMenu={useMobileMenu} setUseMobileMenu={setUseMobileMenu} />
+      <Navbar
+        loggedIn={loggedIn}
+        useMobileMenu={useMobileMenu}
+        setUseMobileMenu={setUseMobileMenu}
+        setShowLoginModal={setShowLoginModal}
+        setShowCreateJoinGameModal={setShowCreateJoinGameModal}
+      />
       <Switch>
         <Route path="/" exact>
           <Home />
@@ -41,22 +67,14 @@ function App() {
         <Route path="/account">
           <Account />
         </Route>
-        <Route path="/play">
-          <CreateJoinGameModal show={showCreatePlayModal} />
-        </Route>
-        <Route path="/login" render={
-          (_) => <Login setLoggedIn={setLoggedIn} />
-        }>
-        </Route>
         <Route path="/logout">
           <Logout setLoggedIn={() => setLoggedIn(false)} />
         </Route>
-        <Route path="/register" render={
-          (_) => <Register setLoggedIn={setLoggedIn} />
-        }>
-        </Route>
+        <Route path="/register" render={() => registerPage()} />
       </Switch>
-    </div >
+      {showLoginModal && <Login setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} showLoginModal={showLoginModal} />}
+      <CreateJoinGameModal show={showCreateJoinGameModal} onHide={setShowCreateJoinGameModal} />
+    </div>
   );
 }
 

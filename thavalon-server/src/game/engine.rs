@@ -78,38 +78,46 @@ pub async fn run_game<I: Interactions>(game: &Game, interactions: &mut I) -> Res
 
     let mut failed_missions = if first_passed { 0 } else { 1 };
     let mut passed_missions = 1 - failed_missions;
+    let mut proposals_made = 0;
 
-    'missions: for mission in 2..=5 {
-        'proposals: for proposal_num in 1..=game.spec.proposals() {
+    for mission in 2..=5 {
+        let mut mission_sent = false;
+        while !mission_sent {
             let proposer = ge.proposers.next().unwrap();
-            let proposal = ge
-                .get_proposal(proposer, mission, proposal_num as u8)
-                .await?;
+            let proposal = ge.get_proposal(proposer, mission, proposals_made).await?;
 
             // If this proposal has force, skip voting
             // Otherwise, vote on the mission
-            if proposal_num != game.spec.proposals() {
-                let votes = ge.vote().await?;
-                if !votes.sent {
-                    continue 'proposals;
-                }
-            }
-
-            let passed = ge.send_mission(proposal, mission as usize).await?;
-            if passed {
-                passed_missions += 1;
+            if proposals_made > ge.game.spec.max_proposals {
+                log::debug!("Sending {} with force", proposal);
+                mission_sent = true;
             } else {
-                failed_missions += 1;
+                log::debug!("Voting on {}", proposal);
+                mission_sent = ge.vote().await?.sent;
             }
 
-            // Skip remaining missions if a team has already won (pending assasination)
-            if passed_missions == 3 {
-                log::debug!("3 missions have passed");
-                break 'missions;
-            } else if failed_missions == 3 {
-                log::debug!("3 missions have failed");
-                break 'missions;
+            if mission_sent {
+                let passed = ge.send_mission(proposal, mission as usize).await?;
+                if passed {
+                    log::debug!("Mission {} passed", mission);
+                    passed_missions += 1;
+                } else {
+                    log::debug!("Mission {} failed", mission);
+                    failed_missions += 1;
+                }
+            } else {
+                // Only rejected proposals count towards the total number of used proposals.
+                proposals_made += 1;
             }
+        }
+
+        // Once a mission has been sent, check if a team has won (pending assassination)
+        if passed_missions == 3 {
+            log::debug!("3 missions have passed");
+            break;
+        } else if failed_missions == 3 {
+            log::debug!("3 missions have failed");
+            break;
         }
     }
 
@@ -138,19 +146,21 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         &mut self,
         from: String,
         mission: u8,
-        proposal: u8,
+        proposals_made: usize,
     ) -> Result<Proposal<'a>, GameError> {
         log::debug!(
-            "Getting a proposal from {} for mission {}, proposal {}",
+            "Getting a proposal from {} for mission {} ({}/{} before force activates)",
             from,
             mission,
-            proposal
+            proposals_made,
+            self.game.spec.max_proposals,
         );
         self.interactions
             .send(Message::NextProposal {
                 proposer: from.clone(),
                 mission,
-                proposal,
+                proposals_made,
+                max_proposals: self.game.spec.max_proposals,
             })
             .await?;
 
@@ -177,7 +187,6 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
                 proposer: from.clone(),
                 players: players.clone(),
                 mission,
-                proposal,
             })
             .await?;
 
@@ -448,7 +457,13 @@ mod test {
         Game {
             players,
             info,
-            proposal_order: vec!["Player 1".to_string(), "Player 2".to_string(), "Player 3".to_string(), "Player 4".to_string(), "Player 5".to_string()],
+            proposal_order: vec![
+                "Player 1".to_string(),
+                "Player 2".to_string(),
+                "Player 3".to_string(),
+                "Player 4".to_string(),
+                "Player 5".to_string(),
+            ],
             spec: GameSpec::for_players(5),
         }
     }
@@ -556,7 +571,11 @@ mod test {
             (
                 "Player 2".to_string(),
                 Action::Propose {
-                    players: hashset!["Player 2".to_string(), "Player 1".to_string(), "Player 4".to_string()],
+                    players: hashset![
+                        "Player 2".to_string(),
+                        "Player 1".to_string(),
+                        "Player 4".to_string()
+                    ],
                 },
             ),
             (
@@ -567,18 +586,25 @@ mod test {
             ),
         ]);
 
-        let proposal = block_on(engine.get_proposal("Player 2".to_string(), 1, 1)).unwrap();
+        let proposal = block_on(engine.get_proposal("Player 2".to_string(), 1, 0)).unwrap();
 
         assert_eq!(proposal.proposer, "Player 2".to_string());
-        assert_eq!(proposal.players, hashset!["Player 2".to_string(), "Player 4".to_string()]);
+        assert_eq!(
+            proposal.players,
+            hashset!["Player 2".to_string(), "Player 4".to_string()]
+        );
 
         assert_eq!(
-            interactions.messages_for("Player 1".to_string()).collect::<Vec<_>>(),
+            interactions
+                .messages_for("Player 1".to_string())
+                .collect::<Vec<_>>(),
             vec![&Message::Error("It's not your proposal!".to_string())]
         );
 
         assert_eq!(
-            interactions.messages_for("Player 2".to_string()).collect::<Vec<_>>(),
+            interactions
+                .messages_for("Player 2".to_string())
+                .collect::<Vec<_>>(),
             vec![&Message::Error(
                 "Proposal must contain 2 players".to_string()
             )]
@@ -590,13 +616,56 @@ mod test {
                 Message::NextProposal {
                     proposer: "Player 2".to_string(),
                     mission: 1,
-                    proposal: 1
+                    proposals_made: 0,
+                    max_proposals: game.spec.max_proposals,
                 },
                 Message::ProposalMade {
                     proposer: "Player 2".to_string(),
                     mission: 1,
-                    proposal: 1,
-                    players: hashset!["Player 2".to_string(), "Player 4".to_string()]
+                    players: hashset!["Player 2".to_string(), "Player 4".to_string()],
+                }
+            ]
+        );
+    }
+
+    #[test]
+    fn test_force_proposal() {
+        let mut interactions = TestInteractions::new();
+        let game = make_game();
+        let mut engine = GameEngine::new(&game, &mut interactions);
+
+        engine.interactions.extend_actions(vec![(
+            "Player 1".to_string(),
+            Action::Propose {
+                players: hashset![
+                    "Player 1".to_string(),
+                    "Player 2".to_string(),
+                    "Player 3".to_string()
+                ],
+            },
+        )]);
+
+        // max_proposals + 1 is the first proposal with force, and max_proposals is the last proposal before force
+        block_on(engine.get_proposal("Player 1".to_string(), 2, game.spec.max_proposals + 1))
+            .unwrap();
+
+        assert_eq!(
+            interactions.broadcasts(),
+            &[
+                Message::NextProposal {
+                    proposer: "Player 1".to_string(),
+                    mission: 2,
+                    proposals_made: game.spec.max_proposals + 1,
+                    max_proposals: game.spec.max_proposals,
+                },
+                Message::ProposalMade {
+                    proposer: "Player 1".to_string(),
+                    mission: 2,
+                    players: hashset![
+                        "Player 1".to_string(),
+                        "Player 2".to_string(),
+                        "Player 3".to_string()
+                    ],
                 }
             ]
         );
@@ -619,11 +688,19 @@ mod test {
 
         let results = block_on(engine.vote()).unwrap();
         assert!(results.sent);
-        assert_eq!(results.upvotes().collect::<HashSet<_>>(), hashset!["Player 2", "Player 1", "Player 5"]);
-        assert_eq!(results.downvotes().collect::<HashSet<_>>(), hashset!["Player 3", "Player 4"]);
+        assert_eq!(
+            results.upvotes().collect::<HashSet<_>>(),
+            hashset!["Player 2", "Player 1", "Player 5"]
+        );
+        assert_eq!(
+            results.downvotes().collect::<HashSet<_>>(),
+            hashset!["Player 3", "Player 4"]
+        );
 
         assert_eq!(
-            interactions.messages_for("Player 2".to_string()).collect::<Vec<_>>(),
+            interactions
+                .messages_for("Player 2".to_string())
+                .collect::<Vec<_>>(),
             vec![&Message::Error("You already voted".to_string())]
         );
 
@@ -634,7 +711,11 @@ mod test {
                 Message::VotingResults {
                     sent: true,
                     counts: VoteCounts::Public {
-                        upvotes: hashset!["Player 2".to_string(), "Player 1".to_string(), "Player 5".to_string()],
+                        upvotes: hashset![
+                            "Player 2".to_string(),
+                            "Player 1".to_string(),
+                            "Player 5".to_string()
+                        ],
                         downvotes: hashset!["Player 3".to_string(), "Player 4".to_string()]
                     }
                 }
@@ -677,7 +758,11 @@ mod test {
         let proposal = Proposal {
             game: &game,
             proposer: "Player 1".to_string(),
-            players: hashset!["Player 1".to_string(), "Player 2".to_string(), "Player 4".to_string()],
+            players: hashset![
+                "Player 1".to_string(),
+                "Player 2".to_string(),
+                "Player 4".to_string()
+            ],
         };
 
         let success = engine.send_mission(proposal, 3).await.unwrap();
@@ -732,7 +817,11 @@ mod test {
         let proposal = Proposal {
             game: &game,
             proposer: "Player 1".to_string(),
-            players: hashset!["Player 1".to_string(), "Player 2".to_string(), "Player 5".to_string()],
+            players: hashset![
+                "Player 1".to_string(),
+                "Player 2".to_string(),
+                "Player 5".to_string()
+            ],
         };
 
         let passed = engine.send_mission(proposal, 3).await.unwrap();
