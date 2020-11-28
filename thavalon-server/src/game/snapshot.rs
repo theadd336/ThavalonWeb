@@ -117,19 +117,12 @@ impl GameSnapshot {
             }
 
             Message::NextProposal {
-                proposal,
                 mission,
                 proposer,
+                ..
             } => {
                 // If it's the first proposal of a round, we need to add a new Mission struct
-                if proposal == 0 {
-                    if self.current_mission() != mission - 1 {
-                        return Err(SnapshotError::UnexpectedMessage(Message::NextProposal {
-                            proposer,
-                            proposal,
-                            mission,
-                        }));
-                    }
+                if self.missions.is_empty() || self.current_mission() != mission {
                     self.missions.push(Mission {
                         proposals: Vec::new(),
                         voting_results: Vec::new(),

@@ -97,12 +97,7 @@ impl Role {
     }
 
     /// Create role information for a player, `me`, given all `players` in the game.
-    pub fn generate_info<R: Rng>(
-        self,
-        rng: &mut R,
-        me: &str,
-        players: &Players,
-    ) -> RoleDetails {
+    pub fn generate_info<R: Rng>(self, rng: &mut R, me: &str, players: &Players) -> RoleDetails {
         let mut seen_players = Vec::new();
         let mut description = String::new();
         let mut abilities = String::new();

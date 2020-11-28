@@ -83,9 +83,13 @@ impl Interactions for ChannelInteractions {
                     let out = self.outbox.get_mut(&player).unwrap();
                     match f(player, action) {
                         Ok(result) => return Ok(result),
-                        Err(msg) => out.send(Message::Error(msg)).map_err(|_| GameError::PlayerDisconnected).await?
+                        Err(msg) => {
+                            out.send(Message::Error(msg))
+                                .map_err(|_| GameError::PlayerDisconnected)
+                                .await?
+                        }
                     }
-                },
+                }
                 None => return Err(GameError::PlayerDisconnected),
             }
         }

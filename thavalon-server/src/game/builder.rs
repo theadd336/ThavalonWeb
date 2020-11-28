@@ -3,11 +3,11 @@
 use tokio::sync::mpsc;
 use tokio::task;
 
-use super::Game;
 use super::engine;
 use super::interactions::ChannelInteractions;
 use super::messages::{Action, Message};
 use super::snapshot::{SnapshotInteractions, Snapshots};
+use super::Game;
 
 /// Builder for starting a new THavalon game
 pub struct GameBuilder {
@@ -23,7 +23,8 @@ impl GameBuilder {
         let (action_tx, action_rx) = mpsc::channel(10);
         let (message_tx, message_rx) = mpsc::channel(10);
 
-        self.interactions.add_player(name.clone(), action_rx, message_tx);
+        self.interactions
+            .add_player(name.clone(), action_rx, message_tx);
         self.players.push(name);
 
         (action_tx, message_rx)
