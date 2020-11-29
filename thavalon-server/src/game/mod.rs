@@ -66,6 +66,8 @@ pub struct Game {
     players: Players,
     info: HashMap<String, RoleDetails>,
     proposal_order: Vec<String>,
+    assassin: String,
+    priority_target: PriorityTarget,
     spec: &'static GameSpec,
 }
 
@@ -87,11 +89,35 @@ impl Game {
             players.add_player(name, role);
         }
 
+        let assassin = players
+            .evil_players()
+            .choose(&mut rng)
+            .cloned()
+            .expect("Could not choose an assassin, game contained no evil players");
+
+        let mut priority_targets = Vec::new();
+        if players.has_role(Role::Merlin) {
+            priority_targets.push(PriorityTarget::Merlin);
+        }
+        if players.has_role(Role::Tristan) && players.has_role(Role::Iseult) {
+            priority_targets.push(PriorityTarget::Lovers);
+        }
+        // TODO: Guinevere
+        let priority_target = *priority_targets
+            .choose(&mut rng)
+            .expect("No valid priority target!");
+
         let mut info = HashMap::with_capacity(players.len());
         for player in players.iter() {
             info.insert(
                 player.name.clone(),
-                player.role.generate_info(&mut rng, &player.name, &players),
+                player.role.generate_info(
+                    &mut rng,
+                    &player.name,
+                    &players,
+                    &assassin,
+                    priority_target,
+                ),
             );
         }
 
@@ -102,6 +128,8 @@ impl Game {
             players,
             info,
             proposal_order,
+            assassin: assassin.to_string(),
+            priority_target,
             spec,
         }
     }

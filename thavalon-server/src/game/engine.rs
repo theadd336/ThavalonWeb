@@ -11,7 +11,7 @@ use tokio::time::{self, Duration};
 
 use super::interactions::Interactions;
 use super::messages::{Action, GameError, Message, VoteCounts};
-use super::role::Role;
+use super::role::{Role, PriorityTarget};
 use super::{Card, Game, GameSpec, MissionNumber};
 
 /// Amount of time to wait for a declaration, for declarations that have to happen within a certain timeframe.
@@ -165,6 +165,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
             .await?;
 
         let size = self.game.spec.mission_size(mission);
+        let game = self.game;
         let players = self
             .interactions
             .receive(|player, action| {
@@ -172,9 +173,18 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
                     Err("It's not your proposal!".to_string())
                 } else {
                     match action {
-                        Action::Propose { players } if players.len() == size => Ok(players),
-                        Action::Propose { .. } => {
-                            Err(format!("Proposal must contain {} players", size))
+                        Action::Propose { players } => {
+                            if players.len() != size {
+                                return Err(format!("Proposal must contain {} players", size))
+                            }
+
+                            for player in players.iter() {
+                                if game.players.by_name(player).is_none() {
+                                    return Err(format!("{} is not in the game", player));
+                                }
+                            }
+
+                            Ok(players)
                         }
                         _ => Err("You can't do that right now".to_string()),
                     }
@@ -351,6 +361,60 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
 
         Ok(passed)
     }
+
+    /// Respond to an assassination attempt. This assumes it is only called from game states where assassination is
+    /// allowed.
+    async fn handle_assassination(&mut self, assassin: &str, target: PriorityTarget, players: HashSet<String>) -> Result<(), GameError> {
+        if assassin != self.game.assassin {
+            return self.interactions.send_to(assassin, Message::Error("You are not the assassin".to_string())).await;
+        }
+
+        log::debug!("{} assassinated {} as {:?}", assassin, players.iter().format(" and "), target);
+
+        let is_correct = match target {
+            PriorityTarget::Merlin => {
+                if players.len() != 1 {
+                    return self.interactions.send_to(assassin, Message::Error("You can only assassinate one player as Merlin".to_string())).await;
+                }
+                let target_name = players.iter().next().unwrap();
+                if let Some(player) = self.game.players.by_name(target_name) {
+                    player.role == Role::Merlin
+                } else {
+                    return self.interactions.send_to(assassin, Message::Error(format!("{} is not in the game", target_name))).await;
+                }
+            },
+            PriorityTarget::Guinevere => todo!("Need a Guinevere role first"),
+            PriorityTarget::Lovers => {
+                if players.len() != 2 {
+                    return self.interactions.send_to(assassin, Message::Error("You must assassinate two players as Lovers".to_string())).await;
+                }
+
+                let mut is_correct = true;
+                for target_name in players.iter() {
+                    if let Some(player) = self.game.players.by_name(target_name) {
+                        if !player.role.is_lover() {
+                            is_correct = false;
+                        }
+                    } else {
+                        return self.interactions.send_to(assassin, Message::Error(format!("{} is not in the game", target_name))).await;
+                    }
+                }
+                is_correct
+            }
+        };
+
+        Ok(())
+
+        // 1. Check if the player is really the assassin
+        // 2. Check if they were correct
+        // 3. Check if it's the priority target or if another assassination is needed.
+        // TODO: confirm how multiple assassinations work
+        // TODO: also need a move-to-assassinate action
+
+        // TODO: should probably return whether or not assassination was successful
+    }
+
+    fn locate_player(&mut self, actor: &str, player: &str) -> Result<&Player, GameError> {}
 }
 
 // Maybe a typemap for per-role game state?

@@ -7,9 +7,9 @@ use std::sync::{Arc, Mutex};
 use async_trait::async_trait;
 use thiserror::Error;
 
-use super::messages::{Action, Message, VoteCounts, GameError};
-use super::role::{Role, RoleDetails};
 use super::interactions::Interactions;
+use super::messages::{Action, GameError, Message, VoteCounts};
+use super::role::{Role, RoleDetails};
 use super::MissionNumber;
 
 /// Snapshot of game state.
@@ -99,7 +99,7 @@ impl GameSnapshot {
     }
 
     /// Get a mutable reference to the current mission.alloc
-    /// 
+    ///
     /// # Panics
     /// If there is *no* current mission, which would only happen if messages were received in an invalid
     /// order.
@@ -117,9 +117,7 @@ impl GameSnapshot {
             }
 
             Message::NextProposal {
-                mission,
-                proposer,
-                ..
+                mission, proposer, ..
             } => {
                 // If it's the first proposal of a round, we need to add a new Mission struct
                 if self.missions.is_empty() || self.current_mission() != mission {
@@ -239,21 +237,23 @@ pub struct SnapshotInteractions<I: Interactions> {
 /// Handle to the per-player snapshots maintained by [`SnapshotInteractions`].
 #[derive(Debug, Clone)]
 pub struct Snapshots {
-    inner: Arc<Mutex<HashMap<String, Arc<Mutex<GameSnapshot>>>>>
+    inner: Arc<Mutex<HashMap<String, Arc<Mutex<GameSnapshot>>>>>,
 }
 
-impl <I: Interactions> SnapshotInteractions<I> {
+impl<I: Interactions> SnapshotInteractions<I> {
     /// Create a new `SnapshotInteractions` that delegates to `inner`.
     pub fn new(inner: I) -> SnapshotInteractions<I> {
         SnapshotInteractions {
             inner,
-            snapshots: Arc::new(Mutex::new(HashMap::new()))
+            snapshots: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     /// Create a new [`Snapshots`] handle, which will have access to all game snapshots this creates.
     pub fn snapshots(&self) -> Snapshots {
-        Snapshots { inner: self.snapshots.clone() }
+        Snapshots {
+            inner: self.snapshots.clone(),
+        }
     }
 
     fn snapshot(&mut self, player: &str) -> Arc<Mutex<GameSnapshot>> {
@@ -271,7 +271,7 @@ impl <I: Interactions> SnapshotInteractions<I> {
 }
 
 #[async_trait]
-impl <I: Interactions + Send> Interactions for SnapshotInteractions<I> {
+impl<I: Interactions + Send> Interactions for SnapshotInteractions<I> {
     async fn send_to(&mut self, player: &str, message: Message) -> Result<(), GameError> {
         {
             let snapshot = self.snapshot(player);
@@ -295,9 +295,10 @@ impl <I: Interactions + Send> Interactions for SnapshotInteractions<I> {
     async fn receive<F, R>(&mut self, f: F) -> Result<R, GameError>
     where
         R: Send,
-        F: FnMut(String, Action) -> Result<R, String> + Send {
-            self.inner.receive(f).await
-        }
+        F: FnMut(String, Action) -> Result<R, String> + Send,
+    {
+        self.inner.receive(f).await
+    }
 }
 
 impl Snapshots {
