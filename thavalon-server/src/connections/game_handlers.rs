@@ -149,24 +149,28 @@ pub async fn join_game(
         ))
         .await;
 
-    match oneshot_rx.await.unwrap() {
-        LobbyResponse::Standard(result) => {
-            if let Err(e) = result {
+    let client_id = match oneshot_rx.await.unwrap() {
+        LobbyResponse::JoinGame(result) => match result {
+            Ok(client_id) => client_id,
+            Err(e) => {
                 log::warn!("Failed to add player {} to game. {}.", player_id, e);
                 return Err(warp::reject());
             }
-        }
+        },
         _ => {
             panic!("Failed to receive the expected LobbyResponse");
         }
-    }
+    };
 
     log::info!(
         "Successfully added player {} to game {}.",
         player_id,
         info.friend_code
     );
-    let socket_url = format!("ws://localhost:8001/api/ws/{}", info.friend_code);
+    let socket_url = format!(
+        "ws://localhost:8001/api/ws/{}/{}",
+        info.friend_code, client_id
+    );
     let response = JoinGameResponse { socket_url };
     Ok(reply::json(&response))
 }
@@ -179,7 +183,7 @@ pub async fn join_game(
 ///
 /// * `ws` - The unupgraded WS connection.
 /// * `friend_code` - The friend code of the game the player is joining.
-/// * `player_id` - The player ID connecting to the WS.
+/// * `client_id` - The client ID connecting to the WS.
 /// * `game_collection` - The global collection of active games.
 ///
 /// # Returns
@@ -189,7 +193,7 @@ pub async fn join_game(
 pub async fn connect_ws(
     ws: Ws,
     friend_code: String,
-    player_id: String,
+    client_id: String,
     game_collection: GameCollection,
 ) -> Result<impl Reply, Rejection> {
     let mut lobby_channel = match game_collection.lock().unwrap().get(&friend_code) {
@@ -205,15 +209,15 @@ pub async fn connect_ws(
     // TODO: Error handling here.
     let _ = lobby_channel
         .send((
-            LobbyCommand::IsPlayerRegistered {
-                player_id: player_id.clone(),
+            LobbyCommand::IsClientRegistered {
+                client_id: client_id.clone(),
             },
             oneshot_tx,
         ))
         .await;
 
     match oneshot_rx.await.unwrap() {
-        LobbyResponse::IsPlayerRegistered(is_registered) => {
+        LobbyResponse::IsClientRegistered(is_registered) => {
             if !is_registered {
                 log::error!("This player is not registered for the game.");
                 return Err(warp::reject());
@@ -224,7 +228,7 @@ pub async fn connect_ws(
         }
     };
 
-    Ok(ws.on_upgrade(move |socket| client_connection(socket, player_id, lobby_channel)))
+    Ok(ws.on_upgrade(move |socket| client_connection(socket, client_id, lobby_channel)))
 }
 
 /// Establishes connections with the player channels to the game and the existing
@@ -233,16 +237,16 @@ pub async fn connect_ws(
 /// # Arguments
 ///
 /// * `socket` - The upgraded WebSocket connection
-/// * `player_id` - The player ID connecting to the game.
+/// * `client_id` - The client ID connecting to the game.
 /// * `lobby_channel` - The channel to the lobby.
-async fn client_connection(socket: WebSocket, player_id: String, mut lobby_channel: LobbyChannel) {
+async fn client_connection(socket: WebSocket, client_id: String, mut lobby_channel: LobbyChannel) {
     let (oneshot_tx, oneshot_rx) = oneshot::channel();
 
     // TODO: Error handling may be needed here.
     let _ = lobby_channel
         .send((
             LobbyCommand::ConnectClientChannels {
-                player_id,
+                client_id,
                 ws: socket,
             },
             oneshot_tx,

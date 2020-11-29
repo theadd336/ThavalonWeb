@@ -95,7 +95,7 @@ pub async fn serve_connections() {
     let ws_route = warp::path("ws")
         .and(warp::ws())
         .and(warp::path::param())
-        .and(authorize_request(&token_manager))
+        .and(warp::path::param())
         .and(with_game_collection(game_collection.clone()))
         .and_then(game_handlers::connect_ws);
 

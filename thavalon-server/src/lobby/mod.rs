@@ -3,6 +3,7 @@
 
 use crate::database::games::{DBGameError, DBGameStatus, DatabaseGame};
 use crate::game::{builder::GameBuilder, Action, Message};
+use crate::utils;
 
 use futures::{stream::SplitSink, SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
@@ -45,11 +46,11 @@ pub enum LobbyCommand {
         display_name: String,
     },
     GetFriendCode,
-    IsPlayerRegistered {
-        player_id: String,
+    IsClientRegistered {
+        client_id: String,
     },
     ConnectClientChannels {
-        player_id: String,
+        client_id: String,
         ws: WebSocket,
     },
 }
@@ -58,8 +59,9 @@ pub enum LobbyCommand {
 #[derive(Debug)]
 pub enum LobbyResponse {
     Standard(Result<(), LobbyError>),
+    JoinGame(Result<String, LobbyError>),
     FriendCode(String),
-    IsPlayerRegistered(bool),
+    IsClientRegistered(bool),
 }
 
 /// Represents connections to and from the game for an individual player.
@@ -91,6 +93,7 @@ pub struct Lobby {
     database_game: DatabaseGame,
     friend_code: String,
     players: HashMap<String, PlayerClient>,
+    client_ids: HashMap<String, String>,
     status: DBGameStatus,
     builder: Option<GameBuilder>,
     receiver: Receiver<(LobbyCommand, ResponseChannel)>,
@@ -112,6 +115,7 @@ impl Lobby {
                 database_game,
                 friend_code,
                 players: HashMap::with_capacity(10),
+                client_ids: HashMap::with_capacity(10),
                 status: DBGameStatus::Lobby,
                 builder: Some(GameBuilder::new()),
                 receiver: rx,
@@ -183,33 +187,42 @@ impl Lobby {
         };
 
         self.players.insert(player_id.clone(), client);
+        let client_id = utils::generate_random_string(32, false);
         log::info!(
-            "Successfully added player {} to game {}.",
+            "Successfully added player {} to game {} with unique client ID {}.",
             player_id,
-            self.friend_code
+            self.friend_code,
+            client_id
         );
-        LobbyResponse::Standard(Ok(()))
+
+        // Insert strings after logging since this step can never fail.
+        // Inserting here saves a string allocation for player_id.
+        self.client_ids.insert(client_id.clone(), player_id);
+        LobbyResponse::JoinGame(Ok(client_id))
     }
 
     /// Updates a player's connections to and from the game and to and from the
     /// client.
     async fn update_player_connections(
         &mut self,
-        player_id: String,
+        client_id: String,
         ws: WebSocket,
     ) -> LobbyResponse {
-        log::info!("Updating connections for player {}.", player_id);
+        log::info!("Updating connections for client {}.", client_id);
 
         // Get the client and create the four connection endpoints.
-        let mut client = self.players.get_mut(&player_id).unwrap();
+        let player_id = self.client_ids.get(&client_id).unwrap();
+        log::info!("Found player ID {} for client ID {}.", player_id, client_id);
+
+        let mut client = self.players.get_mut(player_id).unwrap();
         let (mut to_player_client, mut from_player_client) = ws.split();
-        // client.to_client = Some(to_player_client);
         let to_client = Arc::new(Mutex::new(to_player_client));
         let mut to_game = client.to_game.clone();
         let from_game = client.from_game.clone();
 
         // Spawn a new task to listen for incoming commands from the player.
-        let client_id = player_id.clone();
+        let from_player_id = player_id.clone();
+        let to_player_id = player_id.clone();
         let lobby_to_client = to_client.clone();
         let game_to_client = to_client.clone();
         tokio::task::spawn(async move {
@@ -221,7 +234,7 @@ impl Lobby {
                         // probably best to just close the entire connection.
                         log::error!(
                             "An error occurred while waiting for messages from player {}. {}",
-                            client_id,
+                            from_player_id,
                             e
                         );
                         break;
@@ -234,7 +247,7 @@ impl Lobby {
                     Err(e) => {
                         log::warn!(
                             "Could not deserialize message from player {}. Message: {}",
-                            client_id,
+                            to_player_id,
                             msg
                         );
                         // No way to recover if we get bad JSON, so just kill
@@ -288,11 +301,11 @@ impl Lobby {
                 } => self.add_player(player_id, display_name).await,
 
                 LobbyCommand::GetFriendCode => self.get_friend_code(),
-                LobbyCommand::IsPlayerRegistered { player_id } => {
-                    LobbyResponse::IsPlayerRegistered(self.players.contains_key(&player_id))
+                LobbyCommand::IsClientRegistered { client_id } => {
+                    LobbyResponse::IsClientRegistered(self.client_ids.contains_key(&client_id))
                 }
-                LobbyCommand::ConnectClientChannels { player_id, ws } => {
-                    self.update_player_connections(player_id, ws).await
+                LobbyCommand::ConnectClientChannels { client_id, ws } => {
+                    self.update_player_connections(client_id, ws).await
                 }
             };
 
