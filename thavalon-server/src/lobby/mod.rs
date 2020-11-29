@@ -4,7 +4,8 @@
 use crate::database::games::{DBGameError, DBGameStatus, DatabaseGame};
 use crate::game::{builder::GameBuilder, Action, Message};
 
-use futures::{FutureExt, SinkExt, StreamExt};
+use futures::{stream::SplitSink, SinkExt, StreamExt};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::{
     sync::{
@@ -63,9 +64,24 @@ pub enum LobbyResponse {
 
 /// Represents connections to and from the game for an individual player.
 #[derive(Debug)]
-pub struct PlayerClient {
+struct PlayerClient {
     to_game: Sender<Action>,
     from_game: Arc<Mutex<Receiver<Message>>>,
+    to_client: Option<SplitSink<WebSocket, ws::Message>>,
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "message_type", content = "data")]
+enum IncomingMessage {
+    Ping,
+    GameCommand(Action),
+}
+
+#[derive(Serialize)]
+#[serde(tag = "message_type", content = "data")]
+enum OutgoingMessage {
+    Pong(String),
+    GameMessage(Message),
 }
 
 /// A lobby for an individual game. The Lobby acts as an interface between the
@@ -120,7 +136,7 @@ impl Lobby {
         );
         if self.status != DBGameStatus::Lobby {
             log::warn!(
-                "Player {} attempted to join in-progress of finished game {}.",
+                "Player {} attempted to join in-progress or finished game {}.",
                 player_id,
                 self.friend_code
             );
@@ -163,6 +179,7 @@ impl Lobby {
         let client = PlayerClient {
             to_game: sender,
             from_game: Arc::new(Mutex::new(receiver)),
+            to_client: None,
         };
 
         self.players.insert(player_id.clone(), client);
@@ -184,13 +201,17 @@ impl Lobby {
         log::info!("Updating connections for player {}.", player_id);
 
         // Get the client and create the four connection endpoints.
-        let client = self.players.get(&player_id).unwrap();
+        let mut client = self.players.get_mut(&player_id).unwrap();
         let (mut to_player_client, mut from_player_client) = ws.split();
+        // client.to_client = Some(to_player_client);
+        let to_client = Arc::new(Mutex::new(to_player_client));
         let mut to_game = client.to_game.clone();
         let from_game = client.from_game.clone();
 
         // Spawn a new task to listen for incoming commands from the player.
         let client_id = player_id.clone();
+        let lobby_to_client = to_client.clone();
+        let game_to_client = to_client.clone();
         tokio::task::spawn(async move {
             while let Some(msg) = from_player_client.next().await {
                 let msg = match msg {
@@ -208,19 +229,32 @@ impl Lobby {
                 };
 
                 log::debug!("Received message {} from player {}.", msg, client_id);
-                let action: Action = match serde_json::from_str(&msg) {
-                    Ok(action) => action,
+                let msg: IncomingMessage = match serde_json::from_str(&msg) {
+                    Ok(msg) => msg,
                     Err(e) => {
                         log::warn!(
                             "Could not deserialize message from player {}. Message: {}",
                             client_id,
                             msg
                         );
-                        // TODO: For now, just kill the connection.
+                        // No way to recover if we get bad JSON, so just kill
+                        // the connection.
                         break;
                     }
                 };
-                to_game.send(action).await.unwrap();
+
+                match msg {
+                    IncomingMessage::Ping => lobby_to_client
+                        .lock()
+                        .await
+                        .send(ws::Message::text(
+                            serde_json::to_string(&OutgoingMessage::Pong(String::from("Pong")))
+                                .unwrap(),
+                        ))
+                        .await
+                        .unwrap(),
+                    IncomingMessage::GameCommand(action) => to_game.send(action).await.unwrap(),
+                }
             }
         });
 
@@ -231,7 +265,7 @@ impl Lobby {
             while let Some(msg) = from_game.lock().await.recv().await {
                 let msg = serde_json::to_string(&msg).expect("Could not serialize game message.");
                 let msg = ws::Message::text(msg);
-                if let Err(e) = to_player_client.send(msg).await {
+                if let Err(e) = game_to_client.lock().await.send(msg).await {
                     log::warn!("Connection lost. {}", e);
                     break;
                 }
