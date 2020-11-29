@@ -1,4 +1,12 @@
 //! THavalon game logic
+//! 
+//! The game implementation is broken into several layers:
+//! - [`GameSpec`] describes static game rules based on the number of players, such as the size of each mission and
+//!   which roles may be in the game.
+//! - [`Game`] holds configuration from when the game is rolled, such as which players have which roles and who the
+//!   assassin is.
+//! - [`GameState`] and [`Phase`] implement a state machine for while the game is running.
+//! - [`Interactions`] abstracts over communication with the players.
 
 use std::collections::HashMap;
 use std::fmt;
@@ -11,6 +19,8 @@ mod engine;
 mod interactions;
 mod messages;
 mod role;
+mod state;
+mod state2;
 pub mod snapshot;
 
 pub use self::messages::*;

@@ -21,7 +21,8 @@ pub enum Action {
     Assassinate {
         players: HashSet<String>,
         target: PriorityTarget,
-    }
+    },
+    MoveToAssassination
 }
 
 /// A message from the game to a player
@@ -60,6 +61,12 @@ pub enum Message {
 
     /// Announces the results of a vote
     VotingResults { sent: bool, counts: VoteCounts },
+
+    /// Announces that a mission is going
+    MissionGoing {
+        mission: MissionNumber,
+        players: HashSet<String>,
+    },
 
     /// Announces the results of a mission going
     MissionResults {

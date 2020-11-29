@@ -414,7 +414,9 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
         // TODO: should probably return whether or not assassination was successful
     }
 
-    fn locate_player(&mut self, actor: &str, player: &str) -> Result<&Player, GameError> {}
+    // fn locate_player(&mut self, actor: &str, player: &str) -> Result<&super::Player, GameError> {
+        
+    // }
 }
 
 // Maybe a typemap for per-role game state?
