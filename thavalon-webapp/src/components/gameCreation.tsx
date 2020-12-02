@@ -2,8 +2,10 @@ import React, { useState, Dispatch, SetStateAction } from 'react';
 import ReactModal from 'react-modal';
 import { InputElement } from './formComponents/InputElement';
 import { useForm } from 'react-hook-form';
-import { Container, Row, Col, Button, ButtonGroup, Modal } from "react-bootstrap";
-import { CSSTransition } from 'react-transition-group';
+import { Container, Row, Col, Button, ButtonGroup } from "react-bootstrap";
+import { AccountManager } from "../utils/AccountManager";
+import { CSSTransition } from "react-transition-group";
+import { Redirect } from "react-router-dom";
 
 import "../styles/Modal.scss";
 import "../styles/PlayGameModal.scss";
@@ -28,8 +30,9 @@ enum CreateJoinState {
     JoinGame
 }
 
+const connection = AccountManager.getInstance();
+
 export function CreateJoinGameModal(props: CreateJoinGameProps): JSX.Element {
-    async function OnSubmit(): Promise<void> { }
     const [showForm, setShowForm] = useState(false);
     const [modalState, setModalState] = useState(CreateJoinState.CreateJoinButtons);
     return (
@@ -38,12 +41,11 @@ export function CreateJoinGameModal(props: CreateJoinGameProps): JSX.Element {
             onRequestClose={() => props.onHide(false)}
             contentLabel="Create/Join Game Modal"
             className="Modal"
-            overlayClassName="Overlay"
-        >
+            overlayClassName="Overlay">
             <div className="modalContainer">
                 <h2 className="modalHeader">Play Thavalon</h2>
                 <hr />
-                {modalState === CreateJoinState.CreateJoinButtons && renderCreateJoinButtons(setShowForm, setModalState)}
+                {modalState === CreateJoinState.CreateJoinButtons && CreateJoinButtons(setShowForm, setModalState)}
                 <CSSTransition
                     in={showForm}
                     timeout={300}
@@ -51,8 +53,8 @@ export function CreateJoinGameModal(props: CreateJoinGameProps): JSX.Element {
                     onExited={() => setModalState(CreateJoinState.CreateJoinButtons)}
                     unmountOnExit>
                     <>
-                        {modalState === CreateJoinState.CreateGame && <CreateGameForm setState={setShowForm} onSubmitCallback={OnSubmit} />}
-                        {modalState === CreateJoinState.JoinGame && <JoinGameForm setState={setShowForm} onSubmitCallback={OnSubmit} />}
+                        {modalState === CreateJoinState.CreateGame && <CreateGameForm setState={setShowForm} />}
+                        {modalState === CreateJoinState.JoinGame && <JoinGameForm setState={setShowForm} />}
                     </>
                 </CSSTransition>
             </div>
@@ -60,40 +62,72 @@ export function CreateJoinGameModal(props: CreateJoinGameProps): JSX.Element {
     );
 }
 
-function renderCreateJoinButtons(showForm: any, setState: any): JSX.Element {
+function CreateJoinButtons(showForm: any, setState: any): JSX.Element {
     return (
         <div className="create-join-buttons">
             <Container>
-                <Row>
-                    <Button
-                        variant="primary"
-                        onClick={() => {
-                            showForm(true);
-                            setState(CreateJoinState.JoinGame);
-                        }}>
-                        Join Game
+                <div style={{ textAlign: "center" }}>
+                    <ButtonGroup vertical>
+                        <Button
+                            style={{ marginBottom: 10 }}
+                            variant="primary"
+                            onClick={() => {
+                                showForm(true);
+                                setState(CreateJoinState.JoinGame);
+                            }}>
+                            Join Game
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={() => {
+                                showForm(true);
+                                setState(CreateJoinState.CreateGame);
+                            }}>
+                            Create Game
                     </Button>
-                </Row>
-                <Row>
-                    <Button
-                        variant="primary"
-                        onClick={() => {
-                            showForm(true);
-                            setState(CreateJoinState.CreateGame);
-                        }}>
-                        Create Game
-                    </Button>
-                </Row>
+                    </ButtonGroup>
+
+                </div>
             </Container>
-        </div>
+        </div >
     );
 }
 
-function CreateGameForm(props: { setState: any, onSubmitCallback: any }): JSX.Element {
+function CreateGameForm(props: { setState: any }): JSX.Element {
     const { register, handleSubmit } = useForm<CreateGameData>();
+    const [formErrorMsg, setFormErrorMsg] = useState("");
+    const [redirectToGame, setRedirectToGame] = useState(false);
+    const [friendCode, setFriendCode] = useState("");
+    const [socketUrl, setSocketUrl] = useState("");
+
+    async function onCreateGameSubmit(data: CreateGameData) {
+        const createGameResponse = await connection.createGame();
+        if (createGameResponse.result === false) {
+            setFormErrorMsg(createGameResponse.message);
+            return;
+        }
+
+        const friendCode = createGameResponse.message;
+        const joinGameResponse = await connection.joinGame(friendCode, data.displayName);
+        if (joinGameResponse.result === false) {
+            setFormErrorMsg(joinGameResponse.message);
+            return;
+        }
+
+        const socketUrl = joinGameResponse.message;
+        setSocketUrl(socketUrl);
+        setFriendCode(friendCode);
+        setRedirectToGame(true);
+        return;
+    }
+
+    if (redirectToGame) {
+        return triggerRedirectToGame(friendCode, socketUrl);
+    }
+
     return (
         <div className="create-game-form">
-            <form onSubmit={handleSubmit(props.onSubmitCallback)}>
+            <form onSubmit={handleSubmit(onCreateGameSubmit)}>
                 <InputElement
                     formRef={register}
                     type="text"
@@ -112,16 +146,41 @@ function CreateGameForm(props: { setState: any, onSubmitCallback: any }): JSX.El
                         <Button style={{ float: "right" }} type="submit" variant="primary">Create Game</Button>
                     </Col>
                 </Row>
+                <div className="errorMsg">
+                    {formErrorMsg}
+                </div>
             </form>
-        </div>
+        </div >
     );
 }
 
-function JoinGameForm(props: { setState: any, onSubmitCallback: any }): JSX.Element {
+function JoinGameForm(props: { setState: any }): JSX.Element {
     const { register, handleSubmit } = useForm<JoinGameData>();
+    const [formErrorMsg, setFormErrorMsg] = useState("");
+    const [redirectToGame, setRedirectToGame] = useState(false);
+    const [friendCode, setFriendCode] = useState("");
+    const [socketUrl, setSocketUrl] = useState("");
+
+    async function onJoinGameSubmit(data: JoinGameData): Promise<void> {
+        const joinGameResponse = await connection.joinGame(data.friendCode, data.displayName);
+        if (joinGameResponse.result === false) {
+            setFormErrorMsg(joinGameResponse.message);
+            return;
+        }
+
+        setFriendCode(data.friendCode);
+        setSocketUrl(joinGameResponse.message);
+        setRedirectToGame(true);
+        return;
+    }
+
+    if (redirectToGame) {
+        return triggerRedirectToGame(friendCode, socketUrl);
+    }
+
     return (
         <div className="join-game-form">
-            <form onSubmit={handleSubmit(props.onSubmitCallback)}>
+            <form onSubmit={handleSubmit(onJoinGameSubmit)}>
                 <InputElement
                     formRef={register}
                     type="text"
@@ -150,7 +209,29 @@ function JoinGameForm(props: { setState: any, onSubmitCallback: any }): JSX.Elem
                         <Button style={{ float: "right" }} type="submit" variant="primary">Join Game</Button>
                     </Col>
                 </Row>
+                <div className="errorMsg">
+                    {formErrorMsg}
+                </div>
             </form>
         </div>
+    );
+}
+
+
+function triggerRedirectToGame(friendCode: string, socketUrl: string): JSX.Element {
+    if (friendCode === "" || socketUrl === "") {
+        // Something is horribly broken if we're redirecting to a game with
+        // no friend code or socketUrl. Log and bail out.
+        console.log("ERROR: Tried to redirect to a game with no friend code or socket URL.");
+        return (
+            <Redirect to="/" />
+        );
+    }
+
+    return (
+        <Redirect to={{
+            pathname: `/game/${ friendCode }`,
+            state: { socketUrl: socketUrl }
+        }} />
     );
 }

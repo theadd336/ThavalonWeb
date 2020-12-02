@@ -1,12 +1,13 @@
+use crate::utils;
+
 use chrono::{Duration, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation};
 use lazy_static::lazy_static;
-use rand::{distributions::Alphanumeric, Rng};
 use scrypt::{errors::CheckError, ScryptParams};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
-    env, iter,
+    env,
     sync::{Arc, Mutex},
 };
 use thiserror::Error;
@@ -159,14 +160,7 @@ impl TokenManager {
     /// A RefreshTokenInfo struct with all required information.
     pub async fn create_refresh_token(&mut self, user: &String) -> RefreshTokenInfo {
         log::info!("Creating a refresh token for {}.", user);
-        let token: String;
-        {
-            let mut rng = rand::thread_rng();
-            token = iter::repeat(())
-                .map(|()| rng.sample(Alphanumeric))
-                .take(32)
-                .collect();
-        }
+        let token = utils::generate_random_string(32, false);
         let token_info = RefreshTokenInfo {
             token: token.clone(),
             expires_at: Utc::now()

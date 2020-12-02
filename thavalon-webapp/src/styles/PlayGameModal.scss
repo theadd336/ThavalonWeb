@@ -20,3 +20,7 @@ $animationTime: 300ms;
     transform: scale(0.9);
     transition: opacity $animationTime, transform $animationTime;
 }
+
+.create-join-buttons {
+    text-align: center;
+}

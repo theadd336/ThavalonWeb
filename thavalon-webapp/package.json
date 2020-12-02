@@ -38,8 +38,7 @@
     "react-types": "^0.1.0",
     "strongly-typed-events": "^1.6.8",
     "styled-components": "^5.2.0",
-    "typescript": "^3.8.2",
-    "ws": "^7.2.1"
+    "typescript": "^3.8.2"
   },
   "scripts": {
     "start": "react-scripts start",

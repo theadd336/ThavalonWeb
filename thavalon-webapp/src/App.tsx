@@ -71,6 +71,7 @@ function App() {
           <Logout setLoggedIn={() => setLoggedIn(false)} />
         </Route>
         <Route path="/register" render={() => registerPage()} />
+        <Route path="/game"></Route>
       </Switch>
       {showLoginModal && <Login setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} showLoginModal={showLoginModal} />}
       <CreateJoinGameModal show={showCreateJoinGameModal} onHide={setShowCreateJoinGameModal} />

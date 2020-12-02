@@ -25,6 +25,19 @@ interface JwtType {
     "expires_at": number,
 };
 
+interface CreateGameResponse {
+    "friendCode": string,
+}
+
+interface JoinGameInfo {
+    "friendCode": string,
+    "displayName": string,
+}
+
+interface JoinGameResponse {
+    "socketUrl": string,
+}
+
 export interface HttpResponse {
     "result": boolean, // true if successful http query, false otherwise
     "message": string, // message will contain error message if result is false, otherwise blank
@@ -306,4 +319,84 @@ export class AccountManager {
             return httpResponse;
         });
     }
+
+    /**
+     * Creates a game made by the current user.
+     */
+    public async createGame(): Promise<HttpResponse> {
+        const httpResponse: HttpResponse = {
+            "result": true,
+            "message": ""
+        }
+
+        return await fetch("/api/add/game", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Basic " + this.token,
+            },
+            credentials: "include"
+        }).then((response) => {
+            if (response.status === STATUS.OK) {
+                return response.json();
+            } else {
+                httpResponse.result = false;
+                httpResponse.message = "Unexpected return code from server: " + response.status;
+            }
+            return httpResponse;
+        }).then((createGameResponse: CreateGameResponse) => {
+            httpResponse.message = createGameResponse.friendCode;
+            return httpResponse;
+        }).catch((error) => {
+            console.log("Failed to create game, error is: " + error);
+            httpResponse.result = false;
+            httpResponse.message = "Unable to create game, try again";
+            return httpResponse;
+        });
+    }
+
+    /**
+     * Joins an existing game.
+     *
+     * @param friendCode the friend code for the game
+     * @param displayName the display name of the user joining the game
+     */
+    public async joinGame(friendCode: string, displayName: string): Promise<HttpResponse> {
+        const httpResponse: HttpResponse = {
+            "result": true,
+            "message": ""
+        }
+
+        const joinGameInfo: JoinGameInfo = {
+            "friendCode": friendCode,
+            "displayName": displayName,
+        }
+
+        return await fetch("/api/join/game", {
+            method: "POST",
+            body: JSON.stringify(joinGameInfo),
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Basic " + this.token,
+            },
+            credentials: "include"
+        }).then((response) => {
+            if (response.status === STATUS.OK) {
+                return response.json();
+            } else {
+                httpResponse.result = false;
+                httpResponse.message = "Unexpected return code from server: " + response.status;
+            }
+            return httpResponse;
+        }).then((joinGameResponse: JoinGameResponse) => {
+            httpResponse.message = joinGameResponse.socketUrl;
+            return httpResponse;
+        }).catch((error) => {
+            console.log("Failed to create game, error is: " + error);
+            httpResponse.result = false;
+            httpResponse.message = "Unable to create game, try again";
+            return httpResponse;
+        });
+    }
+
 }
