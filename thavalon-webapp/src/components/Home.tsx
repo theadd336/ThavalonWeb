@@ -14,6 +14,7 @@ export function Home(): JSX.Element {
                 console.log(response.message);
                 const gameSocket = GameSocket.getInstance(response.message);
                 console.log(gameSocket);
+                gameSocket.sendPing();
             });
         });
     }
