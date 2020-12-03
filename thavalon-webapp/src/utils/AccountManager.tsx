@@ -9,40 +9,44 @@ enum STATUS {
 };
 
 interface AddUserInfo {
-    "displayName": string,
-    "email": string,
-    "password": string,
+    displayName: string,
+    email: string,
+    password: string,
 };
 
 interface LogInInfo {
-    "email": string,
-    "password": string,
+    email: string,
+    password: string,
 };
 
 interface JwtType {
-    "token_type": string,
-    "access_token": string,
-    "expires_at": number,
+    token_type: string,
+    access_token: string,
+    expires_at: number,
 };
 
 interface CreateGameResponse {
-    "friendCode": string,
+    friendCode: string,
 }
 
 interface JoinGameInfo {
-    "friendCode": string,
-    "displayName": string,
+    friendCode: string,
+    displayName: string,
 }
 
 interface JoinGameResponse {
-    "socketUrl": string,
+    socketUrl: string,
 }
 
 export interface HttpResponse {
-    "result": boolean, // true if successful http query, false otherwise
-    "message": string, // message will contain error message if result is false, otherwise blank
+    result: boolean, // true if successful http query, false otherwise
+    message: string, // message will contain error message if result is false, otherwise blank
 };
 
+/**
+ * A singleton containing code related to the user account, such as
+ * log in and joining a game.
+ */
 export class AccountManager {
     private static instance: AccountManager;
     private token: string;
@@ -110,8 +114,9 @@ export class AccountManager {
                     break;
                 }
                 default: {
+                    console.log("Unexpected return code from server: " + response.status);
                     httpResponse.result = false;
-                    httpResponse.message = "Unexpected return code from server: " + response.status;    
+                    httpResponse.message = "Request failed, try again.";    
                     break;
                 }
             }
@@ -215,8 +220,9 @@ export class AccountManager {
                     break;
                 }
                 default: {
+                    console.log("Unexpected return code from server: " + response.status);
                     httpResponse.result = false;
-                    httpResponse.message = "Unexpected return code from server: " + response.status;    
+                    httpResponse.message = "Request failed, try again.";    
                     break;
                 }
             }
@@ -272,8 +278,9 @@ export class AccountManager {
                     break;
                 }
                 default: {
+                    console.log("Unexpected return code from server: " + response.status);
                     httpResponse.result = false;
-                    httpResponse.message = "Unexpected return code from server: " + response.status;    
+                    httpResponse.message = "Request failed, try again.";    
                     break;
                 }
             }
@@ -308,9 +315,10 @@ export class AccountManager {
                 this.token = "";
                 this.expiresAt = 0;
             } else {
+                console.log("Unexpected return code from server: " + response.status);
                 httpResponse.result = false;
-                httpResponse.message = "Unexpected return code from server: " + response.status;
-            }
+                httpResponse.message = "Request failed, try again.";    
+        }
             return httpResponse;
         }).catch((error) => {
             console.log("Failed to logout user, error is: " + error);
@@ -340,9 +348,10 @@ export class AccountManager {
             if (response.status === STATUS.OK) {
                 return response.json();
             } else {
+                console.log("Unexpected return code from server: " + response.status);
                 httpResponse.result = false;
-                httpResponse.message = "Unexpected return code from server: " + response.status;
-            }
+                httpResponse.message = "Request failed, try again.";    
+        }
             return httpResponse;
         }).then((createGameResponse: CreateGameResponse) => {
             httpResponse.message = createGameResponse.friendCode;
@@ -384,9 +393,10 @@ export class AccountManager {
             if (response.status === STATUS.OK) {
                 return response.json();
             } else {
+                console.log("Unexpected return code from server: " + response.status);
                 httpResponse.result = false;
-                httpResponse.message = "Unexpected return code from server: " + response.status;
-            }
+                httpResponse.message = "Request failed, try again.";    
+        }
             return httpResponse;
         }).then((joinGameResponse: JoinGameResponse) => {
             httpResponse.message = joinGameResponse.socketUrl;

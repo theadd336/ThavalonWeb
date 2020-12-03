@@ -12,7 +12,7 @@ export function Home(): JSX.Element {
             console.log(friendCode);
             accountManager.joinGame(friendCode, name).then((response: HttpResponse) => {
                 console.log(response.message);
-                const gameSocket = GameSocket.getInstance(response.message);
+                const gameSocket = new GameSocket(response.message);
                 console.log(gameSocket);
                 gameSocket.sendPing();
             });
