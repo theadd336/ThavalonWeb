@@ -40,7 +40,7 @@ export function Navbar(props: NavbarProps): JSX.Element {
             </NavLink>
             {props.loggedIn &&
                 <span id="rightContainer">
-                    <NavLink to="/stats" className="navbarItemLeft subNavbarItemLeft" activeClassName="active">Stats</NavLink>
+                    <NavLink to="/profile" className="navbarItemLeft subNavbarItemLeft" activeClassName="active">Profile</NavLink>
                     <NavLink to="/account" className="navbarItemLeft subNavbarItemLeft" activeClassName="active">Account</NavLink>
                     <NavLink to="/logout" className="navbarItemLeft subNavbarItemLeft" activeClassName="active">Log Out</NavLink>
                 </span>
