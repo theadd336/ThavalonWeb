@@ -8,7 +8,9 @@ import { FormButton } from './formComponents/FormButton';
 import "../styles/Modal.scss";
 
 interface LoginProps {
-    setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
+    setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>,
+    setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>
+    showLoginModal: boolean
 };
 
 interface LoginData {
@@ -17,8 +19,6 @@ interface LoginData {
 };
 
 export function Login(props: LoginProps): JSX.Element {
-    // if set, register modal is open
-    const [modalIsOpen, setModalIsOpen] = useState(true);
     // hook for register form
     const {register, handleSubmit} = useForm<LoginData>();
     // state for setting if form is being submitted or not
@@ -29,11 +29,10 @@ export function Login(props: LoginProps): JSX.Element {
     const [redirectToHome, setRedirectToHome] = useState(false);
 
     /**
-     * Called when register modal is closed.
+     * Called when register modal is closed. Will hide login modal.
      */
     function closeModal() {
-        // TODO: Redirect to prior page on modal close so can refresh
-        setModalIsOpen(false);
+        props.setShowLoginModal(false);
     }
 
     /**
@@ -42,7 +41,6 @@ export function Login(props: LoginProps): JSX.Element {
      * @param event The event caused by submission.
      */
     async function OnSubmit(data: LoginData) {
-        console.log(data);
         setFormSubmitting(true);
         const accountManager = AccountManager.getInstance();
         let httpResponse = await accountManager.loginUser(data.email, data.password);
@@ -56,6 +54,7 @@ export function Login(props: LoginProps): JSX.Element {
             setFormErrorMsg(httpResponse.message);
             setFormSubmitting(false);
         }
+        props.setShowLoginModal(false);
     }
 
     if (redirectToHome) {
@@ -66,7 +65,7 @@ export function Login(props: LoginProps): JSX.Element {
 
     return (
         <ReactModal
-            isOpen={modalIsOpen}
+            isOpen={props.showLoginModal}
             onRequestClose={closeModal}
             contentLabel="Login Modal"
             className="Modal"

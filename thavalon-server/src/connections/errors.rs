@@ -5,6 +5,7 @@ use crate::connections::account_handlers::{
     DuplicateAccountRejection, EmailVerificationRejection, InvalidLoginRejection,
     PasswordInsecureRejection, ValidationRejection,
 };
+use crate::connections::game_handlers::{NonexistentGameRejection, UnverifiedEmailRejection};
 use serde::Serialize;
 use std::convert::Infallible;
 use warp::{http::StatusCode, reject::InvalidHeader, Rejection, Reply};
@@ -24,6 +25,8 @@ enum ErrorCode {
     InvalidLogin,
     MissingHeader,
     InvalidAccountVerification,
+    AccountNotVerified,
+    NoActiveGame,
     Unknown = 255,
 }
 
@@ -67,6 +70,15 @@ pub async fn recover_errors(err: Rejection) -> Result<impl Reply, Infallible> {
         http_response_code = StatusCode::FORBIDDEN;
         error_message = "Verification code expired or the account has been deleted.".to_string();
         error_code = ErrorCode::InvalidAccountVerification;
+    } else if let Some(UnverifiedEmailRejection) = err.find() {
+        http_response_code = StatusCode::FORBIDDEN;
+        error_message =
+            "The email address associated with the account is not verified.".to_string();
+        error_code = ErrorCode::AccountNotVerified;
+    } else if let Some(NonexistentGameRejection) = err.find() {
+        http_response_code = StatusCode::NOT_FOUND;
+        error_message = "No active game found matching the supplied friend code.".to_string();
+        error_code = ErrorCode::NoActiveGame;
     }
 
     if error_code == ErrorCode::Unknown {

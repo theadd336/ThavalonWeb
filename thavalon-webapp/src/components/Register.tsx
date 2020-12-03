@@ -2,13 +2,14 @@ import React, {useState} from 'react';
 import ReactModal from 'react-modal';
 import { DeepMap, FieldError, Resolver, useForm } from 'react-hook-form';
 import { AccountManager, HttpResponse } from '../utils/AccountManager';
-import { Redirect } from 'react-router-dom';
+import { Redirect, useHistory } from 'react-router-dom';
 import { InputElement } from './formComponents/InputElement';
 import { FormButton } from './formComponents/FormButton';
 import "../styles/Modal.scss";
 
 interface RegisterProps {
     setLoggedIn: React.Dispatch<React.SetStateAction<boolean>>
+    setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>
 };
 
 interface RegisterData {
@@ -43,12 +44,18 @@ export function Register(props: RegisterProps): JSX.Element {
     const [formErrorMsg, setFormErrorMsg] = useState("");
     // state for redirecting to home on successful login
     const [redirectToHome, setRedirectToHome] = useState(false);
+    // react router history
+    const history = useHistory();
 
     /**
-     * Called when register modal is closed.
+     * Called when register modal is closed. Redirects to most recent non-modal page.
      */
     function closeModal() {
         setModalIsOpen(false);
+        props.setShowLoginModal(false);
+        // For register, prior page (-1) is where login was triggered, because login is not its own page
+        // TODO: if user goes directly to register page then closes modal, this will take them off site currently
+        history.go(-1);
     }
 
     /**
@@ -87,6 +94,7 @@ export function Register(props: RegisterProps): JSX.Element {
             setFormErrorMsg(httpResponse.message);
             setFormSubmitting(false);
         }
+        props.setShowLoginModal(false);
     }
 
     if (redirectToHome) {
