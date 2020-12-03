@@ -8,14 +8,13 @@ interface PingResponse {
  * Will contain a websocket, that can either be retrieved or optionally made.
  */
 export class GameSocket {
+    // the underlying gamesocket instance
+    private static instance: GameSocket;
     // the instantiated instance of the underlying websocket
     private websocket: WebSocket;
 
     // create the underlying websocket in the constructor
-    public constructor(socketUrl: string) {
-        if (socketUrl === undefined) {
-            throw new Error("socketUrl is required.");
-        }
+    private constructor(socketUrl: string) {
         this.websocket = new WebSocket(socketUrl);
         this.websocket.onopen = this.socketOnOpen;
         this.websocket.onmessage = this.socketOnMessage;
@@ -39,6 +38,13 @@ export class GameSocket {
 
     private socketOnError(event: Event) {
         console.log("Received on error message.");
+    }
+
+    public static getOrCreateInstance(socketUrl?: string): GameSocket {
+        if (socketUrl !== undefined) {
+            GameSocket.instance = new GameSocket(socketUrl);
+        }
+        return GameSocket.instance;
     }
 
     public sendPing(): boolean {
