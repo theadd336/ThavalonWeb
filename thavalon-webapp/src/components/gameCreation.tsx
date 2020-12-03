@@ -10,20 +10,40 @@ import { Redirect } from "react-router-dom";
 import "../styles/Modal.scss";
 import "../styles/PlayGameModal.scss";
 
+/**
+ * Props for the CreateJoinGame Modal
+ */
+export interface CreateJoinGameProps {
+    show: boolean,
+    setOpen: Dispatch<SetStateAction<boolean>>
+}
+
+/**
+ * Required data for the joinGame call.
+ */
 interface JoinGameData {
     friendCode: string,
     displayName: string
 }
 
+/**
+ * Required data to create a game.
+ */
 interface CreateGameData {
     displayName: string
 }
 
-export interface CreateJoinGameProps {
-    show: boolean,
-    onHide: Dispatch<SetStateAction<boolean>>
+/**
+ * Props for both the Join and Create Game forms
+ */
+interface FormProps {
+    showForm: Dispatch<SetStateAction<boolean>>,
+    onSuccess: () => void
 }
 
+/**
+ * Enum representing the current modal state. Used to switch between the different forms.
+ */
 enum CreateJoinState {
     CreateJoinButtons,
     CreateGame,
@@ -32,13 +52,31 @@ enum CreateJoinState {
 
 const connection = AccountManager.getInstance();
 
+/**
+ * Creates the modal for the join and create game options. This modal appears
+ * when a user clicks "Play" and can either be used to create join a game.
+ * @param props - Required reqct props object.
+ */
 export function CreateJoinGameModal(props: CreateJoinGameProps): JSX.Element {
+    // State to keep track of whether or not the form should display.
+    // Needed to trigger closing animations when the form is leaving the modal.
     const [showForm, setShowForm] = useState(false);
+    // State to track the overall modal state, including which form should be displayed.
     const [modalState, setModalState] = useState(CreateJoinState.CreateJoinButtons);
+
+    /**
+     * Function handler for the success event from the child modal.
+     * Will reset state for future callers and close the modal.
+     */
+    function onSuccess(): void {
+        setModalState(CreateJoinState.CreateJoinButtons);
+        props.setOpen(false);
+    }
+
     return (
         <ReactModal
             isOpen={props.show}
-            onRequestClose={() => props.onHide(false)}
+            onRequestClose={() => props.setOpen(false)}
             contentLabel="Create/Join Game Modal"
             className="Modal"
             overlayClassName="Overlay">
@@ -53,27 +91,32 @@ export function CreateJoinGameModal(props: CreateJoinGameProps): JSX.Element {
                     onExited={() => setModalState(CreateJoinState.CreateJoinButtons)}
                     unmountOnExit>
                     <>
-                        {modalState === CreateJoinState.CreateGame && <CreateGameForm setState={setShowForm} />}
-                        {modalState === CreateJoinState.JoinGame && <JoinGameForm setState={setShowForm} />}
+                        {modalState === CreateJoinState.CreateGame && <CreateGameForm showForm={setShowForm} onSuccess={onSuccess} />}
+                        {modalState === CreateJoinState.JoinGame && <JoinGameForm showForm={setShowForm} onSuccess={onSuccess} />}
                     </>
                 </CSSTransition>
             </div>
-        </ReactModal >
+        </ReactModal>
     );
 }
 
-function CreateJoinButtons(showForm: any, setState: any): JSX.Element {
+/**
+ * 
+ * @param showForm Sets whether or not a form should display
+ * @param setModalState Sets the modal state to the correct form that should display
+ */
+function CreateJoinButtons(showForm: Dispatch<SetStateAction<boolean>>, setModalState: Dispatch<SetStateAction<CreateJoinState>>): JSX.Element {
     return (
         <div className="create-join-buttons">
             <Container>
-                <div style={{ textAlign: "center" }}>
+                <div className="center">
                     <ButtonGroup vertical>
                         <Button
-                            style={{ marginBottom: 10 }}
+                            className="with-bottom-margin"
                             variant="primary"
                             onClick={() => {
                                 showForm(true);
-                                setState(CreateJoinState.JoinGame);
+                                setModalState(CreateJoinState.JoinGame);
                             }}>
                             Join Game
                         </Button>
@@ -81,7 +124,7 @@ function CreateJoinButtons(showForm: any, setState: any): JSX.Element {
                             variant="primary"
                             onClick={() => {
                                 showForm(true);
-                                setState(CreateJoinState.CreateGame);
+                                setModalState(CreateJoinState.CreateGame);
                             }}>
                             Create Game
                     </Button>
@@ -93,13 +136,27 @@ function CreateJoinButtons(showForm: any, setState: any): JSX.Element {
     );
 }
 
-function CreateGameForm(props: { setState: any }): JSX.Element {
+/**
+ * Creates the "Create Game" form and handles submissions.
+ * @param props Props to set the form state and handle successes
+ */
+function CreateGameForm(props: FormProps): JSX.Element {
+    // Form to submit CreateGameData
     const { register, handleSubmit } = useForm<CreateGameData>();
+    // State that tracks the form error message.
     const [formErrorMsg, setFormErrorMsg] = useState("");
+    // State to check if we should redirect to a game.
     const [redirectToGame, setRedirectToGame] = useState(false);
+    // State to maintain the friend code to send to the redirect link.
     const [friendCode, setFriendCode] = useState("");
+    // State to maintain the socketUrl to send to the lobby component.
     const [socketUrl, setSocketUrl] = useState("");
 
+    /**
+     * Handles a submission to create a game by the player. Will create the game
+     * and then auto-join the game, if there are no errors.
+     * @param data The CreateGameData from the submitting form
+     */
     async function onCreateGameSubmit(data: CreateGameData) {
         const createGameResponse = await connection.createGame();
         if (createGameResponse.result === false) {
@@ -118,6 +175,8 @@ function CreateGameForm(props: { setState: any }): JSX.Element {
         setSocketUrl(socketUrl);
         setFriendCode(friendCode);
         setRedirectToGame(true);
+        props.showForm(false);
+        props.onSuccess();
         return;
     }
 
@@ -138,12 +197,17 @@ function CreateGameForm(props: { setState: any }): JSX.Element {
                     <Col>
                         <Button
                             variant="secondary"
-                            onClick={() => props.setState(false)}>
+                            onClick={() => props.showForm(false)}>
                             Back
                         </Button>
                     </Col>
                     <Col>
-                        <Button style={{ float: "right" }} type="submit" variant="primary">Create Game</Button>
+                        <Button
+                            className="submit-form-button"
+                            type="submit"
+                            variant="primary">
+                            Create Game
+                        </Button>
                     </Col>
                 </Row>
                 <div className="errorMsg">
@@ -154,13 +218,26 @@ function CreateGameForm(props: { setState: any }): JSX.Element {
     );
 }
 
-function JoinGameForm(props: { setState: any }): JSX.Element {
+/**
+ * Creates the "Join Game" form and handles submissions.
+ * @param props Props to set the form state and handle successes
+ */
+function JoinGameForm(props: FormProps): JSX.Element {
+    // Form to submit CreateGameData
     const { register, handleSubmit } = useForm<JoinGameData>();
+    // State that tracks the form error message.
     const [formErrorMsg, setFormErrorMsg] = useState("");
+    // State to check if we should redirect to a game.
     const [redirectToGame, setRedirectToGame] = useState(false);
+    // State to maintain the friend code to send to the redirect link.
     const [friendCode, setFriendCode] = useState("");
+    // State to maintain the socketUrl to send to the lobby component.
     const [socketUrl, setSocketUrl] = useState("");
 
+    /**
+     * Handles a submission to join a game by the player. 
+     * @param data The JoinGameData from the submitting form
+     */
     async function onJoinGameSubmit(data: JoinGameData): Promise<void> {
         const joinGameResponse = await connection.joinGame(data.friendCode, data.displayName);
         if (joinGameResponse.result === false) {
@@ -171,6 +248,8 @@ function JoinGameForm(props: { setState: any }): JSX.Element {
         setFriendCode(data.friendCode);
         setSocketUrl(joinGameResponse.message);
         setRedirectToGame(true);
+        props.showForm(false);
+        props.onSuccess();
         return;
     }
 
@@ -201,12 +280,17 @@ function JoinGameForm(props: { setState: any }): JSX.Element {
                     <Col>
                         <Button
                             variant="secondary"
-                            onClick={() => props.setState(false)}>
+                            onClick={() => props.showForm(false)}>
                             Back
                         </Button>
                     </Col>
                     <Col>
-                        <Button style={{ float: "right" }} type="submit" variant="primary">Join Game</Button>
+                        <Button
+                            className="submit-form-button"
+                            type="submit"
+                            variant="primary">
+                            Join Game
+                        </Button>
                     </Col>
                 </Row>
                 <div className="errorMsg">
@@ -217,7 +301,12 @@ function JoinGameForm(props: { setState: any }): JSX.Element {
     );
 }
 
-
+/**
+ * Handles rendering the "component" that redirects to the game, setting up
+ * necessary game parameters.
+ * @param friendCode The friend code of the game to join. Used to create the link.
+ * @param socketUrl The URL of the websocket. Needed by the lobby component to connect.
+ */
 function triggerRedirectToGame(friendCode: string, socketUrl: string): JSX.Element {
     if (friendCode === "" || socketUrl === "") {
         // Something is horribly broken if we're redirecting to a game with

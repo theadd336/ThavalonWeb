@@ -74,7 +74,7 @@ function App() {
         <Route path="/game"></Route>
       </Switch>
       {showLoginModal && <Login setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} showLoginModal={showLoginModal} />}
-      <CreateJoinGameModal show={showCreateJoinGameModal} onHide={setShowCreateJoinGameModal} />
+      <CreateJoinGameModal show={showCreateJoinGameModal} setOpen={setShowCreateJoinGameModal} />
     </div>
   );
 }
