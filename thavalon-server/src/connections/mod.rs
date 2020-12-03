@@ -4,8 +4,13 @@
 //#region Modules and Use Statements
 mod account_handlers;
 mod errors;
+mod game_handlers;
 mod validation;
+use crate::lobby::Lobby;
+use game_handlers::GameCollection;
+use std::collections::HashMap;
 use std::convert::Infallible;
+use std::sync::{Arc, Mutex};
 use validation::TokenManager;
 use warp::{
     body,
@@ -27,12 +32,17 @@ impl Reject for InvalidTokenRejection {}
 /// or the server is being shut down.
 pub async fn serve_connections() {
     let token_manager = TokenManager::new();
+
+    let game_collection: GameCollection = Arc::new(Mutex::new(HashMap::new()));
+
+    // TEST ROUTES
     let path_test = warp::path("hi").map(|| "Hello, World!");
 
     let restricted_path_test = warp::path("restricted_hi")
         .and(authorize_request(&token_manager))
         .map(|_| "Hello, restricted world!");
 
+    // Account and Security
     let add_user_route = warp::path!("add" / "user")
         .and(body::json())
         .and(with_token_manager(token_manager.clone()))
@@ -70,12 +80,39 @@ pub async fn serve_connections() {
         .and(body::json())
         .and_then(account_handlers::verify_account);
 
-    let get_routes = warp::get().and(path_test.or(restricted_path_test).or(get_user_info_route));
+    // Game routes
+    let create_game_route = warp::path!("add" / "game")
+        .and(authorize_request(&token_manager))
+        .and(with_game_collection(game_collection.clone()))
+        .and_then(game_handlers::create_game);
+
+    let join_game_route = warp::path!("join" / "game")
+        .and(body::json())
+        .and(authorize_request(&token_manager))
+        .and(with_game_collection(game_collection.clone()))
+        .and_then(game_handlers::join_game);
+
+    let ws_route = warp::path("ws")
+        .and(warp::ws())
+        .and(warp::path::param())
+        .and(warp::path::param())
+        .and(with_game_collection(game_collection.clone()))
+        .and_then(game_handlers::connect_ws);
+
+    // Putting everything together
+    let get_routes = warp::get().and(
+        path_test
+            .or(restricted_path_test)
+            .or(get_user_info_route)
+            .or(ws_route),
+    );
     let post_routes = warp::post().and(
         add_user_route
             .or(login_route)
             .or(refresh_jwt_route)
-            .or(logout_route),
+            .or(logout_route)
+            .or(create_game_route)
+            .or(join_game_route),
     );
     let delete_routes = warp::delete().and(delete_user_route);
     let put_routes = warp::put().and(update_user_route.or(verify_account_route));
@@ -151,4 +188,10 @@ fn with_token_manager(
     token_manager: TokenManager,
 ) -> impl Filter<Extract = (TokenManager,), Error = Infallible> + Clone {
     warp::any().map(move || token_manager.clone())
+}
+
+fn with_game_collection(
+    game_collection: GameCollection,
+) -> impl Filter<Extract = (GameCollection,), Error = Infallible> + Clone {
+    warp::any().map(move || game_collection.clone())
 }

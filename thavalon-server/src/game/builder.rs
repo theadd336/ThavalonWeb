@@ -40,4 +40,11 @@ impl GameBuilder {
             }
         })
     }
+
+    pub fn new() -> Self {
+        GameBuilder {
+            interactions: ChannelInteractions::new(),
+            players: vec![],
+        }
+    }
 }
