@@ -11,20 +11,25 @@ export class GameSocket {
     // the underlying gamesocket instance
     private static instance: GameSocket;
     // the instantiated instance of the underlying websocket
-    private websocket: WebSocket;
+    private static websocket: WebSocket;
 
     // create the underlying websocket in the constructor
     private constructor(socketUrl: string) {
-        this.websocket = new WebSocket(socketUrl);
-        this.websocket.onopen = this.socketOnOpen;
-        this.websocket.onmessage = this.socketOnMessage;
-        this.websocket.onclose = this.socketOnClose
-        this.websocket.onerror = this.socketOnError;
+        GameSocket.websocket = new WebSocket(socketUrl);
+        GameSocket.websocket.onopen = this.socketOnOpen;
+        GameSocket.websocket.onmessage = this.socketOnMessage;
+        GameSocket.websocket.onclose = this.socketOnClose
+        GameSocket.websocket.onerror = this.socketOnError;
     } 
+
+    private logMessage() {
+        console.log("It's open!");
+    }
 
     // functions for handling incoming websocket events
     private socketOnOpen(event: Event) {
         console.log("Successfully initiated connection.");
+        this.logMessage();
     }
 
     private socketOnMessage(event: MessageEvent) {
@@ -40,20 +45,29 @@ export class GameSocket {
         console.log("Received on error message.");
     }
 
-    public static getOrCreateInstance(socketUrl?: string): GameSocket {
-        if (socketUrl !== undefined) {
-            GameSocket.instance = new GameSocket(socketUrl);
+    public static getInstance(): GameSocket {
+        if (GameSocket.instance === undefined) {
+            throw new Error("Gamesocket does not exist");
         }
+        return GameSocket.instance;
+    }
+
+    public static createInstance(socketUrl: string): GameSocket {
+        // close existing socket if it's open
+        if (GameSocket.instance !== undefined) {
+            GameSocket.websocket.close();
+        }
+        GameSocket.instance = new GameSocket(socketUrl);
         return GameSocket.instance;
     }
 
     public sendPing(): boolean {
         console.log("sending ping");
-        if (this.websocket.readyState !== WebSocket.OPEN) {
+        if (GameSocket.websocket.readyState !== WebSocket.OPEN) {
             return false;
         }
         console.log("sent");
-        this.websocket.send(JSON.stringify({
+        GameSocket.websocket.send(JSON.stringify({
             "message_type": "ping",
         }));
         return true;

@@ -90,49 +90,44 @@ export class AccountManager {
             "message": "",
         }
         // returns 500 or 401 or 200
-        return await fetch("/api/auth/refresh", {
+        const response: Response = await fetch("/api/auth/refresh", {
             method: "POST",
             credentials: "include"
-        }).then((response) => {
-            switch(response.status) {
-                case STATUS.OK: {
-                    // this.setJwtInfo.bind(this);
-                    response.json().then((jwt: JwtType) => {
-                        // use anonymous function to get around this being unbound
-                        this.setJwtInfo(jwt);
-                    });
-                    break;
-                }
-                case STATUS.UNAUTHORIZED: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Unauthorized when trying to refresh token";
-                    break;
-                }
-                case STATUS.INTERNAL_SERVER_ERROR: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Internal server error when refreshing token";    
-                    break;
-                }
-                default: {
-                    console.log("Unexpected return code from server: " + response.status);
-                    httpResponse.result = false;
-                    httpResponse.message = "Request failed, try again.";    
-                    break;
-                }
-            }
-            // log any non-OK statuses, and clear jwt info
-            if (!httpResponse.result) {
-                console.log("Invalid refresh token, Reason: " + httpResponse.message);
-                this.token = "";
-                this.expiresAt = 0;        
-            }    
-            return httpResponse;
-        }).catch((error) => {
-            console.log("Failed to refresh token, error is: " + error);
-            httpResponse.result = false;
-            httpResponse.message = "Unable to refresh token, try again";
-            return httpResponse;
         });
+
+        switch(response.status) {
+            case STATUS.OK: {
+                // this.setJwtInfo.bind(this);
+                response.json().then((jwt: JwtType) => {
+                    // use anonymous function to get around this being unbound
+                    this.setJwtInfo(jwt);
+                });
+                break;
+            }
+            case STATUS.UNAUTHORIZED: {
+                httpResponse.result = false;
+                httpResponse.message = "Unauthorized when trying to refresh token";
+                break;
+            }
+            case STATUS.INTERNAL_SERVER_ERROR: {
+                httpResponse.result = false;
+                httpResponse.message = "Internal server error when refreshing token";
+                break;
+            }
+            default: {
+                console.log("Unexpected return code from server: " + response.status);
+                httpResponse.result = false;
+                httpResponse.message = "Request failed, try again.";
+                break;
+            }
+        }
+        // log any non-OK statuses, and clear jwt info
+        if (!httpResponse.result) {
+            console.log("Invalid refresh token, Reason: " + httpResponse.message);
+            this.token = "";
+            this.expiresAt = 0;
+        }
+        return httpResponse;
     }
 
     /**
@@ -189,50 +184,46 @@ export class AccountManager {
             "message": ""
         }
         // Following end point can return 201 on successful add or 406 on reject or 500 if everything's broken or 409 if duplicate account
-        return await fetch("/api/add/user", {
+        const response: Response = await fetch("/api/add/user", {
             method: "POST",
             body: JSON.stringify(addUserInfo),
             headers: {
                 "Content-Type": "application/json"
             }
-        }).then((response) => {
-            // On success, set jwt info. On fail, set error messages to return to user.
-            switch (response.status) {
-                case STATUS.CREATED: {
-                    response.json().then((jwt: JwtType) => {
-                        this.setJwtInfo(jwt);
-                    });    
-                    break;
-                }
-                case STATUS.NOT_ACCEPTABLE: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Invalid email or password";    
-                    break;
-                }
-                case STATUS.CONFLICT: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Invalid email - already in use";    
-                    break;
-                }
-                case STATUS.INTERNAL_SERVER_ERROR: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Unable to create account, try again";    
-                    break;
-                }
-                default: {
-                    console.log("Unexpected return code from server: " + response.status);
-                    httpResponse.result = false;
-                    httpResponse.message = "Request failed, try again.";    
-                    break;
-                }
+        })
+
+        // On success, set jwt info. On fail, set error messages to return to user.
+        switch (response.status) {
+            case STATUS.CREATED: {
+                const jwt: JwtType = await response.json();
+                this.setJwtInfo(jwt);
+                break;
             }
-            return httpResponse;
-        }).catch((error) => {
-            console.log("Failed to register user, error is: " + error);
-            httpResponse.result = false;
-            httpResponse.message = "Unable to register, try again";
-            return httpResponse;
-        });
+            case STATUS.NOT_ACCEPTABLE: {
+                httpResponse.result = false;
+                httpResponse.message = "Invalid email or password";
+                return httpResponse;
+            }
+            case STATUS.CONFLICT: {
+                httpResponse.result = false;
+                httpResponse.message = "Invalid email - already in use";
+                return httpResponse;
+            }
+            case STATUS.INTERNAL_SERVER_ERROR: {
+                httpResponse.result = false;
+                httpResponse.message = "Unable to create account, try again";
+                return httpResponse;
+            }
+            default: {
+                console.log("Unexpected return code from server: " + response.status);
+                httpResponse.result = false;
+                httpResponse.message = "Request failed, try again.";
+                return httpResponse;
+            }
+        }
+        httpResponse.result = false;
+        httpResponse.message = "Unable to register, try again";
+        return httpResponse;
     }
 
     /**
@@ -253,44 +244,41 @@ export class AccountManager {
             "message": ""
         }
 
-        return await fetch("/api/auth/login", {
+        let response: Response = await fetch("/api/auth/login", {
             method: "POST",
             body: JSON.stringify(logInInfo),
             headers: {
                 "Content-Type": "application/json"
             }
-        }).then((response) => {
-            switch (response.status) {
-                case STATUS.OK: {
-                    response.json().then((jwt: JwtType) => {
-                        this.setJwtInfo(jwt);
-                    });    
-                    break;
-                }
-                case STATUS.UNAUTHORIZED: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Invalid email or password";    
-                    break;
-                }
-                case STATUS.INTERNAL_SERVER_ERROR: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Unable to log in, try again";    
-                    break;
-                }
-                default: {
-                    console.log("Unexpected return code from server: " + response.status);
-                    httpResponse.result = false;
-                    httpResponse.message = "Request failed, try again.";    
-                    break;
-                }
-            }
-            return httpResponse;
-        }).catch((error) => {
-            console.log("Failed to login user, error is: " + error);
-            httpResponse.result = false;
-            httpResponse.message = "Unable to login, try again";
-            return httpResponse;
         });
+
+        switch (response.status) {
+            case STATUS.OK: {
+                const jwt: JwtType = await response.json();
+                this.setJwtInfo(jwt);
+                break;
+            }
+            case STATUS.UNAUTHORIZED: {
+                httpResponse.result = false;
+                httpResponse.message = "Invalid email or password";
+                return httpResponse;
+            }
+            case STATUS.INTERNAL_SERVER_ERROR: {
+                httpResponse.result = false;
+                httpResponse.message = "Unable to log in, try again";
+                return httpResponse;
+            }
+            default: {
+                console.log("Unexpected return code from server: " + response.status);
+                httpResponse.result = false;
+                httpResponse.message = "Request failed, try again.";
+                return httpResponse;
+            }
+        }
+
+        httpResponse.result = false;
+        httpResponse.message = "Unable to login, try again";
+        return httpResponse;
     }
 
     /**
@@ -304,28 +292,23 @@ export class AccountManager {
             "message": ""
         }
 
-        return await fetch("/api/auth/logout", {
+        const response: Response = await fetch("/api/auth/logout", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             credentials: "include"
-        }).then((response) => {
-            if (response.status === STATUS.RESET_CONTENT) {
-                this.token = "";
-                this.expiresAt = 0;
-            } else {
-                console.log("Unexpected return code from server: " + response.status);
-                httpResponse.result = false;
-                httpResponse.message = "Request failed, try again.";    
-        }
-            return httpResponse;
-        }).catch((error) => {
-            console.log("Failed to logout user, error is: " + error);
-            httpResponse.result = false;
-            httpResponse.message = "Unable to logout, try again";
-            return httpResponse;
         });
+
+        if (response.status === STATUS.RESET_CONTENT) {
+            this.token = "";
+            this.expiresAt = 0;
+        } else {
+            console.log("Unexpected return code from server: " + response.status);
+            httpResponse.result = false;
+            httpResponse.message = "Request failed, try again.";
+        }
+        return httpResponse;
     }
 
     /**
@@ -337,31 +320,24 @@ export class AccountManager {
             "message": ""
         }
 
-        return await fetch("/api/add/game", {
+        const response: Response = await fetch("/api/add/game", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": "Basic " + this.token,
             },
             credentials: "include"
-        }).then((response) => {
-            if (response.status === STATUS.OK) {
-                return response.json();
-            } else {
-                console.log("Unexpected return code from server: " + response.status);
-                httpResponse.result = false;
-                httpResponse.message = "Request failed, try again.";    
-        }
-            return httpResponse;
-        }).then((createGameResponse: CreateGameResponse) => {
-            httpResponse.message = createGameResponse.friendCode;
-            return httpResponse;
-        }).catch((error) => {
-            console.log("Failed to create game, error is: " + error);
-            httpResponse.result = false;
-            httpResponse.message = "Unable to create game, try again";
-            return httpResponse;
         });
+
+        if (response.status === STATUS.OK) {
+            const createGameResponse: CreateGameResponse = await response.json();
+            httpResponse.message = createGameResponse.friendCode;
+        } else {
+            console.log("Unexpected return code from server: " + response.status);
+            httpResponse.result = false;
+            httpResponse.message = "Request failed, try again.";    
+        }
+        return httpResponse;
     }
 
     /**
@@ -381,7 +357,7 @@ export class AccountManager {
             "displayName": displayName,
         }
 
-        return await fetch("/api/join/game", {
+        const response: Response = await fetch("/api/join/game", {
             method: "POST",
             body: JSON.stringify(joinGameInfo),
             headers: {
@@ -389,24 +365,15 @@ export class AccountManager {
                 "Authorization": "Basic " + this.token,
             },
             credentials: "include"
-        }).then((response) => {
-            if (response.status === STATUS.OK) {
-                return response.json();
-            } else {
-                console.log("Unexpected return code from server: " + response.status);
-                httpResponse.result = false;
-                httpResponse.message = "Request failed, try again.";    
-        }
-            return httpResponse;
-        }).then((joinGameResponse: JoinGameResponse) => {
-            httpResponse.message = joinGameResponse.socketUrl;
-            return httpResponse;
-        }).catch((error) => {
-            console.log("Failed to create game, error is: " + error);
-            httpResponse.result = false;
-            httpResponse.message = "Unable to create game, try again";
-            return httpResponse;
         });
+        if (response.status === STATUS.OK) {
+            const joinGameResponse: JoinGameResponse = await response.json();
+            httpResponse.message = joinGameResponse.socketUrl;
+        } else {
+            console.log("Unexpected return code from server: " + response.status);
+            httpResponse.result = false;
+            httpResponse.message = "Request failed, try again.";    
+        }
+        return httpResponse;
     }
-
 }
