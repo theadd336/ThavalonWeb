@@ -1,155 +1,156 @@
-use std::collections::{HashMap, HashSet};
+#![allow(dead_code)]
+use std::collections::HashSet;
+use std::fmt;
 
-use super::interactions::Interactions;
 use super::messages::{Action, Message};
-use super::Game;
+use super::{Game, MissionNumber};
 
-// Game logic implemented as an impure state machine. Instead of having states consume themselves and return new
-// states, GameState mutates itself in-place to reduce the amount of cross-phase bookkeeping.
+use self::proposing::Proposing;
+use self::voting::Voting;
+use self::on_mission::OnMission;
 
-struct GameState {
+/// Result of handling a player action. The [`GameStateWrapper`] is the new state of the game and the [`Effect`]
+/// [`Vec`] describes side-effects of the state transition.
+pub type ActionResult = (GameStateWrapper, Vec<Effect>);
+
+/// Wrapper over specific phases, so callers can hold a game in any phase.
+pub enum GameStateWrapper {
+    Proposing(GameState<Proposing>),
+    Voting(GameState<Voting>),
+    OnMission(GameState<OnMission>),
+}
+
+/// State of an in-progress game. Game state is divided into two parts. Data needed in all phases of the game,
+/// such as player information, is stored in the `GameState` directly. Phase-specific data, such as how players
+/// voted on a specific mission proposal, is stored in a particular [`Phase`] implementation.
+pub struct GameState<P: Phase> {
+    /// State specific to the current game phase.
+    phase: P,
+    /// Game configuration
     game: Game,
-    phase: Phase,
+    /// All proposals made in the game
     proposals: Vec<Proposal>,
-    passed_missions: usize,
-    failed_missions: usize,
+    /// Results of all completed missions
+    mission_results: Vec<MissionResults>,
 }
 
-enum Phase {
-    Starting,
-    Proposing {
-        proposer: String,
-    },
-    Voting,
-    OnMission,
-    TimedDeclaration,
-    Assassination,
-    Done
+/// A phase of the THavalon state machine
+pub trait Phase: Sized {
+    /// Lifts a game in this phase back into the [`GameStateWrapper`] enum. This is used by code
+    /// that is generic over different game phases and needs a wrapped version of the game.
+    fn wrap(game: GameState<Self>) -> GameStateWrapper;
 }
 
-enum Effect {
+// Boilerplate for wrapping game phases into an enum
+macro_rules! impl_phase {
+    ($phase:ident) => {
+        impl $crate::game::state::Phase for $phase {
+            fn wrap(game: GameState<Self>) -> GameStateWrapper {
+                GameStateWrapper::$phase(game)
+            }
+        }
+    };
+}
+
+// For Rust scoping reasons I don't quite understand, these have to come after the macro definition
+mod proposing;
+mod voting;
+mod on_mission;
+
+/// A bundle of imports needed for most game phases
+mod prelude {
+    pub use super::{GameState, GameStateWrapper, ActionResult, Effect, Proposal, MissionResults};
+
+    pub use super::proposing::Proposing;
+    pub use super::voting::Voting;
+    pub use super::on_mission::OnMission;
+
+    pub use super::super::{
+        Game, GameSpec, Card,
+        messages::{self, Action, Message},
+        role::Role,
+    };
+}
+
+/// A side-effect of a state transition. In most cases, this will result in sending a message to some or all players.
+pub enum Effect {
     Reply(Message),
     Broadcast(Message),
     StartTimeout,
-    ClearTimeout
+    ClearTimeout,
 }
 
-struct Proposal {
+pub struct Proposal {
     proposer: String,
     players: HashSet<String>,
 }
 
-impl GameState {
-    pub fn handle_action(&mut self, player: &str, action: Action) -> Vec<Effect> {
-        let mission_number = passed_missions + failed_missions + 1;
-
-        let (next_phase, effects) = match (phase, action) {
-            (Phase::Proposing { proposer }, Action::Propose { players }) => {
-                if player != proposer {
-                    (Phase::Proposing { proposer }, vec![player_error("It's not your proposal")])
-                } else if valid_proposal(game, &players, mission_number) {
-                    proposals.push(Proposal {
-                        proposer: proposer.clone(),
-                        players: players.clone(),
-                    });
-
-                    let mut effects = vec![
-                        Effect::Broadcast(Message::ProposalMade {
-                            proposer,
-                            players: players.clone(),
-                            mission: mission_number as u8,
-                        })
-                    ];
-
-                    let phase = if mission_number == 1 && proposals.len() == 1 {
-                        Phase::Proposing { proposer: game.next_proposer(player).to_string() }
-                    } else if proposals.len() > game.spec.max_proposals {
-                        effects.push(Effect::Broadcast(Message::MissionGoing {
-                            mission: mission_number as u8,
-                            players,
-                        }));
-                        Phase::OnMission
-                    } else {
-                        effects.push(Effect::Broadcast(Message::CommenceVoting));
-                        Phase::Voting
-                    };
-
-                    (phase, effects)
-                } else {
-                    (Phase::Proposing { proposer }, vec![player_error("Not a valid proposal")])
-                }
-            },
-
-            (Phase::Assassination, Action::Assassinate { target, players }) => todo!("assassination"),
-            (phase, Action::MoveToAssassination) => {
-                if player == game.assassin {
-                    (Phase::Assassination, todo!("assassination message"))
-                } else {
-                    (phase, vec![player_error("You are not the assassin")])
-                }
-            },
-
-
-            (phase, _) => (phase, vec![player_error("You can't do that right now")])
-        };
-
-        let next_game = GameState { phase: next_phase, proposals, passed_missions, failed_missions };
-        (next_game, effects)
-    }
-
-    pub fn handle_timeout(self) -> (GameState, Vec<Effect>) {
-        (self, vec![])
-    }
-
+pub struct MissionResults {
+    passed: bool,
+    players: HashSet<String>,
 }
 
-fn player_error<S: Into<String>>(message: S) -> Effect {
-    Effect::Reply(Message::Error(message.into()))
-}
 
-fn valid_proposal(game: &Game, players: &HashSet<String>, mission_number: usize) -> bool {
-    let mission_size = game.spec.mission_size(mission_number as u8);
-    if players.len() != mission_size {
-        return false
+// Convenience methods shared across game phases
+impl<P: Phase> GameState<P> {
+    /// Generate an [`ActionResult`] that keeps the current state and returns an error reply to the player.
+    fn player_error<S: Into<String>>(self, message: S) -> ActionResult {
+        (P::wrap(self), vec![player_error(message)])
     }
 
-    for player in players.iter() {
-        if game.players.by_name(player).is_none() {
-            return false
+    /// The current mission, indexed starting at 1
+    fn mission(&self) -> MissionNumber {
+        self.mission_results.len() as u8 + 1
+    }
+
+    /// Calculates the number of "spent" proposals, for the purposes of determining if force is active
+    /// - The two proposals on mission 1 do not count
+    /// - Proposals that are sent do not count. Equivalently, every time a mission is sent we get a proposal back
+    ///
+    /// *This will be off by 1 while going on a mission, since the spent proposal has not yet been returned*
+    fn spent_proposals(&self) -> usize {
+        self.proposals
+            .len()
+            .saturating_sub(2) // Subtract 2 proposals for mission 1
+            .saturating_sub(self.mission_results.len()) // Subtract 1 proposal for each sent mission
+    }
+}
+
+impl GameStateWrapper {
+    /// Advance to the next game state given a player action
+    fn handle_action(self, player: &str, action: Action) -> ActionResult {
+        log::debug!("Responding to {:?} from {}", action, player);
+        match (self, action) {
+            (GameStateWrapper::Proposing(inner), Action::Propose { players }) => {
+                inner.handle_proposal(player, players)
+            }
+            (GameStateWrapper::Voting(inner), Action::Vote { upvote }) => {
+                inner.handle_vote(player, upvote)
+            }
+            (GameStateWrapper::OnMission(inner), Action::Play { card }) => {
+                inner.handle_card(player, card)
+            }
+            (GameStateWrapper::OnMission(inner), Action::QuestingBeast) => {
+                inner.handle_questing_beast(player)
+            }
+            (state, _) => (state, vec![player_error("You can't do that right now")]),
         }
     }
-
-    true
 }
 
+impl fmt::Display for Proposal {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use itertools::Itertools;
+        write!(
+            f,
+            "{} (proposed by {})",
+            self.players.iter().format(", "),
+            self.proposer
+        )
+    }
+}
 
-// For nicer error handling / validation, have an error enum representing
-// - validation errors to send back to the player
-// - communication errors (non-fatal?)
-// - (possibly) fatal game logic errors
-// this means I can have a bunch of states that share helper logic (ex. for special mission 1 proposals)
-// have game (e.g.) keep a log of all proposals so for voting (esp mission 1) we can just look back
-
-/*
-
-Hierarchical State Machines:
-
-GameState
-|- Mission
-|  |- Proposing
-|  |- Voting
-|  |- Going
-|  |- WaitingForAgravaine
-|- Assassination
-|- Done
-
-But list of proposals should be global :/
-
-*/
-
-trait StateMachine: Sized {
-    type Event;
-    type Command;
-
-    fn handle(self, event: Self::Event) -> (Self, Vec<Self::Command>);
+/// Generate an [`Effect`] that sends an error reply to the player.
+fn player_error<S: Into<String>>(message: S) -> Effect {
+    Effect::Reply(Message::Error(message.into()))
 }

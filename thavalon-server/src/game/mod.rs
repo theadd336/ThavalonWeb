@@ -17,13 +17,12 @@ use serde::{Deserialize, Serialize};
 pub mod builder;
 mod engine;
 mod interactions;
-mod messages;
+pub mod messages;
 mod role;
-// mod state;
+mod state;
 pub mod snapshot;
-mod state2;
 
-pub use self::messages::*;
+pub use self::messages::{Message, Action};
 pub use self::role::*;
 
 /// A mission number (from 1 to 5)

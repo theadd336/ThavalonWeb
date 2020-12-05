@@ -542,7 +542,7 @@ mod test {
 
     use super::super::interactions::test::TestInteractions;
     use super::super::messages::{Action, Message};
-    use super::super::role::Role;
+    use super::super::role::{Role, PriorityTarget};
     use super::super::Players;
     use super::*;
 
@@ -554,13 +554,16 @@ mod test {
         players.add_player("Player 4".to_string(), Role::Maelegant);
         players.add_player("Player 5".to_string(), Role::Agravaine);
 
+        let assassin = "Player 4";
+        let priority_target = PriorityTarget::Merlin;
+
         let mut rng = thread_rng();
         let info = hashmap! {
-            "Player 1".to_string() => Role::Merlin.generate_info(&mut rng, "Player 1", &players),
-            "Player 2".to_string() => Role::Lancelot.generate_info(&mut rng, "Player 2", &players),
-            "Player 3".to_string() => Role::Iseult.generate_info(&mut rng, "Player 3", &players),
-            "Player 4".to_string() => Role::Maelegant.generate_info(&mut rng, "Player 4", &players),
-            "Player 5".to_string() => Role::Agravaine.generate_info(&mut rng, "Player 5", &players),
+            "Player 1".to_string() => Role::Merlin.generate_info(&mut rng, "Player 1", &players, assassin, priority_target),
+            "Player 2".to_string() => Role::Lancelot.generate_info(&mut rng, "Player 2", &players, assassin, priority_target),
+            "Player 3".to_string() => Role::Iseult.generate_info(&mut rng, "Player 3", &players, assassin, priority_target),
+            "Player 4".to_string() => Role::Maelegant.generate_info(&mut rng, "Player 4", &players, assassin, priority_target),
+            "Player 5".to_string() => Role::Agravaine.generate_info(&mut rng, "Player 5", &players, assassin, priority_target),
         };
 
         Game {
@@ -573,6 +576,8 @@ mod test {
                 "Player 4".to_string(),
                 "Player 5".to_string(),
             ],
+            assassin: assassin.to_string(),
+            priority_target,
             spec: GameSpec::for_players(5),
         }
     }
