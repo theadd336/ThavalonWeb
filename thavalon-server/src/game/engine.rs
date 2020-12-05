@@ -11,7 +11,7 @@ use tokio::time::{self, Duration};
 
 use super::interactions::Interactions;
 use super::messages::{Action, GameError, Message, VoteCounts};
-use super::role::{Role, PriorityTarget};
+use super::role::{PriorityTarget, Role};
 use super::{Card, Game, GameSpec, MissionNumber};
 
 /// Amount of time to wait for a declaration, for declarations that have to happen within a certain timeframe.
@@ -175,7 +175,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
                     match action {
                         Action::Propose { players } => {
                             if players.len() != size {
-                                return Err(format!("Proposal must contain {} players", size))
+                                return Err(format!("Proposal must contain {} players", size));
                             }
 
                             for player in players.iter() {
@@ -364,29 +364,67 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
 
     /// Respond to an assassination attempt. This assumes it is only called from game states where assassination is
     /// allowed.
-    async fn handle_assassination(&mut self, assassin: &str, target: PriorityTarget, players: HashSet<String>) -> Result<(), GameError> {
+    async fn handle_assassination(
+        &mut self,
+        assassin: &str,
+        target: PriorityTarget,
+        players: HashSet<String>,
+    ) -> Result<(), GameError> {
         if assassin != self.game.assassin {
-            return self.interactions.send_to(assassin, Message::Error("You are not the assassin".to_string())).await;
+            return self
+                .interactions
+                .send_to(
+                    assassin,
+                    Message::Error("You are not the assassin".to_string()),
+                )
+                .await;
         }
 
-        log::debug!("{} assassinated {} as {:?}", assassin, players.iter().format(" and "), target);
+        log::debug!(
+            "{} assassinated {} as {:?}",
+            assassin,
+            players.iter().format(" and "),
+            target
+        );
 
         let is_correct = match target {
             PriorityTarget::Merlin => {
                 if players.len() != 1 {
-                    return self.interactions.send_to(assassin, Message::Error("You can only assassinate one player as Merlin".to_string())).await;
+                    return self
+                        .interactions
+                        .send_to(
+                            assassin,
+                            Message::Error(
+                                "You can only assassinate one player as Merlin".to_string(),
+                            ),
+                        )
+                        .await;
                 }
                 let target_name = players.iter().next().unwrap();
                 if let Some(player) = self.game.players.by_name(target_name) {
                     player.role == Role::Merlin
                 } else {
-                    return self.interactions.send_to(assassin, Message::Error(format!("{} is not in the game", target_name))).await;
+                    return self
+                        .interactions
+                        .send_to(
+                            assassin,
+                            Message::Error(format!("{} is not in the game", target_name)),
+                        )
+                        .await;
                 }
-            },
+            }
             PriorityTarget::Guinevere => todo!("Need a Guinevere role first"),
             PriorityTarget::Lovers => {
                 if players.len() != 2 {
-                    return self.interactions.send_to(assassin, Message::Error("You must assassinate two players as Lovers".to_string())).await;
+                    return self
+                        .interactions
+                        .send_to(
+                            assassin,
+                            Message::Error(
+                                "You must assassinate two players as Lovers".to_string(),
+                            ),
+                        )
+                        .await;
                 }
 
                 let mut is_correct = true;
@@ -396,7 +434,13 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
                             is_correct = false;
                         }
                     } else {
-                        return self.interactions.send_to(assassin, Message::Error(format!("{} is not in the game", target_name))).await;
+                        return self
+                            .interactions
+                            .send_to(
+                                assassin,
+                                Message::Error(format!("{} is not in the game", target_name)),
+                            )
+                            .await;
                     }
                 }
                 is_correct
@@ -415,7 +459,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
     }
 
     // fn locate_player(&mut self, actor: &str, player: &str) -> Result<&super::Player, GameError> {
-        
+
     // }
 }
 

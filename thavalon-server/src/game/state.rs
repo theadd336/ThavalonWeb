@@ -4,64 +4,11 @@ use super::interactions::Interactions;
 use super::messages::{Action, Message};
 use super::Game;
 
-/*
-pub struct GameState {
-    /// The current game phase.
-    phase: Phase,
-    /// All proposals made in the game
-    proposals: Vec<Proposal>,
-    game: Game,
-}
-
-pub enum Phase {
-    Proposing(Proposing),
-    Voting(Voting),
-    OnMission,
-    WaitingForAgravaine,
-    Assassination,
-    Done,
-}
-
-struct Proposing {
-    proposer: String,
-    mission_size: usize,
-}
-
-struct Voting {
-    votes: HashMap<String, bool>,
-    is_obscured: bool,
-}
-
-impl GameState {
-    pub fn handle_action(self, player: &str, action: Action) -> Self {
-        let GameState { phase, mut proposals, game } = self;
-        match (phase, action) {
-            (Phase::Proposing(proposing), Action::Propose { players }) => {
-                if proposing.proposer == player {
-                    if valid_proposal(&game, &players, proposing.mission_size) {
-                        proposals.push(Proposal {
-                            proposer: proposing.proposer,
-                            players,
-                        });
-
-                        
-                    } else {
-                        todo!("error: invalid proposal")
-                    }
-                } else {
-                    todo!("error: not your proposal")
-                }
-            }
-            _ =>
-                todo!("error: you can't do that right now");
-                self
-        }
-    }
-}
-
-*/
+// Game logic implemented as an impure state machine. Instead of having states consume themselves and return new
+// states, GameState mutates itself in-place to reduce the amount of cross-phase bookkeeping.
 
 struct GameState {
+    game: Game,
     phase: Phase,
     proposals: Vec<Proposal>,
     passed_missions: usize,
@@ -93,8 +40,7 @@ struct Proposal {
 }
 
 impl GameState {
-    fn handle_action(self, player: &str, action: Action, game: &Game) -> (GameState, Vec<Effect>) {
-        let GameState { phase, mut proposals, mut passed_missions, mut failed_missions } = self;
+    pub fn handle_action(&mut self, player: &str, action: Action) -> Vec<Effect> {
         let mission_number = passed_missions + failed_missions + 1;
 
         let (next_phase, effects) = match (phase, action) {
@@ -151,9 +97,10 @@ impl GameState {
         (next_game, effects)
     }
 
-    fn handle_timeout(self) -> (GameState, Vec<Effect>) {
+    pub fn handle_timeout(self) -> (GameState, Vec<Effect>) {
         (self, vec![])
     }
+
 }
 
 fn player_error<S: Into<String>>(message: S) -> Effect {

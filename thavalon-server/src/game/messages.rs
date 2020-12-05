@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use super::role::{RoleDetails, PriorityTarget};
+use super::role::{PriorityTarget, RoleDetails};
 use super::{Card, MissionNumber};
 
 // Game-related messages
@@ -13,16 +13,22 @@ use super::{Card, MissionNumber};
 /// Something the player tries to do
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
 pub enum Action {
-    Propose { players: HashSet<String> },
-    Vote { upvote: bool },
-    Play { card: Card },
+    Propose {
+        players: HashSet<String>,
+    },
+    Vote {
+        upvote: bool,
+    },
+    Play {
+        card: Card,
+    },
     QuestingBeast,
     Declare,
     Assassinate {
         players: HashSet<String>,
         target: PriorityTarget,
     },
-    MoveToAssassination
+    MoveToAssassination,
 }
 
 /// A message from the game to a player

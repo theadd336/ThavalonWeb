@@ -1,5 +1,5 @@
 //! THavalon game logic
-//! 
+//!
 //! The game implementation is broken into several layers:
 //! - [`GameSpec`] describes static game rules based on the number of players, such as the size of each mission and
 //!   which roles may be in the game.
@@ -19,9 +19,9 @@ mod engine;
 mod interactions;
 mod messages;
 mod role;
-mod state;
-mod state2;
+// mod state;
 pub mod snapshot;
+mod state2;
 
 pub use self::messages::*;
 pub use self::role::*;
@@ -254,6 +254,15 @@ impl GameSpec {
 
     pub fn double_fail_mission_four(&self) -> bool {
         self.double_fail_mission_four
+    }
+
+    /// Tests if `role` is allowed in games of this size
+    pub fn has_role(&self, role: Role) -> bool {
+        if role.is_evil() {
+            self.evil_roles.contains(&role)
+        } else {
+            self.good_roles.contains(&role)
+        }
     }
 }
 
