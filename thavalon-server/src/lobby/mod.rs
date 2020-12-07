@@ -5,6 +5,8 @@ use crate::database::games::{DBGameError, DBGameStatus, DatabaseGame};
 use crate::game::{builder::GameBuilder, Action, Message};
 use crate::utils;
 
+mod client;
+
 use futures::{stream::SplitSink, SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -76,6 +78,7 @@ struct PlayerClient {
 #[serde(tag = "message_type", content = "data")]
 enum IncomingMessage {
     Ping,
+    StartGame,
     GameCommand(Action),
 }
 
