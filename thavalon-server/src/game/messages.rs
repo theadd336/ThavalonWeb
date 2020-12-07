@@ -85,7 +85,10 @@ pub enum Message {
     },
 
     /// Agravaine declared, so the given mission now failed.
-    AgravaineDeclaration { mission: MissionNumber },
+    AgravaineDeclaration {
+        mission: MissionNumber,
+        player: String,
+    },
 }
 
 /// How players voted on a proposal

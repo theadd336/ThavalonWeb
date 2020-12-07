@@ -1,13 +1,14 @@
 #![allow(dead_code)]
 use std::collections::HashSet;
 use std::fmt;
+use std::time::Duration;
 
 use super::messages::{Action, Message};
 use super::{Game, MissionNumber};
 
 use self::proposing::Proposing;
 use self::voting::Voting;
-use self::on_mission::OnMission;
+use self::on_mission::{OnMission, WaitingForAgravaine};
 
 /// Result of handling a player action. The [`GameStateWrapper`] is the new state of the game and the [`Effect`]
 /// [`Vec`] describes side-effects of the state transition.
@@ -18,6 +19,7 @@ pub enum GameStateWrapper {
     Proposing(GameState<Proposing>),
     Voting(GameState<Voting>),
     OnMission(GameState<OnMission>),
+    WaitingForAgravaine(GameState<WaitingForAgravaine>),
 }
 
 /// State of an in-progress game. Game state is divided into two parts. Data needed in all phases of the game,
@@ -76,7 +78,7 @@ mod prelude {
 pub enum Effect {
     Reply(Message),
     Broadcast(Message),
-    StartTimeout,
+    StartTimeout(Duration),
     ClearTimeout,
 }
 
@@ -113,6 +115,25 @@ impl<P: Phase> GameState<P> {
             .len()
             .saturating_sub(2) // Subtract 2 proposals for mission 1
             .saturating_sub(self.mission_results.len()) // Subtract 1 proposal for each sent mission
+    }
+
+    /// Switch into the `Proposing` state with `proposer` as the next player to propose.
+    fn to_proposing(self, proposer: String, mut effects: Vec<Effect>) -> ActionResult {
+        effects.push(Effect::Broadcast(Message::NextProposal {
+            proposer: proposer.clone(),
+            mission: self.mission(),
+            proposals_made: self.spent_proposals(),
+            max_proposals: self.game.spec.max_proposals,
+        }));
+
+        let next_state = GameState {
+            proposals: self.proposals,
+            mission_results: self.mission_results,
+            game: self.game,
+            phase: Proposing::new(proposer)
+        };
+
+        (GameStateWrapper::Proposing(next_state), effects)
     }
 }
 

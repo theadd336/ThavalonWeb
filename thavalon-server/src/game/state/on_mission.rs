@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::Duration;
 
 use super::prelude::*;
 
@@ -13,6 +14,14 @@ pub struct OnMission {
     /// The number of questing beasts played
     questing_beasts: usize,
 }
+
+/// Placeholder phase used when waiting for Agravaine to declare
+pub struct WaitingForAgravaine {
+    proposal_index: usize,
+}
+
+/// How long to wait for an Agravaine declaration
+const AGRAVAINE_TIMEOUT: Duration = Duration::from_secs(30);
 
 impl GameState<OnMission> {
     pub fn handle_card(mut self, player: &str, card: Card) -> ActionResult {
@@ -56,28 +65,23 @@ impl GameState<OnMission> {
                         passed,
                     })];
 
-                    if self.game.spec.has_role(Role::Agravaine) {
-                        todo!()
+                    if self.game.spec.has_role(Role::Agravaine) && passed {
+                        effects.push(Effect::StartTimeout(AGRAVAINE_TIMEOUT));
+                        let next_state = GameState {
+                            proposals: self.proposals,
+                            mission_results: self.mission_results,
+                            game: self.game,
+                            phase: WaitingForAgravaine {
+                                proposal_index: self.phase.proposal_index
+                            },
+                        };
+                        (GameStateWrapper::WaitingForAgravaine(next_state), effects)
                     } else {
                         let next_proposer = self
                             .game
                             .next_proposer(&self.proposal().proposer)
                             .to_string();
-                        effects.push(Effect::Broadcast(Message::NextProposal {
-                            proposer: next_proposer.clone(),
-                            mission: self.mission(),
-                            // This will be accurate because we've already added in the mission results
-                            proposals_made: self.spent_proposals(),
-                            max_proposals: self.game.spec.max_proposals,
-                        }));
-
-                        let next_state = GameState {
-                            proposals: self.proposals,
-                            mission_results: self.mission_results,
-                            game: self.game,
-                            phase: Proposing::new(next_proposer),
-                        };
-                        (GameStateWrapper::Proposing(next_state), effects)
+                        self.to_proposing(next_proposer, effects)
                     }
                 } else {
                     // If cards aren't all in yet, there's no state change
@@ -122,7 +126,42 @@ impl OnMission {
     }
 }
 
+impl GameState<WaitingForAgravaine> {
+    fn handle_declaration(self, player: &str) -> ActionResult {
+        let mission_number = self.mission();
+        let mission = self.mission_results.last_mut()
+            .expect("Waiting for Agravaine but no mission went");
+        let role = self.game.players.by_name(player).expect("Player was not in the game").role;
+        if mission.players.contains(player) && role == Role::Agravaine {
+            log::debug!("Agravaine declaration by {} caused mission {} to fail", player, mission_number);
+            mission.passed = false;
+
+            let effects = vec![
+                Effect::Broadcast(Message::AgravaineDeclaration {
+                    mission: mission_number,
+                    player: player.to_string(),
+                })
+            ];
+
+            let mission_proposer = &self.proposals[self.phase.proposal_index].proposer;
+            let proposer = self.game.next_proposer(mission_proposer).to_string();
+
+            self.to_proposing(proposer, effects)
+        } else {
+            self.player_error("You can't declare right now")
+        }
+    }
+
+    fn handle_timeout(self) -> ActionResult {
+        log::debug!("Timed out waiting for Agravaine to declare");
+        let mission_proposer = &self.proposals[self.phase.proposal_index].proposer;
+        let proposer = self.game.next_proposer(mission_proposer).to_string();
+        self.to_proposing(proposer, vec![])
+    }
+}
+
 impl_phase!(OnMission);
+impl_phase!(WaitingForAgravaine);
 
 /// Tests if a mission has failed
 /// Note: this is written the way it is because it's easier to express the rules for a mission failing. In general,
