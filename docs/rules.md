@@ -18,10 +18,14 @@ THavalon follows the same rules as The Resistance: Avalon, with the modification
 - *Colgrevance* (10): is hidden from other Evil roles; knows which player has each Evil role.
 
 ## Proposals 
-In each round, players take turns proposing teams with the appropriate number of players. During the first round, only two players are permitted to make proposals; in subsequent rounds, there may be a number of proposals up to one more than the number of Evil players in the game (e.g. 3 proposals for 5- and 6-player, 4 proposals for 7-, 8-, and 9- player, and 5 proposals for 10 player). When making a proposal, the leader of the mission selects an appropriate number of people for the mission and submits their final selection for voting. 
+In each round, players take turns proposing teams with the appropriate number of players. During the first round, only two players are permitted to make proposals. In subsequent
+rounds, there is a limit on the number of proposals that may be made, based on the number of players in the game. Every proposal that is *not* sent counts towards this limit; the one proposal in each round that is sent sent does not count. Once the limit has been exceeded, *force* activates for the remainder of the game. Once force is active, proposals
+are sent immediately without voting.
+
+When making a proposal, the leader of the mission selects an appropriate number of people for the mission and submits their final selection for voting. 
 
 ## Voting 
-Voting in THavalon functions identically to voting in the base game, except with respect to the last mission proposal of a round. If a proposal is the last proposal of the round, the voting phase is skipped and the selected team immediately goes on the mission.
+Voting in THavalon functions identically to voting in the base game, except with respect to force.
 
 ## Going on Missions
 Once a team has been sent on a mission, each person on that team may choose which card they wish to play. Good players must play Success cards and Evil players may choose to play either Success or Fail. Lancelot and Maelegant are also able to play Reverse cards, and Agravaine may only play Fail cards. Once all players on the team have submitted their selected card, the result of the mission, including which cards were played, is made publicly available. 
