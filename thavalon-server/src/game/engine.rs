@@ -544,7 +544,7 @@ mod test {
 
     use super::super::interactions::test::TestInteractions;
     use super::super::messages::{Action, Message};
-    use super::super::role::{Role, PriorityTarget};
+    use super::super::role::{PriorityTarget, Role};
     use super::super::Players;
     use super::*;
 

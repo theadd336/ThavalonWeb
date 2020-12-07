@@ -70,7 +70,10 @@ impl GameState<OnMission> {
                         let next_phase = WaitingForAgravaine {
                             proposal_index: self.phase.proposal_index,
                         };
-                        (GameStateWrapper::WaitingForAgravaine(self.with_phase(next_phase)), effects)
+                        (
+                            GameStateWrapper::WaitingForAgravaine(self.with_phase(next_phase)),
+                            effects,
+                        )
                     } else {
                         let next_proposer = self
                             .game
@@ -122,20 +125,32 @@ impl OnMission {
 }
 
 impl GameState<WaitingForAgravaine> {
-    fn handle_declaration(mut self, player: &str) -> ActionResult {
+    pub fn handle_declaration(mut self, player: &str) -> ActionResult {
         let mission_number = self.mission();
-        let mission = self.mission_results.last_mut()
+        let mission = self
+            .mission_results
+            .last_mut()
             .expect("Waiting for Agravaine but no mission went");
-        let role = self.game.players.by_name(player).expect("Player was not in the game").role;
+        let role = self
+            .game
+            .players
+            .by_name(player)
+            .expect("Player was not in the game")
+            .role;
         if mission.players.contains(player) && role == Role::Agravaine {
-            log::debug!("Agravaine declaration by {} caused mission {} to fail", player, mission_number);
+            log::debug!(
+                "Agravaine declaration by {} caused mission {} to fail",
+                player,
+                mission_number
+            );
             mission.passed = false;
 
             let effects = vec![
                 Effect::Broadcast(Message::AgravaineDeclaration {
                     mission: mission_number,
                     player: player.to_string(),
-                })
+                }),
+                Effect::ClearTimeout,
             ];
 
             let mission_proposer = &self.proposals[self.phase.proposal_index].proposer;
@@ -146,7 +161,7 @@ impl GameState<WaitingForAgravaine> {
         }
     }
 
-    fn handle_timeout(self) -> ActionResult {
+    pub fn handle_timeout(self) -> ActionResult {
         log::debug!("Timed out waiting for Agravaine to declare");
         let mission_proposer = &self.proposals[self.phase.proposal_index].proposer;
         let proposer = self.game.next_proposer(mission_proposer).to_string();

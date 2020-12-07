@@ -6,9 +6,9 @@ use std::time::Duration;
 use super::messages::{Action, Message};
 use super::{Game, MissionNumber};
 
+use self::on_mission::{OnMission, WaitingForAgravaine};
 use self::proposing::Proposing;
 use self::voting::Voting;
-use self::on_mission::{OnMission, WaitingForAgravaine};
 
 /// Result of handling a player action. The [`GameStateWrapper`] is the new state of the game and the [`Effect`]
 /// [`Vec`] describes side-effects of the state transition.
@@ -55,22 +55,22 @@ macro_rules! impl_phase {
 }
 
 // For Rust scoping reasons I don't quite understand, these have to come after the macro definition
+mod on_mission;
 mod proposing;
 mod voting;
-mod on_mission;
 
 /// A bundle of imports needed for most game phases
 mod prelude {
-    pub use super::{GameState, GameStateWrapper, ActionResult, Effect, Proposal, MissionResults};
+    pub use super::{ActionResult, Effect, GameState, GameStateWrapper, MissionResults, Proposal};
 
+    pub use super::on_mission::OnMission;
     pub use super::proposing::Proposing;
     pub use super::voting::Voting;
-    pub use super::on_mission::OnMission;
 
     pub use super::super::{
-        Game, GameSpec, Card,
         messages::{self, Action, Message},
         role::Role,
+        Card, Game, GameSpec,
     };
 }
 
@@ -91,7 +91,6 @@ pub struct MissionResults {
     passed: bool,
     players: HashSet<String>,
 }
-
 
 // Convenience methods shared across game phases
 impl<P: Phase> GameState<P> {
@@ -123,7 +122,7 @@ impl<P: Phase> GameState<P> {
             phase: next_phase,
             game: self.game,
             proposals: self.proposals,
-            mission_results: self.mission_results
+            mission_results: self.mission_results,
         }
     }
 
@@ -157,7 +156,22 @@ impl GameStateWrapper {
             (GameStateWrapper::OnMission(inner), Action::QuestingBeast) => {
                 inner.handle_questing_beast(player)
             }
+            (GameStateWrapper::WaitingForAgravaine(inner), Action::Declare) => {
+                inner.handle_declaration(player)
+            }
             (state, _) => (state, vec![player_error("You can't do that right now")]),
+        }
+    }
+
+    /// Handles a timeout set by [`Effect::SetTimeout`] expiring. This is used for player actions which must happen in a
+    /// certain time window, like Agravaine declarations.
+    fn handle_timeout(self) -> ActionResult {
+        log::debug!("Action timeout expired");
+        match self {
+            GameStateWrapper::WaitingForAgravaine(inner) => inner.handle_timeout(),
+            // handle_timeout should only be called after a timeout has been set, which only happens if we're waiting
+            // for Agravaine.
+            _ => panic!("Timeout expired when no timeout should have been set"),
         }
     }
 }

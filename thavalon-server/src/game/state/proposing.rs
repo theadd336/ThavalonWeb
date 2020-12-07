@@ -32,7 +32,7 @@ impl GameState<Proposing> {
 
         let proposal = Proposal {
             proposer: player.to_string(),
-            players: players.clone()
+            players: players.clone(),
         };
         log::debug!("Got {} for mission {}", proposal, mission);
         self.proposals.push(proposal);
@@ -56,7 +56,10 @@ impl GameState<Proposing> {
                 players: proposal.players.clone(),
             }));
             let next_phase = OnMission::new(self.proposals.len() - 1);
-            (GameStateWrapper::OnMission(self.with_phase(next_phase)), effects)
+            (
+                GameStateWrapper::OnMission(self.with_phase(next_phase)),
+                effects,
+            )
         } else {
             if mission == 1 {
                 let first_proposal = &self.proposals[self.proposals.len() - 2];

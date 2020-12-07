@@ -19,10 +19,10 @@ mod engine;
 mod interactions;
 pub mod messages;
 mod role;
-mod state;
 pub mod snapshot;
+mod state;
 
-pub use self::messages::{Message, Action};
+pub use self::messages::{Action, Message};
 pub use self::role::*;
 
 /// A mission number (from 1 to 5)
