@@ -86,8 +86,8 @@ export class AccountManager {
      */
     private async checkRefreshToken(): Promise<HttpResponse> {
         const httpResponse: HttpResponse = {
-            "result": true,
-            "message": "",
+            result: true,
+            message: "",
         }
         // returns 500 or 401 or 200
         const response: Response = await fetch("/api/auth/refresh", {
@@ -98,10 +98,8 @@ export class AccountManager {
         switch(response.status) {
             case STATUS.OK: {
                 // this.setJwtInfo.bind(this);
-                response.json().then((jwt: JwtType) => {
-                    // use anonymous function to get around this being unbound
-                    this.setJwtInfo(jwt);
-                });
+                const jwt: JwtType = await response.json();
+                this.setJwtInfo(jwt);
                 break;
             }
             case STATUS.UNAUTHORIZED: {
@@ -174,14 +172,14 @@ export class AccountManager {
     public async registerUser(name: string, email: string, password: string): Promise<HttpResponse> {
         // parameters for registering user
         const addUserInfo: AddUserInfo = {
-            "displayName": name,
-            "email": email,
-            "password": password
+            displayName: name,
+            email: email,
+            password: password
         }
 
         const httpResponse: HttpResponse = {
-            "result": true,
-            "message": ""
+            result: true,
+            message: ""
         }
         // Following end point can return 201 on successful add or 406 on reject or 500 if everything's broken or 409 if duplicate account
         const response: Response = await fetch("/api/add/user", {
@@ -235,13 +233,13 @@ export class AccountManager {
     public async loginUser(email: string, password: string): Promise<HttpResponse> {
         // parameters for logging in user
         const logInInfo: LogInInfo = {
-            "email": email,
-            "password": password
+            email: email,
+            password: password
         }
 
         const httpResponse: HttpResponse = {
-            "result": true,
-            "message": ""
+            result: true,
+            message: ""
         }
 
         let response: Response = await fetch("/api/auth/login", {
@@ -288,8 +286,8 @@ export class AccountManager {
      */
     public async logoutUser(): Promise<HttpResponse> {
         const httpResponse: HttpResponse = {
-            "result": true,
-            "message": ""
+            result: true,
+            message: ""
         }
 
         const response: Response = await fetch("/api/auth/logout", {
@@ -316,8 +314,8 @@ export class AccountManager {
      */
     public async createGame(): Promise<HttpResponse> {
         const httpResponse: HttpResponse = {
-            "result": true,
-            "message": ""
+            result: true,
+            message: ""
         }
 
         const response: Response = await fetch("/api/add/game", {
@@ -325,8 +323,7 @@ export class AccountManager {
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": "Basic " + this.token,
-            },
-            credentials: "include"
+            }
         });
 
         if (response.status === STATUS.OK) {
@@ -348,13 +345,13 @@ export class AccountManager {
      */
     public async joinGame(friendCode: string, displayName: string): Promise<HttpResponse> {
         const httpResponse: HttpResponse = {
-            "result": true,
-            "message": ""
+            result: true,
+            message: ""
         }
 
         const joinGameInfo: JoinGameInfo = {
-            "friendCode": friendCode,
-            "displayName": displayName,
+            friendCode: friendCode,
+            displayName: displayName,
         }
 
         const response: Response = await fetch("/api/join/game", {
@@ -363,8 +360,7 @@ export class AccountManager {
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": "Basic " + this.token,
-            },
-            credentials: "include"
+            }
         });
         if (response.status === STATUS.OK) {
             const joinGameResponse: JoinGameResponse = await response.json();
