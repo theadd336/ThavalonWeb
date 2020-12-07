@@ -198,7 +198,7 @@ impl GameSnapshot {
                 Ok(())
             }
 
-            Message::AgravaineDeclaration { mission } => {
+            Message::AgravaineDeclaration { mission, player  } => {
                 let state = self.mission_mut(mission);
                 if let Some(mut results) = state.results.as_mut() {
                     results.agravaine_declared = true;
@@ -206,7 +206,7 @@ impl GameSnapshot {
                     Ok(())
                 } else {
                     Err(SnapshotError::UnexpectedMessage(
-                        Message::AgravaineDeclaration { mission },
+                        Message::AgravaineDeclaration { mission, player },
                     ))
                 }
             }

@@ -67,15 +67,10 @@ impl GameState<OnMission> {
 
                     if self.game.spec.has_role(Role::Agravaine) && passed {
                         effects.push(Effect::StartTimeout(AGRAVAINE_TIMEOUT));
-                        let next_state = GameState {
-                            proposals: self.proposals,
-                            mission_results: self.mission_results,
-                            game: self.game,
-                            phase: WaitingForAgravaine {
-                                proposal_index: self.phase.proposal_index
-                            },
+                        let next_phase = WaitingForAgravaine {
+                            proposal_index: self.phase.proposal_index,
                         };
-                        (GameStateWrapper::WaitingForAgravaine(next_state), effects)
+                        (GameStateWrapper::WaitingForAgravaine(self.with_phase(next_phase)), effects)
                     } else {
                         let next_proposer = self
                             .game
@@ -127,7 +122,7 @@ impl OnMission {
 }
 
 impl GameState<WaitingForAgravaine> {
-    fn handle_declaration(self, player: &str) -> ActionResult {
+    fn handle_declaration(mut self, player: &str) -> ActionResult {
         let mission_number = self.mission();
         let mission = self.mission_results.last_mut()
             .expect("Waiting for Agravaine but no mission went");
@@ -145,7 +140,6 @@ impl GameState<WaitingForAgravaine> {
 
             let mission_proposer = &self.proposals[self.phase.proposal_index].proposer;
             let proposer = self.game.next_proposer(mission_proposer).to_string();
-
             self.to_proposing(proposer, effects)
         } else {
             self.player_error("You can't declare right now")

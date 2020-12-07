@@ -117,6 +117,16 @@ impl<P: Phase> GameState<P> {
             .saturating_sub(self.mission_results.len()) // Subtract 1 proposal for each sent mission
     }
 
+    /// Transition this game state into a new phase. All non-phase-specific state is copied over.
+    fn with_phase<Q: Phase>(self, next_phase: Q) -> GameState<Q> {
+        GameState {
+            phase: next_phase,
+            game: self.game,
+            proposals: self.proposals,
+            mission_results: self.mission_results
+        }
+    }
+
     /// Switch into the `Proposing` state with `proposer` as the next player to propose.
     fn to_proposing(self, proposer: String, mut effects: Vec<Effect>) -> ActionResult {
         effects.push(Effect::Broadcast(Message::NextProposal {
@@ -125,14 +135,7 @@ impl<P: Phase> GameState<P> {
             proposals_made: self.spent_proposals(),
             max_proposals: self.game.spec.max_proposals,
         }));
-
-        let next_state = GameState {
-            proposals: self.proposals,
-            mission_results: self.mission_results,
-            game: self.game,
-            phase: Proposing::new(proposer)
-        };
-
+        let next_state = self.with_phase(Proposing::new(proposer));
         (GameStateWrapper::Proposing(next_state), effects)
     }
 }

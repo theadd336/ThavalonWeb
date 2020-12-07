@@ -326,7 +326,8 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
             .await?;
 
         if passed {
-            let agravaine_declared = match time::timeout(
+            // Use an Option<player name> to capture both whether Agravaine declared and who declared as Agravaine
+            let agravaine_declaration = match time::timeout(
                 DECLARE_DELAY,
                 self.interactions.receive(|player, action| {
                     if !proposal.players.contains(&player) {
@@ -335,7 +336,7 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
 
                     let role = game.players.by_name(&player).unwrap().role;
                     match action {
-                        Action::Declare if role == Role::Agravaine => Ok(true),
+                        Action::Declare if role == Role::Agravaine => Ok(Some(player)),
                         _ => Err("You can't do that right now".to_string()),
                     }
                 }),
@@ -345,14 +346,15 @@ impl<'a, I: Interactions> GameEngine<'a, I> {
                 Ok(Ok(declared)) => declared,
                 // We either timed out waiting for Agravaine to declare or encountered an error receiving messages. Since there won't
                 // necessarily _be_ a message in this time frame, ignore errors.
-                _ => false,
+                _ => None,
             };
 
-            if agravaine_declared {
+            if let Some(agravaine) = agravaine_declaration {
                 log::debug!("Agravaine declared!");
                 self.interactions
                     .send(Message::AgravaineDeclaration {
                         mission: mission as MissionNumber,
+                        player: agravaine,
                     })
                     .await?;
                 return Ok(false);

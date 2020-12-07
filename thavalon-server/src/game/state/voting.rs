@@ -24,6 +24,7 @@ impl GameState<Voting> {
         if self.phase.votes.len() == self.game.size() {
             let mission = self.mission();
             let spent_proposals = self.spent_proposals();
+            // TODO: avoid destructuring so we can use GameState helpers
             let GameState {
                 game,
                 proposals,
