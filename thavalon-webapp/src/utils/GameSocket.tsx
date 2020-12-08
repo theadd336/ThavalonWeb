@@ -63,7 +63,7 @@ export class GameSocket {
         }
         console.log("sent");
         GameSocket.instance.websocket?.send(JSON.stringify({
-            "message_type": "ping",
+            message_type: "ping",
         }));
         return true;
     }
