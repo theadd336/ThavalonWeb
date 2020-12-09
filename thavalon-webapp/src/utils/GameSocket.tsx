@@ -58,11 +58,11 @@ export class GameSocket {
 
     public sendPing(): boolean {
         console.log("sending ping");
-        if (GameSocket.instance.websocket?.readyState !== WebSocket.OPEN) {
+        if (this.websocket.readyState !== WebSocket.OPEN) {
             return false;
         }
         console.log("sent");
-        GameSocket.instance.websocket?.send(JSON.stringify({
+        this.websocket.send(JSON.stringify({
             message_type: "ping",
         }));
         return true;
