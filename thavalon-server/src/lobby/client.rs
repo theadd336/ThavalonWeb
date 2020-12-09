@@ -66,7 +66,7 @@ impl PlayerClient {
     ) -> Self {
         let (to_outbound_task_tx, to_outbound_task_rx) =
             mpsc::channel::<OutboundTaskMessageType>(10);
-        let client = PlayerClient {
+        let mut client = PlayerClient {
             client_id,
             tasks: HashMap::new(),
             to_lobby,
@@ -220,14 +220,14 @@ impl PlayerClient {
             .await;
     }
 
-    fn create_outgoing_ws_task(&mut self, to_client: SplitSink<WebSocket, ws::Message>) {
+    fn create_outgoing_ws_task(&mut self, mut to_client: SplitSink<WebSocket, ws::Message>) {
         // Task to manage all incoming messages and send them to the client.
         log::debug!(
             "Creating a new outgoing WS task for client {}.",
             self.client_id
         );
         let client_id = self.client_id.clone();
-        let outbound_task_rx = self.oubound_task_receiver.take().unwrap();
+        let mut outbound_task_rx = self.oubound_task_receiver.take().unwrap();
         let (abort_handle, abort_registration) = AbortHandle::new_pair();
         let outbound_to_client_future = Abortable::new(
             async move {

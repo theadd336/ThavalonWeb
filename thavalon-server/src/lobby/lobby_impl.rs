@@ -117,6 +117,7 @@ impl Lobby {
             client_id
         );
         self.players.insert(player_id.clone(), client_id.clone());
+        self.clients.insert(client_id.clone(), client);
         LobbyResponse::JoinGame(Ok(client_id))
     }
 
