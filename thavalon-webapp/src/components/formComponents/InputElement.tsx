@@ -2,15 +2,12 @@ import React from 'react';
 import "../../styles/formStyles/InputElement.scss";
 
 export interface InputElementProps {
-    "type": string,
-    "label": string,
-    "name": string,
-    "required": boolean,
-    "minLength"?: number,
-    "maxLength"?: number,
-    "autoComplete"?: "on" | "off",
-    "autoCapitalize"?: boolean
-    "formRef": any, // not fully clear what the type of register from react-hook-form is
+    type: string,
+    label: string,
+    name: string,
+    required: boolean,
+    minLength?: number,
+    formRef: any, // not fully clear what the type of register from react-hook-form is
 }
 
 /**

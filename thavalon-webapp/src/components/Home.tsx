@@ -22,7 +22,6 @@ export function Home(): JSX.Element {
     return (
         <div>
             <h1>Hello World!</h1>
-            <button onClick={makeGame}>Make Game</button>
         </div>
     );
 }

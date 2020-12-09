@@ -14,8 +14,8 @@ interface LoginProps {
 };
 
 interface LoginData {
-    "email": string,
-    "password": string
+    email: string,
+    password: string
 };
 
 export function Login(props: LoginProps): JSX.Element {
