@@ -1,14 +1,11 @@
 //! Module for all game-related REST endpoint handlers. This module also handles
 //! all websocket related functions.
 
-use crate::database::{accounts, games::DatabaseGame};
+use crate::database::accounts;
 use crate::lobby::{Lobby, LobbyChannel, LobbyCommand, LobbyError, LobbyResponse};
 
 use serde::{Deserialize, Serialize};
-use tokio::sync::{
-    mpsc::{self, Sender},
-    oneshot,
-};
+use tokio::sync::oneshot;
 use warp::{
     reject::{self, Reject},
     reply,

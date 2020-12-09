@@ -1,22 +1,19 @@
 //! Module containing the PlayerClient struct, which contains connections
 //! to and from the game, lobby, and frontend.
 
-use super::{LobbyChannel, LobbyCommand, LobbyResponse};
+use super::{LobbyChannel, LobbyCommand};
 use crate::game::{Action, Message};
 
 use std::collections::HashMap;
 
 use futures::{
     future::{AbortHandle, Abortable},
-    stream::{SplitSink, SplitStream},
+    stream::SplitSink,
     SinkExt, StreamExt,
 };
 use serde::{Deserialize, Serialize};
 use tokio::{
-    sync::{
-        mpsc::{self, Receiver, Sender},
-        oneshot, Mutex,
-    },
+    sync::mpsc::{self, Receiver, Sender},
     task,
 };
 use warp::filters::ws::{self, WebSocket};
@@ -174,9 +171,8 @@ impl PlayerClient {
                                 client_id,
                                 e
                             );
-                            panic!();
-                            // // TODO: Implement sending an error code to the client.
-                            // todo!()
+                            // TODO: Implement sending an error code to the client.
+                            todo!();
                         }
                     };
 

@@ -4,9 +4,8 @@ use crate::database::games::{DBGameError, DBGameStatus, DatabaseGame};
 use crate::game::builder::GameBuilder;
 use crate::utils;
 
-use futures::{stream::SplitSink, SinkExt, StreamExt};
 use tokio::{
-    sync::mpsc::{self, Receiver, Sender},
+    sync::mpsc::{self, Receiver},
     task,
 };
 use warp::filters::ws::WebSocket;
@@ -129,7 +128,7 @@ impl Lobby {
         ws: WebSocket,
     ) -> LobbyResponse {
         log::info!("Updating connections for client {}.", client_id);
-        let mut client = match self.clients.get_mut(&client_id) {
+        let client = match self.clients.get_mut(&client_id) {
             Some(client) => client,
             None => {
                 log::warn!(
@@ -160,6 +159,13 @@ impl Lobby {
         LobbyResponse::Standard(Ok(()))
     }
 
+    async fn start_game(&mut self) -> LobbyResponse {
+        let _ = self.database_game.start_game().await;
+        let builder = self.builder.take().unwrap();
+        builder.start();
+        return LobbyResponse::Standard(Ok(()));
+    }
+
     /// Begins a loop for the lobby to listen for incoming commands.
     /// This function should only return when the game ends or when a fatal
     /// error occurs.
@@ -180,7 +186,7 @@ impl Lobby {
                     self.update_player_connections(client_id, ws).await
                 }
                 LobbyCommand::Ping { client_id } => self.send_pong(client_id).await,
-                LobbyCommand::StartGame => todo!(),
+                LobbyCommand::StartGame => self.start_game().await,
             };
 
             if let Some(channel) = result_channel {

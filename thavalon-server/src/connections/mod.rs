@@ -6,7 +6,6 @@ mod account_handlers;
 mod errors;
 mod game_handlers;
 mod validation;
-use crate::lobby::Lobby;
 use game_handlers::GameCollection;
 use std::collections::HashMap;
 use std::convert::Infallible;
