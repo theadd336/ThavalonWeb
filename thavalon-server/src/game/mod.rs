@@ -258,5 +258,6 @@ static TWO_PLAYER: GameSpec = GameSpec {
         Role::Agravaine,
     ],
     good_players: 1,
+    max_proposals: 2,
     double_fail_mission_four: false
 };
