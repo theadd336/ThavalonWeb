@@ -26,6 +26,8 @@ pub enum LobbyError {
     InvalidStateError,
     #[error("An unknown error occurred. See logs for details.")]
     UnknownError,
+    #[error("Client ID is not registered for the game.")]
+    InvalidClientID,
 }
 
 /// Enum of available commands to send to the lobby.

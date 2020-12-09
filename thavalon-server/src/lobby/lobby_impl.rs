@@ -1,4 +1,4 @@
-use super::client::PlayerClient;
+use super::client::{OutgoingMessage, PlayerClient};
 use super::{LobbyChannel, LobbyCommand, LobbyError, LobbyResponse, ResponseChannel};
 use crate::database::games::{DBGameError, DBGameStatus, DatabaseGame};
 use crate::game::builder::GameBuilder;
@@ -13,11 +13,6 @@ use warp::filters::ws::WebSocket;
 
 use std::collections::HashMap;
 
-struct ClientWrapper {
-    to_client: Sender<LobbyResponse>,
-    client: PlayerClient,
-}
-
 /// A lobby for an individual game. The Lobby acts as an interface between the
 /// Thavalon game instance, the DatabaseGame which keeps the game state in sync
 /// with the database, and all players connected to the game.
@@ -25,10 +20,10 @@ pub struct Lobby {
     database_game: DatabaseGame,
     friend_code: String,
     players: HashMap<String, String>,
-    client_ids: HashMap<String, String>,
+    clients: HashMap<String, PlayerClient>,
     status: DBGameStatus,
     builder: Option<GameBuilder>,
-    receiver: Receiver<(LobbyCommand, Option<ResponseChannel>)>,
+    to_lobby: LobbyChannel,
 }
 
 impl Lobby {
@@ -38,8 +33,9 @@ impl Lobby {
     ///
     /// * `LobbyChannel` to communicate with the lobby.
     pub async fn new() -> LobbyChannel {
-        let (mut tx, rx) = mpsc::channel(10);
+        let (tx, rx) = mpsc::channel(10);
 
+        let to_lobby = tx.clone();
         task::spawn(async move {
             let database_game = DatabaseGame::new().await.unwrap();
             let friend_code = database_game.get_friend_code().clone();
@@ -47,12 +43,12 @@ impl Lobby {
                 database_game,
                 friend_code,
                 players: HashMap::with_capacity(10),
-                client_ids: HashMap::with_capacity(10),
+                clients: HashMap::with_capacity(10),
                 status: DBGameStatus::Lobby,
                 builder: Some(GameBuilder::new()),
-                receiver: rx,
+                to_lobby,
             };
-            lobby.listen().await
+            lobby.listen(rx).await
         });
 
         tx
@@ -113,6 +109,7 @@ impl Lobby {
         let (sender, receiver) = self.builder.as_mut().unwrap().add_player(display_name);
 
         let client_id = utils::generate_random_string(32, false);
+        let client = PlayerClient::new(client_id.clone(), self.to_lobby.clone(), sender, receiver);
         log::info!(
             "Successfully added player {} to game {} with unique client ID {}.",
             player_id,
@@ -131,14 +128,42 @@ impl Lobby {
         ws: WebSocket,
     ) -> LobbyResponse {
         log::info!("Updating connections for client {}.", client_id);
+        let mut client = match self.clients.get_mut(&client_id) {
+            Some(client) => client,
+            None => {
+                log::warn!(
+                    "Client {} tried to connect to lobby {} but is not registered",
+                    client_id,
+                    self.friend_code
+                );
+                let _ = ws.close().await;
+                return LobbyResponse::Standard(Err(LobbyError::InvalidClientID));
+            }
+        };
+
+        client.update_websockets(ws).await;
+        LobbyResponse::Standard(Ok(()))
+    }
+
+    async fn send_pong(&mut self, client_id: String) -> LobbyResponse {
+        let client = match self.clients.get_mut(&client_id) {
+            Some(client) => client,
+            None => {
+                log::error!("Client {} does not exist. Cannot send Pong.", client_id);
+                return LobbyResponse::Standard(Err(LobbyError::InvalidClientID));
+            }
+        };
+        let message = OutgoingMessage::Pong("Pong".to_string());
+        let message = serde_json::to_string(&message).unwrap();
+        client.send_message(message).await;
         LobbyResponse::Standard(Ok(()))
     }
 
     /// Begins a loop for the lobby to listen for incoming commands.
     /// This function should only return when the game ends or when a fatal
     /// error occurs.
-    async fn listen(mut self) {
-        while let Some(msg) = self.receiver.recv().await {
+    async fn listen(mut self, mut receiver: Receiver<(LobbyCommand, Option<ResponseChannel>)>) {
+        while let Some(msg) = receiver.recv().await {
             let (msg_contents, result_channel) = msg;
             let results = match msg_contents {
                 LobbyCommand::AddPlayer {
@@ -148,12 +173,12 @@ impl Lobby {
 
                 LobbyCommand::GetFriendCode => self.get_friend_code(),
                 LobbyCommand::IsClientRegistered { client_id } => {
-                    LobbyResponse::IsClientRegistered(self.client_ids.contains_key(&client_id))
+                    LobbyResponse::IsClientRegistered(self.clients.contains_key(&client_id))
                 }
                 LobbyCommand::ConnectClientChannels { client_id, ws } => {
                     self.update_player_connections(client_id, ws).await
                 }
-                LobbyCommand::Ping { client_id } => todo!(),
+                LobbyCommand::Ping { client_id } => self.send_pong(client_id).await,
                 LobbyCommand::StartGame => todo!(),
             };
 
