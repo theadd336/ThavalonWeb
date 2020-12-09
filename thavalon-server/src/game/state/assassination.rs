@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use itertools::Itertools;
+
 use super::prelude::*;
 
 /// Phase for end-game assassination.
@@ -12,13 +14,19 @@ impl GameState<Assassination> {
         target: PriorityTarget,
         players: HashSet<String>,
     ) -> ActionResult {
-        todo!()
+        if player == self.game.assassin {
+            log::debug!("{} assassinated {} as {:?}", player, players.iter().format(" and "), target);
+
+            todo!()
+        } else {
+            self.player_error("You are not the assassin")
+        }
     }
 }
 
 impl<P: Phase> GameState<P> {
     pub fn move_to_assassinate(self, player: &str) -> ActionResult {
-        if self.game.assassin == player {
+        if player == self.game.assassin {
             log::debug!("{} moved to assassinate", player);
             let effects = vec![Effect::Broadcast(Message::BeginAssassination {
                 assassin: player.to_string(),
