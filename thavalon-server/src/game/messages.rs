@@ -89,6 +89,9 @@ pub enum Message {
         mission: MissionNumber,
         player: String,
     },
+
+    /// Assassination has begun. This can either be because 3 missions passed or because the assassin moved to assassinate.
+    BeginAssassination { assassin: String },
 }
 
 /// How players voted on a proposal

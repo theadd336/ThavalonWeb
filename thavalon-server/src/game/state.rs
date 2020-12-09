@@ -4,8 +4,10 @@ use std::fmt;
 use std::time::Duration;
 
 use super::messages::{Action, Message};
+use super::role::Team;
 use super::{Game, MissionNumber};
 
+use self::assassination::Assassination;
 use self::on_mission::{OnMission, WaitingForAgravaine};
 use self::proposing::Proposing;
 use self::voting::Voting;
@@ -20,6 +22,8 @@ pub enum GameStateWrapper {
     Voting(GameState<Voting>),
     OnMission(GameState<OnMission>),
     WaitingForAgravaine(GameState<WaitingForAgravaine>),
+    Assassination(GameState<Assassination>),
+    Done(GameState<Done>)
 }
 
 /// State of an in-progress game. Game state is divided into two parts. Data needed in all phases of the game,
@@ -34,6 +38,11 @@ pub struct GameState<P: Phase> {
     proposals: Vec<Proposal>,
     /// Results of all completed missions
     mission_results: Vec<MissionResults>,
+}
+
+/// Phase used when the game is over.
+pub struct Done {
+    winning_team: Team,
 }
 
 /// A phase of the THavalon state machine
@@ -54,14 +63,19 @@ macro_rules! impl_phase {
     };
 }
 
+impl_phase!(Done);
+
 // For Rust scoping reasons I don't quite understand, these have to come after the macro definition
+mod assassination;
 mod on_mission;
 mod proposing;
 mod voting;
 
 /// A bundle of imports needed for most game phases
 mod prelude {
-    pub use super::{ActionResult, Effect, GameState, GameStateWrapper, MissionResults, Proposal};
+    pub use super::{
+        ActionResult, Effect, GameState, GameStateWrapper, MissionResults, Phase, Proposal,
+    };
 
     pub use super::on_mission::OnMission;
     pub use super::proposing::Proposing;
@@ -69,7 +83,7 @@ mod prelude {
 
     pub use super::super::{
         messages::{self, Action, Message},
-        role::Role,
+        role::{PriorityTarget, Role},
         Card, Game, GameSpec,
     };
 }
@@ -139,6 +153,31 @@ impl<P: Phase> GameState<P> {
     }
 }
 
+/// Macro for repeating identical code across phases, with a fallback for any other phases.
+///
+/// # Examples
+/// ```
+/// in_phases!(
+///   state,
+///   Phase1 | Phase2 => |inner_state| do_stuff(inner_state),
+///   |other_state| error_message(other_state)
+/// )
+/// ```
+macro_rules! in_phases {
+    // Arguments are divided into 3 parts:
+    // - the expression to match on, of type GameStateWrapper
+    // - included phases, separated by `|`, with a closure-like action
+    // - a closure-like action for excluded phases
+    ($wrapper:expr, $($phase:ident)|+ => |$inner:pat| $action:expr , |$other:pat| => $fallback:expr) => {
+        match $wrapper {
+            $(
+                GameStateWrapper::$phase($inner) => $action,
+            )+
+            $other => $fallback
+        }
+    }
+}
+
 impl GameStateWrapper {
     /// Advance to the next game state given a player action
     fn handle_action(self, player: &str, action: Action) -> ActionResult {
@@ -159,6 +198,19 @@ impl GameStateWrapper {
             (GameStateWrapper::WaitingForAgravaine(inner), Action::Declare) => {
                 inner.handle_declaration(player)
             }
+            (GameStateWrapper::Assassination(inner), Action::Assassinate { target, players }) => {
+                inner.handle_assassination(player, target, players)
+            }
+
+            (state, Action::MoveToAssassination) => {
+                // For now, the in_phases! macro is somewhat overcomplicated, but it'll be useful for other cross-phase
+                // actions like declarations
+                in_phases!(state,
+                    Proposing | Voting | OnMission | WaitingForAgravaine => |inner| inner.move_to_assassinate(player),
+                    |state| => (state, vec![player_error("You can't move to assassination right now")])
+                )
+            }
+
             (state, _) => (state, vec![player_error("You can't do that right now")]),
         }
     }
@@ -169,9 +221,11 @@ impl GameStateWrapper {
         log::debug!("Action timeout expired");
         match self {
             GameStateWrapper::WaitingForAgravaine(inner) => inner.handle_timeout(),
-            // handle_timeout should only be called after a timeout has been set, which only happens if we're waiting
-            // for Agravaine.
-            _ => panic!("Timeout expired when no timeout should have been set"),
+            _ => {
+                // This might happen if we transition to a new phase (like assassination) while a timeout is active.
+                log::warn!("Timeout expired when no timeout should have been set");
+                (self, vec![])
+            }
         }
     }
 }

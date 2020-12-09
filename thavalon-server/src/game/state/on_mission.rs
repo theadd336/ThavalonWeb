@@ -65,6 +65,9 @@ impl GameState<OnMission> {
                         passed,
                     })];
 
+                    // TODO: check if game is over
+
+                    // TODO: how does Agravaine work on mission 4?
                     if self.game.spec.has_role(Role::Agravaine) && passed {
                         effects.push(Effect::StartTimeout(AGRAVAINE_TIMEOUT));
                         let next_phase = WaitingForAgravaine {
