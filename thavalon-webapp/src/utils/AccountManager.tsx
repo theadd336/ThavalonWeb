@@ -9,27 +9,44 @@ enum STATUS {
 };
 
 interface AddUserInfo {
-    "displayName": string,
-    "email": string,
-    "password": string,
+    displayName: string,
+    email: string,
+    password: string,
 };
 
 interface LogInInfo {
-    "email": string,
-    "password": string,
+    email: string,
+    password: string,
 };
 
 interface JwtType {
-    "token_type": string,
-    "access_token": string,
-    "expires_at": number,
+    token_type: string,
+    access_token: string,
+    expires_at: number,
 };
+
+interface CreateGameResponse {
+    friendCode: string,
+}
+
+interface JoinGameInfo {
+    friendCode: string,
+    displayName: string,
+}
+
+interface JoinGameResponse {
+    socketUrl: string,
+}
 
 export interface HttpResponse {
-    "result": boolean, // true if successful http query, false otherwise
-    "message": string, // message will contain error message if result is false, otherwise blank
+    result: boolean, // true if successful http query, false otherwise
+    message: string, // message will contain error message if result is false, otherwise blank
 };
 
+/**
+ * A singleton containing code related to the user account, such as
+ * log in and joining a game.
+ */
 export class AccountManager {
     private static instance: AccountManager;
     private token: string;
@@ -69,52 +86,46 @@ export class AccountManager {
      */
     private async checkRefreshToken(): Promise<HttpResponse> {
         const httpResponse: HttpResponse = {
-            "result": true,
-            "message": "",
+            result: true,
+            message: "",
         }
         // returns 500 or 401 or 200
-        return await fetch("/api/auth/refresh", {
+        const response: Response = await fetch("/api/auth/refresh", {
             method: "POST",
             credentials: "include"
-        }).then((response) => {
-            switch(response.status) {
-                case STATUS.OK: {
-                    // this.setJwtInfo.bind(this);
-                    response.json().then((jwt: JwtType) => {
-                        // use anonymous function to get around this being unbound
-                        this.setJwtInfo(jwt);
-                    });
-                    break;
-                }
-                case STATUS.UNAUTHORIZED: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Unauthorized when trying to refresh token";
-                    break;
-                }
-                case STATUS.INTERNAL_SERVER_ERROR: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Internal server error when refreshing token";    
-                    break;
-                }
-                default: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Unexpected return code from server: " + response.status;    
-                    break;
-                }
-            }
-            // log any non-OK statuses, and clear jwt info
-            if (!httpResponse.result) {
-                console.log("Invalid refresh token, Reason: " + httpResponse.message);
-                this.token = "";
-                this.expiresAt = 0;        
-            }    
-            return httpResponse;
-        }).catch((error) => {
-            console.log("Failed to refresh token, error is: " + error);
-            httpResponse.result = false;
-            httpResponse.message = "Unable to refresh token, try again";
-            return httpResponse;
         });
+
+        switch(response.status) {
+            case STATUS.OK: {
+                // this.setJwtInfo.bind(this);
+                const jwt: JwtType = await response.json();
+                this.setJwtInfo(jwt);
+                break;
+            }
+            case STATUS.UNAUTHORIZED: {
+                httpResponse.result = false;
+                httpResponse.message = "Unauthorized when trying to refresh token";
+                break;
+            }
+            case STATUS.INTERNAL_SERVER_ERROR: {
+                httpResponse.result = false;
+                httpResponse.message = "Internal server error when refreshing token";
+                break;
+            }
+            default: {
+                console.log("Unexpected return code from server: " + response.status);
+                httpResponse.result = false;
+                httpResponse.message = "Request failed, try again.";
+                break;
+            }
+        }
+        // log any non-OK statuses, and clear jwt info
+        if (!httpResponse.result) {
+            console.log("Invalid refresh token, Reason: " + httpResponse.message);
+            this.token = "";
+            this.expiresAt = 0;
+        }
+        return httpResponse;
     }
 
     /**
@@ -161,59 +172,56 @@ export class AccountManager {
     public async registerUser(name: string, email: string, password: string): Promise<HttpResponse> {
         // parameters for registering user
         const addUserInfo: AddUserInfo = {
-            "displayName": name,
-            "email": email,
-            "password": password
+            displayName: name,
+            email: email,
+            password: password
         }
 
         const httpResponse: HttpResponse = {
-            "result": true,
-            "message": ""
+            result: true,
+            message: ""
         }
         // Following end point can return 201 on successful add or 406 on reject or 500 if everything's broken or 409 if duplicate account
-        return await fetch("/api/add/user", {
+        const response: Response = await fetch("/api/add/user", {
             method: "POST",
             body: JSON.stringify(addUserInfo),
             headers: {
                 "Content-Type": "application/json"
             }
-        }).then((response) => {
-            // On success, set jwt info. On fail, set error messages to return to user.
-            switch (response.status) {
-                case STATUS.CREATED: {
-                    response.json().then((jwt: JwtType) => {
-                        this.setJwtInfo(jwt);
-                    });    
-                    break;
-                }
-                case STATUS.NOT_ACCEPTABLE: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Invalid email or password";    
-                    break;
-                }
-                case STATUS.CONFLICT: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Invalid email - already in use";    
-                    break;
-                }
-                case STATUS.INTERNAL_SERVER_ERROR: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Unable to create account, try again";    
-                    break;
-                }
-                default: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Unexpected return code from server: " + response.status;    
-                    break;
-                }
+        })
+
+        // On success, set jwt info. On fail, set error messages to return to user.
+        switch (response.status) {
+            case STATUS.CREATED: {
+                const jwt: JwtType = await response.json();
+                this.setJwtInfo(jwt);
+                break;
             }
-            return httpResponse;
-        }).catch((error) => {
-            console.log("Failed to register user, error is: " + error);
-            httpResponse.result = false;
-            httpResponse.message = "Unable to register, try again";
-            return httpResponse;
-        });
+            case STATUS.NOT_ACCEPTABLE: {
+                httpResponse.result = false;
+                httpResponse.message = "Invalid email or password";
+                return httpResponse;
+            }
+            case STATUS.CONFLICT: {
+                httpResponse.result = false;
+                httpResponse.message = "Invalid email - already in use";
+                return httpResponse;
+            }
+            case STATUS.INTERNAL_SERVER_ERROR: {
+                httpResponse.result = false;
+                httpResponse.message = "Unable to create account, try again";
+                return httpResponse;
+            }
+            default: {
+                console.log("Unexpected return code from server: " + response.status);
+                httpResponse.result = false;
+                httpResponse.message = "Request failed, try again.";
+                return httpResponse;
+            }
+        }
+        httpResponse.result = false;
+        httpResponse.message = "Unable to register, try again";
+        return httpResponse;
     }
 
     /**
@@ -225,52 +233,50 @@ export class AccountManager {
     public async loginUser(email: string, password: string): Promise<HttpResponse> {
         // parameters for logging in user
         const logInInfo: LogInInfo = {
-            "email": email,
-            "password": password
+            email: email,
+            password: password
         }
 
         const httpResponse: HttpResponse = {
-            "result": true,
-            "message": ""
+            result: true,
+            message: ""
         }
 
-        return await fetch("/api/auth/login", {
+        let response: Response = await fetch("/api/auth/login", {
             method: "POST",
             body: JSON.stringify(logInInfo),
             headers: {
                 "Content-Type": "application/json"
             }
-        }).then((response) => {
-            switch (response.status) {
-                case STATUS.OK: {
-                    response.json().then((jwt: JwtType) => {
-                        this.setJwtInfo(jwt);
-                    });    
-                    break;
-                }
-                case STATUS.UNAUTHORIZED: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Invalid email or password";    
-                    break;
-                }
-                case STATUS.INTERNAL_SERVER_ERROR: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Unable to log in, try again";    
-                    break;
-                }
-                default: {
-                    httpResponse.result = false;
-                    httpResponse.message = "Unexpected return code from server: " + response.status;    
-                    break;
-                }
-            }
-            return httpResponse;
-        }).catch((error) => {
-            console.log("Failed to login user, error is: " + error);
-            httpResponse.result = false;
-            httpResponse.message = "Unable to login, try again";
-            return httpResponse;
         });
+
+        switch (response.status) {
+            case STATUS.OK: {
+                const jwt: JwtType = await response.json();
+                this.setJwtInfo(jwt);
+                break;
+            }
+            case STATUS.UNAUTHORIZED: {
+                httpResponse.result = false;
+                httpResponse.message = "Invalid email or password";
+                return httpResponse;
+            }
+            case STATUS.INTERNAL_SERVER_ERROR: {
+                httpResponse.result = false;
+                httpResponse.message = "Unable to log in, try again";
+                return httpResponse;
+            }
+            default: {
+                console.log("Unexpected return code from server: " + response.status);
+                httpResponse.result = false;
+                httpResponse.message = "Request failed, try again.";
+                return httpResponse;
+            }
+        }
+
+        httpResponse.result = false;
+        httpResponse.message = "Unable to login, try again";
+        return httpResponse;
     }
 
     /**
@@ -280,30 +286,90 @@ export class AccountManager {
      */
     public async logoutUser(): Promise<HttpResponse> {
         const httpResponse: HttpResponse = {
-            "result": true,
-            "message": ""
+            result: true,
+            message: ""
         }
 
-        return await fetch("/api/auth/logout", {
+        const response: Response = await fetch("/api/auth/logout", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             credentials: "include"
-        }).then((response) => {
-            if (response.status === STATUS.RESET_CONTENT) {
-                this.token = "";
-                this.expiresAt = 0;
-            } else {
-                httpResponse.result = false;
-                httpResponse.message = "Unexpected return code from server: " + response.status;
-            }
-            return httpResponse;
-        }).catch((error) => {
-            console.log("Failed to logout user, error is: " + error);
-            httpResponse.result = false;
-            httpResponse.message = "Unable to logout, try again";
-            return httpResponse;
         });
+
+        if (response.status === STATUS.RESET_CONTENT) {
+            this.token = "";
+            this.expiresAt = 0;
+        } else {
+            console.log("Unexpected return code from server: " + response.status);
+            httpResponse.result = false;
+            httpResponse.message = "Request failed, try again.";
+        }
+        return httpResponse;
+    }
+
+    /**
+     * Creates a game made by the current user.
+     */
+    public async createGame(): Promise<HttpResponse> {
+        const httpResponse: HttpResponse = {
+            result: true,
+            message: ""
+        }
+
+        const response: Response = await fetch("/api/add/game", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Basic " + this.token,
+            }
+        });
+
+        if (response.status === STATUS.OK) {
+            const createGameResponse: CreateGameResponse = await response.json();
+            httpResponse.message = createGameResponse.friendCode;
+        } else {
+            console.log("Unexpected return code from server: " + response.status);
+            httpResponse.result = false;
+            httpResponse.message = "Request failed, try again.";    
+        }
+        return httpResponse;
+    }
+
+    /**
+     * Joins an existing game.
+     *
+     * @param friendCode the friend code for the game
+     * @param displayName the display name of the user joining the game
+     */
+    public async joinGame(friendCode: string, displayName: string): Promise<HttpResponse> {
+        const httpResponse: HttpResponse = {
+            result: true,
+            message: ""
+        }
+
+        const joinGameInfo: JoinGameInfo = {
+            friendCode: friendCode,
+            displayName: displayName,
+        }
+
+        const response: Response = await fetch("/api/join/game", {
+            method: "POST",
+            body: JSON.stringify(joinGameInfo),
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Basic " + this.token,
+            }
+        });
+        if (response.status === STATUS.OK) {
+            const joinGameResponse: JoinGameResponse = await response.json();
+            httpResponse.message = joinGameResponse.socketUrl;
+        } else {
+            console.log("Unexpected return code from server: " + response.status);
+            httpResponse.result = false;
+            httpResponse.message = "Request failed, try again.";    
+        }
+        return httpResponse;
     }
 }
