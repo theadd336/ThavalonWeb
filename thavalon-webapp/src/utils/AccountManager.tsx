@@ -95,7 +95,7 @@ export class AccountManager {
             credentials: "include"
         });
 
-        switch(response.status) {
+        switch (response.status) {
             case STATUS.OK: {
                 // this.setJwtInfo.bind(this);
                 const jwt: JwtType = await response.json();
@@ -153,7 +153,7 @@ export class AccountManager {
      * @param setTimer if True, will set a timer to recheck the token regularly if the user is logged in
      * @returns A promise with an HttpResponse, indicating if user is logged in and any errors.
      */
-    public async checkLoggedIn(setTimer=true): Promise<HttpResponse> {
+    public async checkLoggedIn(setTimer = true): Promise<HttpResponse> {
         let httpResponse = await this.checkRefreshToken();
         if (setTimer && httpResponse.result) {
             this.checkRefreshTokenOnTimer();
@@ -332,7 +332,7 @@ export class AccountManager {
         } else {
             console.log("Unexpected return code from server: " + response.status);
             httpResponse.result = false;
-            httpResponse.message = "Request failed, try again.";    
+            httpResponse.message = "Request failed, try again.";
         }
         return httpResponse;
     }
@@ -368,88 +368,8 @@ export class AccountManager {
         } else {
             console.log("Unexpected return code from server: " + response.status);
             httpResponse.result = false;
-            httpResponse.message = "Request failed, try again.";    
+            httpResponse.message = "Request failed, try again.";
         }
         return httpResponse;
     }
-
-    /**
-     * Creates a game made by the current user.
-     */
-    public async createGame(): Promise<HttpResponse> {
-        const httpResponse: HttpResponse = {
-            "result": true,
-            "message": ""
-        }
-
-        return await fetch("/api/add/game", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Basic " + this.token,
-            },
-            credentials: "include"
-        }).then((response) => {
-            if (response.status === STATUS.OK) {
-                return response.json();
-            } else {
-                httpResponse.result = false;
-                httpResponse.message = "Unexpected return code from server: " + response.status;
-            }
-            return httpResponse;
-        }).then((createGameResponse: CreateGameResponse) => {
-            httpResponse.message = createGameResponse.friendCode;
-            return httpResponse;
-        }).catch((error) => {
-            console.log("Failed to create game, error is: " + error);
-            httpResponse.result = false;
-            httpResponse.message = "Unable to create game, try again";
-            return httpResponse;
-        });
-    }
-
-    /**
-     * Joins an existing game.
-     *
-     * @param friendCode the friend code for the game
-     * @param displayName the display name of the user joining the game
-     */
-    public async joinGame(friendCode: string, displayName: string): Promise<HttpResponse> {
-        const httpResponse: HttpResponse = {
-            "result": true,
-            "message": ""
-        }
-
-        const joinGameInfo: JoinGameInfo = {
-            "friendCode": friendCode,
-            "displayName": displayName,
-        }
-
-        return await fetch("/api/join/game", {
-            method: "POST",
-            body: JSON.stringify(joinGameInfo),
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Basic " + this.token,
-            },
-            credentials: "include"
-        }).then((response) => {
-            if (response.status === STATUS.OK) {
-                return response.json();
-            } else {
-                httpResponse.result = false;
-                httpResponse.message = "Unexpected return code from server: " + response.status;
-            }
-            return httpResponse;
-        }).then((joinGameResponse: JoinGameResponse) => {
-            httpResponse.message = joinGameResponse.socketUrl;
-            return httpResponse;
-        }).catch((error) => {
-            console.log("Failed to create game, error is: " + error);
-            httpResponse.result = false;
-            httpResponse.message = "Unable to create game, try again";
-            return httpResponse;
-        });
-    }
-
 }

@@ -55,7 +55,7 @@ const connection = AccountManager.getInstance();
 /**
  * Creates the modal for the join and create game options. This modal appears
  * when a user clicks "Play" and can either be used to create join a game.
- * @param props - Required reqct props object.
+ * @param props - Required React props object.
  */
 export function CreateJoinGameModal(props: CreateJoinGameProps): JSX.Element {
     // State to keep track of whether or not the form should display.
@@ -81,7 +81,7 @@ export function CreateJoinGameModal(props: CreateJoinGameProps): JSX.Element {
             className="Modal"
             overlayClassName="Overlay">
             <div className="modalContainer">
-                <h2 className="modalHeader">Play Thavalon</h2>
+                <h2 className="modalHeader">Play THavalon</h2>
                 <hr />
                 {modalState === CreateJoinState.CreateJoinButtons && CreateJoinButtons(setShowForm, setModalState)}
                 <CSSTransition
@@ -127,9 +127,8 @@ function CreateJoinButtons(showForm: Dispatch<SetStateAction<boolean>>, setModal
                                 setModalState(CreateJoinState.CreateGame);
                             }}>
                             Create Game
-                    </Button>
+                        </Button>
                     </ButtonGroup>
-
                 </div>
             </Container>
         </div >
@@ -165,6 +164,7 @@ function CreateGameForm(props: FormProps): JSX.Element {
         }
 
         const friendCode = createGameResponse.message;
+        setFriendCode(friendCode);
         const joinGameResponse = await connection.joinGame(friendCode, data.displayName);
         if (joinGameResponse.result === false) {
             setFormErrorMsg(joinGameResponse.message);
@@ -173,7 +173,6 @@ function CreateGameForm(props: FormProps): JSX.Element {
 
         const socketUrl = joinGameResponse.message;
         setSocketUrl(socketUrl);
-        setFriendCode(friendCode);
         setRedirectToGame(true);
         props.showForm(false);
         props.onSuccess();
