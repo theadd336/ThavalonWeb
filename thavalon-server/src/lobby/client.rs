@@ -18,6 +18,7 @@ use tokio::{
 };
 use warp::filters::ws::{self, WebSocket};
 
+/// An incoming message from the client.
 #[derive(Deserialize)]
 #[serde(tag = "message_type", content = "data")]
 enum IncomingMessage {
@@ -26,6 +27,7 @@ enum IncomingMessage {
     GameCommand(Action),
 }
 
+/// An outgoing message to the client.
 #[derive(Serialize)]
 #[serde(tag = "message_type", content = "data")]
 pub enum OutgoingMessage {
@@ -33,6 +35,7 @@ pub enum OutgoingMessage {
     GameMessage(Message),
 }
 
+/// Task types that the PlayerClient maintains
 #[derive(Hash, PartialEq, Eq)]
 enum TaskType {
     FromGame,
@@ -40,11 +43,19 @@ enum TaskType {
     ToClient,
 }
 
+/// Message types that can be sent to the outbound messaging task.
+/// Most of the time, this will be ToClient, which will forward the message to the client.
+/// However, in the event of a new connection, the NewWebSocket can be used to update
+/// the outgoing WS connection without needing to recreate the task.
 #[derive(Debug)]
 enum OutboundTaskMessageType {
     ToClient(String),
     NewWebSocket(SplitSink<WebSocket, ws::Message>),
 }
+
+/// Manages the connection to the actual player.
+/// `PlayerClient` maintains all the connection tasks, updating and remaking them
+/// as needed. The struct also maintains connections to the lobby and to the game.
 pub struct PlayerClient {
     tasks: HashMap<TaskType, AbortHandle>,
     client_id: String,
@@ -54,7 +65,29 @@ pub struct PlayerClient {
     oubound_task_receiver: Option<Receiver<OutboundTaskMessageType>>,
 }
 
+// Implement drop to clean up all outstanding tasks.
+impl Drop for PlayerClient {
+    fn drop(&mut self) {
+        log::debug!(
+            "Client {} has been dropped. Stopping all tasks.",
+            self.client_id
+        );
+
+        for abort_handle in self.tasks.values() {
+            abort_handle.abort();
+        }
+    }
+}
+
 impl PlayerClient {
+    /// Creates a new PlayerClient using connections from the lobby.
+    ///
+    /// # Arguments
+    ///
+    /// * `client_id` - The ID for this client
+    /// * `to_lobby` - A `LobbyChannel` back to the owning lobby
+    /// * `to_game` - A channel to the game instance
+    /// * `from_game` - A channel from the game instance to the player
     pub fn new(
         client_id: String,
         to_lobby: LobbyChannel,
@@ -76,6 +109,11 @@ impl PlayerClient {
         client
     }
 
+    /// Sends a message directly to the player
+    ///
+    /// # Arguments
+    ///
+    /// * `message` - JSON message to send to the player
     pub async fn send_message(&mut self, message: String) {
         log::debug!(
             "Received message {} from lobby to send to client {}.",
@@ -89,54 +127,26 @@ impl PlayerClient {
             .await;
     }
 
-    fn spawn_from_game_task(&mut self, mut from_game: Receiver<Message>) {
-        log::info!("Creating stable tasks for client {}.", self.client_id);
-        // Task to manage messages from the game.
-        let mut game_to_outbound_task = self.to_outbound_task.clone();
-        let client_id = self.client_id.clone();
-
-        let (abort_handle, abort_registration) = AbortHandle::new_pair();
-        let future = Abortable::new(
-            async move {
-                while let Some(game_msg) = from_game.recv().await {
-                    log::debug!(
-                        "Received game message {:?} from client {}.",
-                        game_msg,
-                        client_id
-                    );
-                    let game_msg = serde_json::to_string(&game_msg).unwrap();
-
-                    // Can't unwrap, but this should never fail, since the task is
-                    // stable.
-                    let _ = game_to_outbound_task
-                        .send(OutboundTaskMessageType::ToClient(game_msg))
-                        .await;
-                }
-            },
-            abort_registration,
-        );
-        self.tasks.insert(TaskType::FromGame, abort_handle);
-        task::spawn(future);
-
-        log::info!(
-            "Successfully spawned all stable tasks for client {}.",
-            self.client_id
-        );
-    }
-
-    pub async fn update_websockets(&mut self, ws: WebSocket) {
-        log::info!(
-            "Creating the client receiver task for client {}.",
-            self.client_id
-        );
+    /// Updates the PlayerClient with a new Websocket connection.
+    ///
+    /// # Arguments
+    ///
+    /// `ws` - The new WebSocket connection to use
+    pub async fn update_websocket(&mut self, ws: WebSocket) {
+        log::info!("Connecting client {}'s websockets.", self.client_id);
 
         let (to_client, mut from_client) = ws.split();
+
+        // If we already have a ToClient task, which can happen with reconnects,
+        // just update the websocket. Otherwise, create a new task.
         if self.tasks.contains_key(&TaskType::ToClient) {
             self.update_outgoing_ws_task(to_client).await;
         } else {
             self.create_outgoing_ws_task(to_client);
         }
 
+        // Always create a new WS receiver task, as the old task will die when
+        // the connection closes.
         let (abort_handle, abort_registration) = AbortHandle::new_pair();
         let mut to_game = self.to_game.clone();
         let mut to_lobby = self.to_lobby.clone();
@@ -205,6 +215,52 @@ impl PlayerClient {
         }
     }
 
+    /// Spawns the `from_game` task. This task is a stable task, meaning it should
+    /// last the duration of the PlayerClient's life.
+    ///
+    /// # Arguments
+    ///
+    /// `from_game` - The channel from the game to the player
+    fn spawn_from_game_task(&mut self, mut from_game: Receiver<Message>) {
+        log::debug!("Creating from_game task for client {}.", self.client_id);
+        // Task to manage messages from the game.
+        let mut game_to_outbound_task = self.to_outbound_task.clone();
+        let client_id = self.client_id.clone();
+
+        let (abort_handle, abort_registration) = AbortHandle::new_pair();
+        let future = Abortable::new(
+            async move {
+                while let Some(game_msg) = from_game.recv().await {
+                    log::debug!(
+                        "Received game message {:?} from client {}.",
+                        game_msg,
+                        client_id
+                    );
+                    let game_msg = serde_json::to_string(&game_msg).unwrap();
+
+                    // Can't unwrap, but this should never fail, since the task is
+                    // stable.
+                    let _ = game_to_outbound_task
+                        .send(OutboundTaskMessageType::ToClient(game_msg))
+                        .await;
+                }
+            },
+            abort_registration,
+        );
+        self.tasks.insert(TaskType::FromGame, abort_handle);
+        task::spawn(future);
+
+        log::debug!(
+            "Successfully spawned the from_game task for client {}.",
+            self.client_id
+        );
+    }
+
+    /// Updates the outgoing task with a new websocket connection
+    ///
+    /// # Arguments
+    ///
+    /// * `new_ws` - The new WebSocket to use
     async fn update_outgoing_ws_task(&mut self, new_ws: SplitSink<WebSocket, ws::Message>) {
         log::debug!(
             "Updating the outgoing WS task for client {}.",
@@ -216,14 +272,25 @@ impl PlayerClient {
             .await;
     }
 
+    /// Creates the outgoing task and adds it to the task dictionary.
+    ///
+    /// # Arguments
+    ///
+    /// `to_client` - The outgoing WebSocket connection to the client.
     fn create_outgoing_ws_task(&mut self, mut to_client: SplitSink<WebSocket, ws::Message>) {
         // Task to manage all incoming messages and send them to the client.
-        log::debug!(
-            "Creating a new outgoing WS task for client {}.",
+        log::info!(
+            "Creating a new outgoing websocket task for client {}.",
             self.client_id
         );
         let client_id = self.client_id.clone();
+
+        // Since an mpsc receiver isn't send or sync, we either need to lock it
+        // take full ownership. To avoid overhead of a lock or an Arc, we take
+        // ownership here. This is a stable task that should never crash, so
+        // we don't need to ever remake it.
         let mut outbound_task_rx = self.oubound_task_receiver.take().unwrap();
+
         let (abort_handle, abort_registration) = AbortHandle::new_pair();
         let outbound_to_client_future = Abortable::new(
             async move {

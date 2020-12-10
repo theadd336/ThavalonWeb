@@ -65,6 +65,8 @@ impl Lobby {
             player_id,
             self.friend_code
         );
+
+        // First, sanity checks. Are we in the right status, and does the player exist already?
         if self.status != DBGameStatus::Lobby {
             log::warn!(
                 "Player {} attempted to join in-progress or finished game {}.",
@@ -74,6 +76,9 @@ impl Lobby {
             return LobbyResponse::Standard(Err(LobbyError::InvalidStateError));
         }
 
+        // TODO: In the worst case, a player could lose the entire link to the game
+        // and only have the friend code. We should support rejoining games from the
+        // add_player path eventually.
         if self.players.contains_key(&player_id) {
             log::warn!(
                 "Player {} is already in game {}.",
@@ -83,6 +88,7 @@ impl Lobby {
             return LobbyResponse::Standard(Err(LobbyError::DuplicatePlayerError));
         }
 
+        // The checks passed. Try adding the player into the game.
         if let Err(e) = self
             .database_game
             .add_player(player_id.clone(), display_name.clone())
@@ -105,8 +111,11 @@ impl Lobby {
 
             return LobbyResponse::Standard(return_err);
         }
+
+        // Player added to the database game. Now add the player to the game instance.
         let (sender, receiver) = self.builder.as_mut().unwrap().add_player(display_name);
 
+        // Generate a unique client ID for the player and update all our dictionaries.
         let client_id = utils::generate_random_string(32, false);
         let client = PlayerClient::new(client_id.clone(), self.to_lobby.clone(), sender, receiver);
         log::info!(
@@ -141,10 +150,11 @@ impl Lobby {
             }
         };
 
-        client.update_websockets(ws).await;
+        client.update_websocket(ws).await;
         LobbyResponse::Standard(Ok(()))
     }
 
+    /// Sends a pong back to the client that requested it.
     async fn send_pong(&mut self, client_id: String) -> LobbyResponse {
         let client = match self.clients.get_mut(&client_id) {
             Some(client) => client,
@@ -159,7 +169,10 @@ impl Lobby {
         LobbyResponse::Standard(Ok(()))
     }
 
+    /// [WIP] - Starts a game.
     async fn start_game(&mut self) -> LobbyResponse {
+        // TODO: This function is a stub that should be expanded.
+        // It is currently here to remove compiler warnings.
         let _ = self.database_game.start_game().await;
         let builder = self.builder.take().unwrap();
         builder.start();
