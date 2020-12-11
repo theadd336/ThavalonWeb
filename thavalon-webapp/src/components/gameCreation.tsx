@@ -157,14 +157,16 @@ function CreateGameForm(props: FormProps): JSX.Element {
      * @param data The CreateGameData from the submitting form
      */
     async function onCreateGameSubmit(data: CreateGameData) {
-        const createGameResponse = await connection.createGame();
-        if (createGameResponse.result === false) {
-            setFormErrorMsg(createGameResponse.message);
-            return;
+        if (friendCode === "") {
+            const createGameResponse = await connection.createGame();
+            if (createGameResponse.result === false) {
+                setFormErrorMsg(createGameResponse.message);
+                return;
+            }
+            const friendCode = createGameResponse.message;
+            setFriendCode(friendCode);
         }
 
-        const friendCode = createGameResponse.message;
-        setFriendCode(friendCode);
         const joinGameResponse = await connection.joinGame(friendCode, data.displayName);
         if (joinGameResponse.result === false) {
             setFormErrorMsg(joinGameResponse.message);
