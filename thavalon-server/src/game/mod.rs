@@ -192,6 +192,8 @@ impl GameSpec {
     pub fn for_players(players: usize) -> &'static GameSpec {
         match players {
             2 => &TWO_PLAYER,
+            3 => &THREE_PLAYER,
+            4 => &FOUR_PLAYER,
             5 => &FIVE_PLAYER,
             _ => panic!("{}-player games not supported", players),
         }
@@ -243,21 +245,32 @@ static FIVE_PLAYER: GameSpec = GameSpec {
 /// Two-player games, for testing
 static TWO_PLAYER: GameSpec = GameSpec {
     players: 2,
-    mission_sizes: [2, 2, 2, 2, 2],
-    good_roles: &[
-        Role::Merlin,
-        Role::Lancelot,
-        Role::Percival,
-        Role::Tristan,
-        Role::Iseult,
-    ],
-    evil_roles: &[
-        Role::Mordred,
-        Role::Morgana,
-        Role::Maelegant,
-        Role::Agravaine,
-    ],
+    mission_sizes: [1, 1, 2, 2, 2],
+    good_roles: Role::ALL_GOOD,
+    evil_roles: Role::ALL_EVIL,
     good_players: 1,
     max_proposals: 2,
     double_fail_mission_four: false
 };
+
+/// Three-player games, for testing
+static THREE_PLAYER: GameSpec = GameSpec {
+    players: 3,
+    mission_sizes: [1, 2, 2, 2, 3],
+    good_roles: Role::ALL_GOOD,
+    evil_roles: Role::ALL_EVIL,
+    good_players: 2,
+    max_proposals: 3,
+    double_fail_mission_four: false
+};
+
+static FOUR_PLAYER: GameSpec = GameSpec {
+    players: 4,
+    mission_sizes: [2, 2, 3, 3, 4],
+    good_roles: Role::ALL_GOOD,
+    evil_roles: Role::ALL_EVIL,
+    good_players: 3,
+    max_proposals: 4,
+    double_fail_mission_four: false
+};
+
