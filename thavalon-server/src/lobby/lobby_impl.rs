@@ -18,7 +18,7 @@ use std::collections::HashMap;
 pub struct Lobby {
     database_game: DatabaseGame,
     friend_code: String,
-    players: HashMap<String, String>,
+    player_ids_to_client_ids: HashMap<String, String>,
     clients: HashMap<String, PlayerClient>,
     status: DBGameStatus,
     builder: Option<GameBuilder>,
@@ -41,7 +41,7 @@ impl Lobby {
             let lobby = Lobby {
                 database_game,
                 friend_code,
-                players: HashMap::with_capacity(10),
+                player_ids_to_client_ids: HashMap::with_capacity(10),
                 clients: HashMap::with_capacity(10),
                 status: DBGameStatus::Lobby,
                 builder: Some(GameBuilder::new()),
@@ -79,7 +79,7 @@ impl Lobby {
         // TODO: In the worst case, a player could lose the entire link to the game
         // and only have the friend code. We should support rejoining games from the
         // add_player path eventually.
-        if self.players.contains_key(&player_id) {
+        if self.player_ids_to_client_ids.contains_key(&player_id) {
             log::warn!(
                 "Player {} is already in game {}.",
                 player_id,
@@ -124,7 +124,8 @@ impl Lobby {
             self.friend_code,
             client_id
         );
-        self.players.insert(player_id.clone(), client_id.clone());
+        self.player_ids_to_client_ids
+            .insert(player_id.clone(), client_id.clone());
         self.clients.insert(client_id.clone(), client);
         LobbyResponse::JoinGame(Ok(client_id))
     }
