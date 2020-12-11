@@ -156,7 +156,7 @@ impl PlayerClient {
                 while let Some(incoming_msg) = from_client.next().await {
                     if let Err(e) = incoming_msg {
                         log::error!("An error occurred while reading messages from the incoming connection for client {}. {}", client_id, e);
-                        return;
+                        break;
                     }
 
                     let incoming_msg = incoming_msg.unwrap();
@@ -182,7 +182,7 @@ impl PlayerClient {
                                 e
                             );
                             // TODO: Implement sending an error code to the client.
-                            todo!();
+                            break;
                         }
                     };
 
@@ -205,6 +205,10 @@ impl PlayerClient {
                         }
                     }
                 }
+
+                to_lobby
+                    .send((LobbyCommand::PlayerDisconnect { client_id }, None))
+                    .await;
             },
             abort_registration,
         );

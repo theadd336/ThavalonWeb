@@ -2,7 +2,7 @@
 use crate::database::get_database;
 use crate::utils;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use chrono::Utc;
 use mongodb::{
@@ -41,6 +41,7 @@ pub struct DatabaseGame {
     friend_code: String,
     players: HashSet<String>,
     display_names: HashSet<String>,
+    players_to_display_names: HashMap<String, String>,
     status: DBGameStatus,
     created_time: i64,
     start_time: Option<i64>,
@@ -73,6 +74,7 @@ impl DatabaseGame {
             _id,
             players: HashSet::with_capacity(10),
             display_names: HashSet::with_capacity(10),
+            players_to_display_names: HashMap::with_capacity(10),
             status: DBGameStatus::Lobby,
             created_time: Utc::now().timestamp(),
             start_time: None,
@@ -169,8 +171,10 @@ impl DatabaseGame {
             return Err(DBGameError::InvalidStateError);
         }
 
-        self.players.insert(player_id);
-        self.display_names.insert(display_name);
+        self.players.insert(player_id.clone());
+        self.display_names.insert(display_name.clone());
+        self.players_to_display_names
+            .insert(player_id, display_name);
         let update_doc = doc! {
             "$set": {
                 "players": bson::to_bson(&self.players).unwrap(),
@@ -191,14 +195,13 @@ impl DatabaseGame {
     ///
     /// # Returns
     ///
-    /// * Empty type on success
+    /// * `String` - Player display name on success
     /// * `DBGameError::InvalidStateError` if the game state isn't `Lobby`
     /// * `DBGameError::UpdateError` if a DB update fails
     pub async fn remove_player(
         &mut self,
         player_id: &String,
-        display_name: &String,
-    ) -> Result<(), DBGameError> {
+    ) -> Result<Option<String>, DBGameError> {
         log::info!("Removing player {} to game {}.", player_id, self._id);
         if self.status != DBGameStatus::Lobby {
             log::error!(
@@ -212,7 +215,12 @@ impl DatabaseGame {
         }
 
         self.players.remove(player_id);
-        self.display_names.remove(display_name);
+        let display_name = match self.players_to_display_names.remove(player_id) {
+            Some(name) => name,
+            None => return Ok(None),
+        };
+        self.display_names.remove(&display_name);
+        self.players_to_display_names.remove(player_id);
         let update_doc = doc! {
             "$set": {
                 "players": bson::to_bson(&self.players).unwrap(),
@@ -220,7 +228,8 @@ impl DatabaseGame {
             }
         };
 
-        self.update_db(update_doc).await
+        self.update_db(update_doc).await?;
+        Ok(Some(display_name))
     }
 
     /// Helper function to get a handle to the game collection.
