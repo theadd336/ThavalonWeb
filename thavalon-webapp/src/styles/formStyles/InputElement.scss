@@ -70,4 +70,8 @@ input[type="text"], input[type="email"], input[type="password"] {
             background-position: center;
         }
     }
+
+    &.force-uppercase {
+        text-transform: uppercase;
+    }
 }

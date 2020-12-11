@@ -7,6 +7,9 @@ export interface InputElementProps {
     name: string,
     required: boolean,
     minLength?: number,
+    maxLength?: number,
+    autoCapitalize?: boolean,
+    autoComplete?: string,
     formRef: any, // not fully clear what the type of register from react-hook-form is
 }
 
@@ -33,7 +36,17 @@ export function InputElement(props: InputElementProps): JSX.Element {
 
     return (
         <>
-            <input ref={props.formRef} type={props.type} required={props.required} onChange={setLabelElementClass} name={props.name} className={inputClassName} minLength={props.minLength} />
+            <input
+                ref={props.formRef}
+                type={props.type}
+                required={props.required}
+                onChange={setLabelElementClass}
+                name={props.name}
+                className={`${ inputClassName } ${ props.autoCapitalize ? "force-uppercase" : "" }`}
+                minLength={props.minLength}
+                maxLength={props.maxLength}
+                autoComplete={props.autoComplete}
+            />
             <label placeholder={props.label} />
         </>
     );
