@@ -7,6 +7,9 @@ export interface InputElementProps {
     name: string,
     required: boolean,
     minLength?: number,
+    maxLength?: number,
+    autoCapitalize?: boolean,
+    autoComplete?: string,
     formRef: any, // not fully clear what the type of register from react-hook-form is
 }
 
