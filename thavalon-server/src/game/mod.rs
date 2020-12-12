@@ -269,8 +269,8 @@ static FOUR_PLAYER: GameSpec = GameSpec {
     mission_sizes: [2, 2, 3, 3, 4],
     good_roles: Role::ALL_GOOD,
     evil_roles: Role::ALL_EVIL,
-    good_players: 3,
+    good_players: 2,
     max_proposals: 4,
-    double_fail_mission_four: false
+    double_fail_mission_four: true
 };
 
