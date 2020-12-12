@@ -24,13 +24,22 @@ impl GameState<Assassination> {
         players: HashSet<String>,
     ) -> ActionResult {
         if player == self.game.assassin {
-            log::debug!("{} assassinated {} as {:?}", player, players.iter().format(" and "), target);
+            log::debug!(
+                "{} assassinated {} as {:?}",
+                player,
+                players.iter().format(" and "),
+                target
+            );
 
             // All priority assassinations (so far) take the form of "X players are one of Y roles", so we model that as
             // `expected_targets` and `matches` methods on `PriorityTarget` to cut down on duplication.
 
             if players.len() != target.expected_targets() {
-                return self.player_error(format!("You must assassinate {} players as {:?}", target.expected_targets(), target));
+                return self.player_error(format!(
+                    "You must assassinate {} players as {:?}",
+                    target.expected_targets(),
+                    target
+                ));
             }
 
             let mut is_correct = true;
@@ -44,13 +53,11 @@ impl GameState<Assassination> {
                 }
             }
 
-            let mut effects = vec![
-                Effect::Broadcast(Message::AssassinationResult {
-                    players,
-                    target,
-                    correct: is_correct
-                })
-            ];
+            let mut effects = vec![Effect::Broadcast(Message::AssassinationResult {
+                players,
+                target,
+                correct: is_correct,
+            })];
 
             if is_correct {
                 log::debug!("Assassination was correct!");
@@ -58,7 +65,7 @@ impl GameState<Assassination> {
             } else {
                 log::debug!("Assassination was incorrect!");
                 effects.push(Effect::Broadcast(Message::GameOver {
-                    winning_team: Team::Good
+                    winning_team: Team::Good,
                 }));
 
                 let next_state = self.with_phase(Done::new(Team::Good));

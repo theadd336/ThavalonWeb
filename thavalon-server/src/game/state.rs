@@ -23,7 +23,7 @@ pub enum GameStateWrapper {
     OnMission(GameState<OnMission>),
     WaitingForAgravaine(GameState<WaitingForAgravaine>),
     Assassination(GameState<Assassination>),
-    Done(GameState<Done>)
+    Done(GameState<Done>),
 }
 
 /// State of an in-progress game. Game state is divided into two parts. Data needed in all phases of the game,
@@ -189,7 +189,7 @@ impl GameStateWrapper {
             phase,
             game,
             proposals: vec![],
-            mission_results: vec![]
+            mission_results: vec![],
         })
     }
 
@@ -247,7 +247,7 @@ impl GameStateWrapper {
     pub fn is_done(&self) -> bool {
         match self {
             &GameStateWrapper::Done(_) => true,
-            _ => false
+            _ => false,
         }
     }
 }

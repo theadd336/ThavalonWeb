@@ -3,7 +3,7 @@ use std::fmt::{self, Write};
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::{Card, Players, Player};
+use super::{Card, Player, Players};
 
 /// A THavalon role
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize)]
@@ -224,7 +224,7 @@ impl PriorityTarget {
         match self {
             PriorityTarget::Merlin => player.role == Role::Merlin,
             PriorityTarget::Guinevere => todo!("Need a Guinevere role"),
-            PriorityTarget::Lovers => player.role.is_lover()
+            PriorityTarget::Lovers => player.role.is_lover(),
         }
     }
 
@@ -232,7 +232,7 @@ impl PriorityTarget {
     pub fn expected_targets(self) -> usize {
         match self {
             PriorityTarget::Lovers => 2,
-            _ => 1
+            _ => 1,
         }
     }
 }

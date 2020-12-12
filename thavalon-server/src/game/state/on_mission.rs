@@ -176,7 +176,11 @@ impl_phase!(WaitingForAgravaine);
 /// * `state` - the `GameState` to transition from (either `OnMission` or `WaitingForAgravaine`)
 /// * `effects` - additional side-effects to apply (this varies depending on whether or not Agravaine declared)
 /// * `proposal` - the proposal the mission was based on, used to figure out who is proposing next
-fn conclude_mission<P: Phase>(state: GameState<P>, mut effects: Vec<Effect>, proposal: usize) -> ActionResult {
+fn conclude_mission<P: Phase>(
+    state: GameState<P>,
+    mut effects: Vec<Effect>,
+    proposal: usize,
+) -> ActionResult {
     let (mut successes, mut fails) = (0, 0);
     for mission in state.mission_results.iter() {
         if mission.passed {
@@ -189,14 +193,14 @@ fn conclude_mission<P: Phase>(state: GameState<P>, mut effects: Vec<Effect>, pro
     if successes == 3 {
         log::debug!("3 missions have passed, moving to assassination");
         effects.push(Effect::Broadcast(Message::BeginAssassination {
-            assassin: state.game.assassin.to_string()
+            assassin: state.game.assassin.to_string(),
         }));
         let next_state = GameStateWrapper::Assassination(state.with_phase(Assassination {}));
         (next_state, effects)
     } else if fails == 3 {
         log::debug!("3 missions have failed, the Evil team has won");
         effects.push(Effect::Broadcast(Message::GameOver {
-            winning_team: Team::Evil
+            winning_team: Team::Evil,
         }));
         let next_state = GameStateWrapper::Done(state.with_phase(Done::new(Team::Evil)));
         (next_state, effects)

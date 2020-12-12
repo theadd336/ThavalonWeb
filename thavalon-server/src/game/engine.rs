@@ -7,8 +7,7 @@ use super::interactions::Interactions;
 use super::messages::{GameError, Message};
 use super::Game;
 
-
-use super::state::{GameStateWrapper, Effect};
+use super::state::{Effect, GameStateWrapper};
 
 /// Runs a THavalon game to completion.
 pub async fn run_game<I: Interactions>(game: Game, interactions: &mut I) -> Result<(), GameError> {
@@ -49,11 +48,13 @@ pub async fn run_game<I: Interactions>(game: Game, interactions: &mut I) -> Resu
                 Effect::Reply(message) => {
                     // player is only None if the timeout fired, and handle_timeout() should never return an
                     // Effect::Reply because there's no player to reply to.
-                    let player = player.as_ref().expect("handle_timeout() returned an Effect::Reply");
+                    let player = player
+                        .as_ref()
+                        .expect("handle_timeout() returned an Effect::Reply");
                     if let Err(e) = interactions.send_to(player, message).await {
                         log::error!("Error sending message to {}: {}", player, e);
                     }
-                },
+                }
                 Effect::StartTimeout(duration) => {
                     timeout = time::delay_for(duration).right_future();
                 }

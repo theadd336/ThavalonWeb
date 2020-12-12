@@ -104,9 +104,7 @@ pub enum Message {
     },
 
     /// Sent when the game is over to announce who won.
-    GameOver {
-        winning_team: Team,
-    }
+    GameOver { winning_team: Team },
 }
 
 /// How players voted on a proposal

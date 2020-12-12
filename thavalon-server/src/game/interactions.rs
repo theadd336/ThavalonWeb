@@ -69,7 +69,7 @@ impl Interactions for ChannelInteractions {
     async fn receive(&mut self) -> Result<(String, Action), GameError> {
         match self.inbox.next().await {
             Some(msg) => Ok(msg),
-            None => Err(GameError::PlayerDisconnected)
+            None => Err(GameError::PlayerDisconnected),
         }
     }
 }
@@ -143,7 +143,7 @@ pub(super) mod test {
         async fn receive(&mut self) -> Result<(String, Action), GameError> {
             match self.actions.pop_front() {
                 Some(msg) => Ok(msg),
-                None => Err(GameError::PlayerDisconnected)
+                None => Err(GameError::PlayerDisconnected),
             }
         }
     }
