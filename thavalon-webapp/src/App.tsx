@@ -72,13 +72,9 @@ function App() {
           <Logout setLoggedIn={() => setLoggedIn(false)} />
         </Route>
         <Route path="/register" render={() => registerPage()} />
-<<<<<<< Updated upstream
-        <Route path="/game" />
-=======
         <Route path="/game/:friendCode">
           <Game />
         </Route>
->>>>>>> Stashed changes
       </Switch>
       <Login setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} showLoginModal={showLoginModal} />
       <CreateJoinGameModal show={showCreateJoinGameModal} setOpen={setShowCreateJoinGameModal} />

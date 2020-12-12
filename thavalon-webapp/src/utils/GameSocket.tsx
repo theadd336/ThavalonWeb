@@ -22,6 +22,11 @@ export class GameSocket {
         this.websocket.onclose = this.socketOnClose.bind(this);
         this.websocket.onerror = this.socketOnError.bind(this);
     } 
+
+    private delay(ms: number) {
+        return new Promise( resolve => setTimeout(resolve, ms) );
+    }    
+
     // functions for handling incoming websocket events
     private socketOnOpen(event: Event) {
         console.log("Successfully initiated connection.");
