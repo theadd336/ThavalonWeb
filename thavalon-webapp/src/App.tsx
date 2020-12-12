@@ -8,6 +8,7 @@ import { Home } from './components/Home';
 import { AccountManager, HttpResponse } from './utils/AccountManager';
 import { CreateJoinGameModal } from './components/gameCreation';
 import ReactModal from 'react-modal';
+import { Game } from './components/Game';
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Profile } from './components/profileComponents/Profile';
@@ -71,7 +72,13 @@ function App() {
           <Logout setLoggedIn={() => setLoggedIn(false)} />
         </Route>
         <Route path="/register" render={() => registerPage()} />
+<<<<<<< Updated upstream
         <Route path="/game" />
+=======
+        <Route path="/game/:friendCode">
+          <Game />
+        </Route>
+>>>>>>> Stashed changes
       </Switch>
       <Login setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} showLoginModal={showLoginModal} />
       <CreateJoinGameModal show={showCreateJoinGameModal} setOpen={setShowCreateJoinGameModal} />
