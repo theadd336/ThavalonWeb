@@ -13,10 +13,10 @@ interface RegisterProps {
 };
 
 interface RegisterData {
-    "name": string,
-    "email": string,
-    "password": string,
-    "confirmPassword": string,
+    name: string,
+    email: string,
+    password: string,
+    confirmPassword: string,
 };
 
 const registerResolver: Resolver<RegisterData> = async (values: RegisterData) => {

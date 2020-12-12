@@ -1,7 +1,11 @@
 import React from 'react';
+import { AccountManager, HttpResponse } from '../utils/AccountManager';
+import { GameSocket } from '../utils/GameSocket';
 
 export function Home(): JSX.Element {
     return (
-        <h1>Hello World!</h1>
+        <div>
+            <h1>Hello World!</h1>
+        </div>
     );
 }

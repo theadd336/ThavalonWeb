@@ -44,4 +44,11 @@ impl GameBuilder {
         });
         (snapshots, task_handle)
     }
+
+    pub fn new() -> Self {
+        GameBuilder {
+            interactions: ChannelInteractions::new(),
+            players: vec![],
+        }
+    }
 }

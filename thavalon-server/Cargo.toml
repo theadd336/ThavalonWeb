@@ -1,6 +1,6 @@
 [package]
 name = "thavalon-server"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["theadd336 <pauladdonizio@gmail.com>"]
 edition = "2018"
 
@@ -37,7 +37,7 @@ features = [
     "macros",
     "rt-threaded",
     "stream",
-    "sync"
+    "sync",
 ]
 
 [dependencies.uuid]
