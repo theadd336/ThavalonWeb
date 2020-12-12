@@ -137,7 +137,7 @@ impl Game {
             players,
             info,
             proposal_order,
-            assassin: assassin.to_string(),
+            assassin,
             priority_target,
             spec,
         }

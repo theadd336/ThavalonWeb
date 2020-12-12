@@ -142,7 +142,7 @@ impl<P: Phase> GameState<P> {
     }
 
     /// Switch into the `Proposing` state with `proposer` as the next player to propose.
-    fn to_proposing(self, proposer: String, mut effects: Vec<Effect>) -> ActionResult {
+    fn into_proposing(self, proposer: String, mut effects: Vec<Effect>) -> ActionResult {
         effects.push(Effect::Broadcast(Message::NextProposal {
             proposer: proposer.clone(),
             mission: self.mission(),
@@ -245,10 +245,7 @@ impl GameStateWrapper {
 
     /// Returns whether or not the game is over
     pub fn is_done(&self) -> bool {
-        match self {
-            &GameStateWrapper::Done(_) => true,
-            _ => false,
-        }
+        matches!(self, GameStateWrapper::Done(_))
     }
 }
 

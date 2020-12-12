@@ -47,7 +47,7 @@ impl GameState<Proposing> {
             // On mission 1, we need the first 2 proposals before voting
             log::debug!("Getting a second proposal for mission 1");
             let next_proposer = self.game.next_proposer(player).to_string();
-            self.to_proposing(next_proposer, effects)
+            self.into_proposing(next_proposer, effects)
         } else if self.spent_proposals() > self.game.spec.max_proposals {
             let proposal = self.proposals.last().unwrap();
             log::debug!("Sending {} with force for mission {}", proposal, mission);

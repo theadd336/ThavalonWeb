@@ -83,17 +83,11 @@ impl Role {
     }
 
     pub fn is_lover(self) -> bool {
-        match self {
-            Role::Tristan | Role::Iseult => true,
-            _ => false,
-        }
+        matches!(self, Role::Tristan | Role::Iseult)
     }
 
     pub fn is_assassinatable(self) -> bool {
-        match self {
-            Role::Merlin | Role::Tristan | Role::Iseult => true,
-            _ => false,
-        }
+        matches!(self, Role::Merlin | Role::Tristan | Role::Iseult)
     }
 
     pub fn can_play(self, card: Card) -> bool {

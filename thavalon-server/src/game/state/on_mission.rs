@@ -207,7 +207,7 @@ fn conclude_mission<P: Phase>(
     } else {
         let mission_proposer = &state.proposals[proposal].proposer;
         let next_proposer = state.game.next_proposer(mission_proposer).to_string();
-        state.to_proposing(next_proposer, effects)
+        state.into_proposing(next_proposer, effects)
     }
 }
 

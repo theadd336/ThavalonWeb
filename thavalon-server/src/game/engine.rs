@@ -1,4 +1,4 @@
-//! THavalon game engine, implemented as an async task.
+//! THavalon game engine, implemented as an async task. This starts a `GameState` state machine and runs it to completion.
 
 use futures::future::{self, FutureExt};
 use tokio::time;
