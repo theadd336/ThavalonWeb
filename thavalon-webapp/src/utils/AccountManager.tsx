@@ -95,7 +95,7 @@ export class AccountManager {
             credentials: "include"
         });
 
-        switch(response.status) {
+        switch (response.status) {
             case STATUS.OK: {
                 // this.setJwtInfo.bind(this);
                 const jwt: JwtType = await response.json();
@@ -153,7 +153,7 @@ export class AccountManager {
      * @param setTimer if True, will set a timer to recheck the token regularly if the user is logged in
      * @returns A promise with an HttpResponse, indicating if user is logged in and any errors.
      */
-    public async checkLoggedIn(setTimer=true): Promise<HttpResponse> {
+    public async checkLoggedIn(setTimer = true): Promise<HttpResponse> {
         let httpResponse = await this.checkRefreshToken();
         if (setTimer && httpResponse.result) {
             this.checkRefreshTokenOnTimer();
@@ -332,7 +332,7 @@ export class AccountManager {
         } else {
             console.log("Unexpected return code from server: " + response.status);
             httpResponse.result = false;
-            httpResponse.message = "Request failed, try again.";    
+            httpResponse.message = "Request failed, try again.";
         }
         return httpResponse;
     }
@@ -368,7 +368,7 @@ export class AccountManager {
         } else {
             console.log("Unexpected return code from server: " + response.status);
             httpResponse.result = false;
-            httpResponse.message = "Request failed, try again.";    
+            httpResponse.message = "Request failed, try again.";
         }
         return httpResponse;
     }
