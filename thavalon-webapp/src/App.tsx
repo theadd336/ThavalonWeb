@@ -73,8 +73,17 @@ function App() {
         <Route path="/register" render={() => registerPage()} />
         <Route path="/game" />
       </Switch>
-      <Login setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} showLoginModal={showLoginModal} />
-      <CreateJoinGameModal show={showCreateJoinGameModal} setOpen={setShowCreateJoinGameModal} />
+      {showLoginModal &&
+        <Login
+          setLoggedIn={setLoggedIn}
+          setShowLoginModal={setShowLoginModal}
+          showLoginModal={showLoginModal} />}
+      {showCreateJoinGameModal &&
+        <CreateJoinGameModal
+          isLoggedIn={loggedIn}
+          setShowLoginModal={setShowLoginModal}
+          show={showCreateJoinGameModal}
+          setOpen={setShowCreateJoinGameModal} />}
     </div>
   );
 }
