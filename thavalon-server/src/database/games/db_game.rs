@@ -4,13 +4,9 @@ use crate::utils;
 
 use std::collections::HashSet;
 
-use async_trait::async_trait;
 use chrono::Utc;
 use mongodb::{
     bson::{self, doc, oid::ObjectId, Document},
-    error::Error,
-    options::{InsertOneOptions, ReplaceOptions, UpdateModifications, UpdateOptions},
-    results::{InsertOneResult, UpdateResult},
     Collection,
 };
 use serde::{Deserialize, Serialize};
@@ -71,7 +67,7 @@ impl DatabaseGame {
             }
         };
 
-        let friend_code = utils::generate_random_string(4, true);
+        let friend_code = utils::generate_random_string(FRIEND_CODE_LENGTH, true);
         let game = DatabaseGame {
             friend_code,
             _id,
