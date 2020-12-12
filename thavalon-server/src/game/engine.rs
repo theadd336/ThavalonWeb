@@ -22,8 +22,10 @@ pub async fn run_game<I: Interactions>(game: Game, interactions: &mut I) -> Resu
             .await?;
     }
 
-    // TODO: should this log errors instead of bailing?
     let mut state = GameStateWrapper::new(game);
+    // At some points in the game, players have a certain time window to do something in. Using an
+    // Either<Pending, Delay> means we can always use select below, without having to worry about whether or not there's
+    // an active timeout.
     let mut timeout = future::pending().left_future();
 
     while !state.is_done() {
