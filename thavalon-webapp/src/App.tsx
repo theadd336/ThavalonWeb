@@ -76,8 +76,17 @@ function App() {
           <Game />
         </Route>
       </Switch>
-      <Login setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} showLoginModal={showLoginModal} />
-      <CreateJoinGameModal show={showCreateJoinGameModal} setOpen={setShowCreateJoinGameModal} />
+      {showLoginModal &&
+        <Login
+          setLoggedIn={setLoggedIn}
+          setShowLoginModal={setShowLoginModal}
+          showLoginModal={showLoginModal} />}
+      {showCreateJoinGameModal &&
+        <CreateJoinGameModal
+          isLoggedIn={loggedIn}
+          setShowLoginModal={setShowLoginModal}
+          show={showCreateJoinGameModal}
+          setOpen={setShowCreateJoinGameModal} />}
     </div>
   );
 }

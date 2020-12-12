@@ -15,6 +15,8 @@ import { GameSocket } from '../utils/GameSocket';
  * Props for the CreateJoinGame Modal
  */
 export interface CreateJoinGameProps {
+    isLoggedIn: boolean,
+    setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>,
     show: boolean,
     setOpen: Dispatch<SetStateAction<boolean>>
 }
@@ -59,12 +61,19 @@ const connection = AccountManager.getInstance();
  * @param props - Required React props object.
  */
 export function CreateJoinGameModal(props: CreateJoinGameProps): JSX.Element {
+
     // State to keep track of whether or not the form should display.
     // Needed to trigger closing animations when the form is leaving the modal.
     const [showForm, setShowForm] = useState(false);
     // State to track the overall modal state, including which form should be displayed.
     const [modalState, setModalState] = useState(CreateJoinState.CreateJoinButtons);
 
+    // If not logged in, show the login modal, close this, and return nothing.
+    if (!props.isLoggedIn) {
+        props.setShowLoginModal(true);
+        props.setOpen(false);
+        return <></>;
+    }
     /**
      * Function handler for the success event from the child modal.
      * Will reset state for future callers and close the modal.
@@ -158,16 +167,14 @@ function CreateGameForm(props: FormProps): JSX.Element {
      * @param data The CreateGameData from the submitting form
      */
     async function onCreateGameSubmit(data: CreateGameData) {
-        if (friendCode === "") {
-            const createGameResponse = await connection.createGame();
-            if (createGameResponse.result === false) {
-                setFormErrorMsg(createGameResponse.message);
-                return;
-            }
-            const friendCode = createGameResponse.message;
-            setFriendCode(friendCode);
+        const createGameResponse = await connection.createGame();
+        if (createGameResponse.result === false) {
+            setFormErrorMsg(createGameResponse.message);
+            return;
         }
 
+        const friendCode = createGameResponse.message;
+        setFriendCode(friendCode);
         const joinGameResponse = await connection.joinGame(friendCode, data.displayName);
         if (joinGameResponse.result === false) {
             setFormErrorMsg(joinGameResponse.message);
