@@ -125,5 +125,12 @@ pub enum GameError {
     PlayerDisconnected,
 
     #[error("Internal interaction error")]
+    #[serde(serialize_with = "serialize_internal_error")]
     Internal(#[from] Box<dyn std::error::Error + Send + 'static>),
+}
+
+#[allow(clippy::borrowed_box)] // We need &Box<T> instead of &T here to match what serde expects and to add the Send + 'static constraints
+fn serialize_internal_error<S: serde::Serializer>(error: &Box<dyn std::error::Error + Send + 'static>, ser: S) -> Result<S::Ok, S::Error> {
+    let error_message = error.to_string();
+    ser.serialize_str(&error_message)
 }
