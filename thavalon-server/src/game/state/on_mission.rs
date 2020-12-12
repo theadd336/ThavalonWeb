@@ -65,8 +65,6 @@ impl GameState<OnMission> {
                         passed,
                     })];
 
-                    // TODO: check if game is over
-
                     // TODO: how does Agravaine work on mission 4?
                     if self.game.spec.has_role(Role::Agravaine) && passed {
                         effects.push(Effect::StartTimeout(AGRAVAINE_TIMEOUT));
@@ -78,11 +76,8 @@ impl GameState<OnMission> {
                             effects,
                         )
                     } else {
-                        let next_proposer = self
-                            .game
-                            .next_proposer(&self.proposal().proposer)
-                            .to_string();
-                        self.to_proposing(next_proposer, effects)
+                        let proposal_index = self.phase.proposal_index;
+                        conclude_mission(self, effects, proposal_index)
                     }
                 } else {
                     // If cards aren't all in yet, there's no state change
@@ -156,9 +151,8 @@ impl GameState<WaitingForAgravaine> {
                 Effect::ClearTimeout,
             ];
 
-            let mission_proposer = &self.proposals[self.phase.proposal_index].proposer;
-            let proposer = self.game.next_proposer(mission_proposer).to_string();
-            self.to_proposing(proposer, effects)
+            let proposal = self.phase.proposal_index;
+            conclude_mission(self, effects, proposal)
         } else {
             self.player_error("You can't declare right now")
         }
@@ -166,14 +160,52 @@ impl GameState<WaitingForAgravaine> {
 
     pub fn handle_timeout(self) -> ActionResult {
         log::debug!("Timed out waiting for Agravaine to declare");
-        let mission_proposer = &self.proposals[self.phase.proposal_index].proposer;
-        let proposer = self.game.next_proposer(mission_proposer).to_string();
-        self.to_proposing(proposer, vec![])
+        let proposal = self.phase.proposal_index;
+        conclude_mission(self, vec![], proposal)
     }
 }
 
 impl_phase!(OnMission);
 impl_phase!(WaitingForAgravaine);
+
+/// Common logic for transitioning to the next phase after a mission ends. This is shared by the [`OnMission`] and
+/// [`WaitingForAgravaine`] phases. This assumes that `state.mission_results` is up-to-date (including Agravaine
+/// declarations).
+///
+/// # Arguments
+/// * `state` - the `GameState` to transition from (either `OnMission` or `WaitingForAgravaine`)
+/// * `effects` - additional side-effects to apply (this varies depending on whether or not Agravaine declared)
+/// * `proposal` - the proposal the mission was based on, used to figure out who is proposing next
+fn conclude_mission<P: Phase>(state: GameState<P>, mut effects: Vec<Effect>, proposal: usize) -> ActionResult {
+    let (mut successes, mut fails) = (0, 0);
+    for mission in state.mission_results.iter() {
+        if mission.passed {
+            successes += 1
+        } else {
+            fails += 1
+        }
+    }
+
+    if successes == 3 {
+        log::debug!("3 missions have passed, moving to assassination");
+        effects.push(Effect::Broadcast(Message::BeginAssassination {
+            assassin: state.game.assassin.to_string()
+        }));
+        let next_state = GameStateWrapper::Assassination(state.with_phase(Assassination {}));
+        (next_state, effects)
+    } else if fails == 3 {
+        log::debug!("3 missions have failed, the Evil team has won");
+        effects.push(Effect::Broadcast(Message::GameOver {
+            winning_team: Team::Evil
+        }));
+        let next_state = GameStateWrapper::Done(state.with_phase(Done::new(Team::Evil)));
+        (next_state, effects)
+    } else {
+        let mission_proposer = &state.proposals[proposal].proposer;
+        let next_proposer = state.game.next_proposer(mission_proposer).to_string();
+        state.to_proposing(next_proposer, effects)
+    }
+}
 
 /// Tests if a mission has failed
 /// Note: this is written the way it is because it's easier to express the rules for a mission failing. In general,
@@ -203,6 +235,7 @@ fn is_failure<'a, I: IntoIterator<Item = &'a Card>>(
     }
 }
 
+#[cfg(test)]
 mod test {
     use super::super::prelude::*;
     use super::is_failure;

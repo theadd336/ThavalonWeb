@@ -3,7 +3,7 @@ use std::fmt::{self, Write};
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::{Card, Players};
+use super::{Card, Players, Player};
 
 /// A THavalon role
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize)]
@@ -215,5 +215,24 @@ impl fmt::Display for Role {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Can use debug since it's still the role name
         writeln!(f, "{:?}", self)
+    }
+}
+
+impl PriorityTarget {
+    /// Checks if assassinating `player` as this target is correct.
+    pub fn matches(self, player: &Player) -> bool {
+        match self {
+            PriorityTarget::Merlin => player.role == Role::Merlin,
+            PriorityTarget::Guinevere => todo!("Need a Guinevere role"),
+            PriorityTarget::Lovers => player.role.is_lover()
+        }
+    }
+
+    /// The number of expected players in an assassination attempt for this target.
+    pub fn expected_targets(self) -> usize {
+        match self {
+            PriorityTarget::Lovers => 2,
+            _ => 1
+        }
     }
 }

@@ -38,7 +38,7 @@ impl GameBuilder {
         let mut interactions = SnapshotInteractions::new(self.interactions);
         let snapshots = interactions.snapshots();
         let task_handle = task::spawn(async move {
-            if let Err(e) = engine::run_game(&game, &mut interactions).await {
+            if let Err(e) = engine::run_game(game, &mut interactions).await {
                 log::error!("Fatal game error: {}", e);
             }
         });

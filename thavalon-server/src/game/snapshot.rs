@@ -292,12 +292,8 @@ impl<I: Interactions + Send> Interactions for SnapshotInteractions<I> {
         self.inner.send(message).await
     }
 
-    async fn receive<F, R>(&mut self, f: F) -> Result<R, GameError>
-    where
-        R: Send,
-        F: FnMut(String, Action) -> Result<R, String> + Send,
-    {
-        self.inner.receive(f).await
+    async fn receive(&mut self) -> Result<(String, Action), GameError> {
+        self.inner.receive().await
     }
 }
 

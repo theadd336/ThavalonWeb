@@ -74,16 +74,17 @@ mod voting;
 /// A bundle of imports needed for most game phases
 mod prelude {
     pub use super::{
-        ActionResult, Effect, GameState, GameStateWrapper, MissionResults, Phase, Proposal,
+        ActionResult, Done, Effect, GameState, GameStateWrapper, MissionResults, Phase, Proposal,
     };
 
+    pub use super::assassination::Assassination;
     pub use super::on_mission::OnMission;
     pub use super::proposing::Proposing;
     pub use super::voting::Voting;
 
     pub use super::super::{
         messages::{self, Action, Message},
-        role::{PriorityTarget, Role},
+        role::{PriorityTarget, Role, Team},
         Card, Game, GameSpec,
     };
 }
@@ -179,8 +180,21 @@ macro_rules! in_phases {
 }
 
 impl GameStateWrapper {
+    /// Creates the [`GameState`] wrapper for a new game.
+    pub fn new(game: Game) -> GameStateWrapper {
+        // TODO: should this start with the second-to-last player, or does that not matter?
+        let first_proposer = &game.proposal_order()[0];
+        let phase = Proposing::new(first_proposer.clone());
+        GameStateWrapper::Proposing(GameState {
+            phase,
+            game,
+            proposals: vec![],
+            mission_results: vec![]
+        })
+    }
+
     /// Advance to the next game state given a player action
-    fn handle_action(self, player: &str, action: Action) -> ActionResult {
+    pub fn handle_action(self, player: &str, action: Action) -> ActionResult {
         log::debug!("Responding to {:?} from {}", action, player);
         match (self, action) {
             (GameStateWrapper::Proposing(inner), Action::Propose { players }) => {
@@ -217,7 +231,7 @@ impl GameStateWrapper {
 
     /// Handles a timeout set by [`Effect::SetTimeout`] expiring. This is used for player actions which must happen in a
     /// certain time window, like Agravaine declarations.
-    fn handle_timeout(self) -> ActionResult {
+    pub fn handle_timeout(self) -> ActionResult {
         log::debug!("Action timeout expired");
         match self {
             GameStateWrapper::WaitingForAgravaine(inner) => inner.handle_timeout(),
@@ -227,6 +241,20 @@ impl GameStateWrapper {
                 (self, vec![])
             }
         }
+    }
+
+    /// Returns whether or not the game is over
+    pub fn is_done(&self) -> bool {
+        match self {
+            &GameStateWrapper::Done(_) => true,
+            _ => false
+        }
+    }
+}
+
+impl Done {
+    pub fn new(winning_team: Team) -> Done {
+        Done { winning_team }
     }
 }
 

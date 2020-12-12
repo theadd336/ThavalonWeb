@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use super::role::{PriorityTarget, RoleDetails};
+use super::role::{PriorityTarget, RoleDetails, Team};
 use super::{Card, MissionNumber};
 
 // Game-related messages
@@ -92,6 +92,21 @@ pub enum Message {
 
     /// Assassination has begun. This can either be because 3 missions passed or because the assassin moved to assassinate.
     BeginAssassination { assassin: String },
+
+    /// The results of an assassination attempt.
+    AssassinationResult {
+        /// The players that were assassinated (usually just 1)
+        players: HashSet<String>,
+        /// What the players were assassinated as
+        target: PriorityTarget,
+        /// Whether or not the assassination was correct
+        correct: bool,
+    },
+
+    /// Sent when the game is over to announce who won.
+    GameOver {
+        winning_team: Team,
+    }
 }
 
 /// How players voted on a proposal

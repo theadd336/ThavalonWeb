@@ -17,14 +17,8 @@ pub trait Interactions {
     /// Send a message to all players
     async fn send(&mut self, message: Message) -> Result<(), GameError>;
 
-    /// Receives messages from players until one satisfies the given function. The function can either return `Ok`, in which case the
-    /// result is immediately returned, or `Err`, in which case the error message is sent to the player and this waits for the next message.
-    ///
-    /// Think of this like a one-off `filter_map` operation.
-    async fn receive<F, R>(&mut self, mut f: F) -> Result<R, GameError>
-    where
-        R: Send,
-        F: FnMut(String, Action) -> Result<R, String> + Send;
+    /// Receive the next message from any player
+    async fn receive(&mut self) -> Result<(String, Action), GameError>;
 }
 
 /// An Interactions that uses per-player MPSC channels
@@ -72,26 +66,10 @@ impl Interactions for ChannelInteractions {
         future::join_all(sends).await.into_iter().collect()
     }
 
-    async fn receive<F, R>(&mut self, mut f: F) -> Result<R, GameError>
-    where
-        R: Send,
-        F: FnMut(String, Action) -> Result<R, String> + Send,
-    {
-        loop {
-            match self.inbox.next().await {
-                Some((player, action)) => {
-                    let out = self.outbox.get_mut(&player).unwrap();
-                    match f(player, action) {
-                        Ok(result) => return Ok(result),
-                        Err(msg) => {
-                            out.send(Message::Error(msg))
-                                .map_err(|_| GameError::PlayerDisconnected)
-                                .await?
-                        }
-                    }
-                }
-                None => return Err(GameError::PlayerDisconnected),
-            }
+    async fn receive(&mut self) -> Result<(String, Action), GameError> {
+        match self.inbox.next().await {
+            Some(msg) => Ok(msg),
+            None => Err(GameError::PlayerDisconnected)
         }
     }
 }
@@ -162,19 +140,10 @@ pub(super) mod test {
             Ok(())
         }
 
-        async fn receive<F, R>(&mut self, mut f: F) -> Result<R, GameError>
-        where
-            R: Send,
-            F: FnMut(String, Action) -> Result<R, String> + Send,
-        {
-            loop {
-                match self.actions.pop_front() {
-                    Some((player, action)) => match f(player.clone(), action) {
-                        Ok(result) => return Ok(result),
-                        Err(msg) => self.messages.push((player, Message::Error(msg))),
-                    },
-                    None => return Err(GameError::PlayerDisconnected),
-                }
+        async fn receive(&mut self) -> Result<(String, Action), GameError> {
+            match self.actions.pop_front() {
+                Some(msg) => Ok(msg),
+                None => Err(GameError::PlayerDisconnected)
             }
         }
     }
