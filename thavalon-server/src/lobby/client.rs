@@ -240,9 +240,19 @@ impl PlayerClient {
 
                     // Can't unwrap, but this should never fail, since the task is
                     // stable.
-                    let _ = game_to_outbound_task
+                    if let Err(e) = game_to_outbound_task
                         .send(OutboundTaskMessageType::ToClient(game_msg))
-                        .await;
+                        .await
+                    {
+                        log::error!(
+                            "Error while sending an outbound game message for client {}. {}",
+                            client_id,
+                            e
+                        );
+                        // An error here is unrecoverable, since the client is never
+                        // rebuilt to this extent. Just give up on everything and panic!
+                        panic!();
+                    }
                 }
             },
             abort_registration,
