@@ -1,14 +1,11 @@
 //! Module for all game-related REST endpoint handlers. This module also handles
 //! all websocket related functions.
 
-use crate::database::{accounts, games::DatabaseGame};
+use crate::database::accounts;
 use crate::lobby::{Lobby, LobbyChannel, LobbyCommand, LobbyError, LobbyResponse};
 
 use serde::{Deserialize, Serialize};
-use tokio::sync::{
-    mpsc::{self, Sender},
-    oneshot,
-};
+use tokio::sync::oneshot;
 use warp::{
     reject::{self, Reject},
     reply,
@@ -89,7 +86,7 @@ pub async fn create_game(
 
     // TODO: Error handling here.
     let _ = lobby_channel
-        .send((LobbyCommand::GetFriendCode, oneshot_tx))
+        .send((LobbyCommand::GetFriendCode, Some(oneshot_tx)))
         .await;
 
     let friend_code = match oneshot_rx.await.unwrap() {
@@ -145,7 +142,7 @@ pub async fn join_game(
                 player_id: player_id.clone(),
                 display_name: info.display_name.clone(),
             },
-            oneshot_tx,
+            Some(oneshot_tx),
         ))
         .await;
 
@@ -212,7 +209,7 @@ pub async fn connect_ws(
             LobbyCommand::IsClientRegistered {
                 client_id: client_id.clone(),
             },
-            oneshot_tx,
+            Some(oneshot_tx),
         ))
         .await;
 
@@ -249,7 +246,7 @@ async fn client_connection(socket: WebSocket, client_id: String, mut lobby_chann
                 client_id,
                 ws: socket,
             },
-            oneshot_tx,
+            Some(oneshot_tx),
         ))
         .await;
 
