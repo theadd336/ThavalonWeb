@@ -33,7 +33,7 @@ export class GameSocket {
         this.websocket.onmessage = this.socketOnMessage.bind(this);
         this.websocket.onclose = this.socketOnClose.bind(this);
         this.websocket.onerror = this.socketOnError.bind(this);
-    } 
+    }
 
     /**
      * Listen to websocket's onopen event.
@@ -109,7 +109,7 @@ export class GameSocket {
      * Destroy the underlying gamesocket by setting it to undefined.
      */
     public static destroyInstance() {
-        GameSocket.instance?.websocket?.close;
+        GameSocket.instance?.websocket?.close();
         GameSocket.instance = undefined;
     }
 

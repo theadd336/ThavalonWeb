@@ -168,7 +168,12 @@ impl PlayerClient {
                         client_id
                     );
 
-                    let incoming_msg = incoming_msg.to_str().unwrap();
+                    let incoming_msg = match incoming_msg.to_str() {
+                        Ok(msg) => msg,
+                        Err(_) => {
+                            break;
+                        }
+                    };
                     log::debug!(
                         "Attempting to deserialize message {} from client {}.",
                         incoming_msg,

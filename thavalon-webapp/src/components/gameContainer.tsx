@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { } from "react-router";
 import { Lobby } from "./gameComponents/lobby";
 import { GameSocket } from "../utils/GameSocket";
 
+/**
+ * Props interface for the GameContainer. This structure matches the object
+ * passed by <Route /> to extract the required state information.
+ */
 interface GameContainerProps {
     location: {
         state: {
@@ -12,11 +15,35 @@ interface GameContainerProps {
     }
 }
 
+enum LobbyState {
+    Lobby,
+    Game,
+}
+
+/**
+ * Contains all of the game related components and sets up low level connection
+ * infrastructure.
+ * @param props Props object for the GameContainer
+ */
 export function GameContainer(props: GameContainerProps): JSX.Element {
     const [connection, setConnection] = useState<GameSocket | undefined>(undefined);
-    if (connection === undefined || connection.socketUrl !== props.location.state.socketUrl) {
-        const temp = GameSocket.createInstance(props.location.state.socketUrl);
-        setConnection(temp);
+    const [lobbyState, setLobbyState] = useState(LobbyState.Lobby);
+    useEffect(() => {
+        return () => {
+            GameSocket.destroyInstance();
+        }
+    }, []);
+
+    if (connection === undefined ||
+        connection.getSocketUrl() !== props.location.state.socketUrl) {
+        const newConnection = GameSocket.createInstance(props.location.state.socketUrl);
+        setConnection(newConnection);
     }
-        return <Lobby friendCode={props.location.state.friendCode} />;
+    return (
+        <>
+            {lobbyState === LobbyState.Lobby && <Lobby friendCode={props.location.state.friendCode} />}
+            {lobbyState === LobbyState.Game && <h1>Not Implemented (yet..)</h1>}
+        </>
+    );
+
 }

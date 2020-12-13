@@ -9,7 +9,6 @@ import { AccountManager, HttpResponse } from './utils/AccountManager';
 import { CreateJoinGameModal } from './components/gameCreation';
 import { GameContainer } from "./components/gameContainer";
 import ReactModal from 'react-modal';
-import { Game } from './components/Game';
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Profile } from './components/profileComponents/Profile';
