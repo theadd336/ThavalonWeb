@@ -8,6 +8,7 @@ import { Home } from './components/Home';
 import { AccountManager, HttpResponse } from './utils/AccountManager';
 import { Account } from './components/Account';
 import { CreateJoinGameModal } from './components/gameCreation';
+import { GameContainer } from "./components/gameContainer";
 import ReactModal from 'react-modal';
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -71,7 +72,8 @@ function App() {
           <Logout setLoggedIn={() => setLoggedIn(false)} />
         </Route>
         <Route path="/register" render={() => registerPage()} />
-        <Route path="/game" />
+        <Route path="/game" component={GameContainer}>
+        </Route>
       </Switch>
       {showLoginModal &&
         <Login
