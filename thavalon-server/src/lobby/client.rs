@@ -33,6 +33,8 @@ enum IncomingMessage {
 pub enum OutgoingMessage {
     Pong(String),
     GameMessage(Message),
+    PlayerList(Vec<String>),
+    StartGame,
 }
 
 /// Task types that the PlayerClient maintains

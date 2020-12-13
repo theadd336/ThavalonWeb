@@ -7,8 +7,10 @@ import { Register } from './components/Register';
 import { Home } from './components/Home';
 import { AccountManager, HttpResponse } from './utils/AccountManager';
 import { Account } from './components/Account';
+import { CreateJoinGameModal } from './components/gameCreation';
 import ReactModal from 'react-modal';
 
+import "bootstrap/dist/css/bootstrap.min.css";
 // Used by react modal for screen readers
 ReactModal.setAppElement("#root");
 
@@ -20,8 +22,10 @@ function App() {
   const [checkedLoggedIn, setCheckedLoggedIn] = useState(false);
   // state for checking if should display mobile navbar menu
   const [useMobileMenu, setUseMobileMenu] = useState(false);
-  // state for determining if login modal shown, controlled by navbar click
+  // state for determining if the login modal shown, controlled by navbar click
   const [showLoginModal, setShowLoginModal] = useState(false);
+  // state for determining if the create/join game modal is shown, controlled by navbar click.
+  const [showCreateJoinGameModal, setShowCreateJoinGameModal] = useState(false);
 
   // check logged in status within useEffect to not enter render loop
   useEffect(() => {
@@ -46,7 +50,13 @@ function App() {
 
   return (
     <div>
-      <Navbar loggedIn={loggedIn} useMobileMenu={useMobileMenu} setUseMobileMenu={setUseMobileMenu} setShowLoginModal={setShowLoginModal} />
+      <Navbar
+        loggedIn={loggedIn}
+        useMobileMenu={useMobileMenu}
+        setUseMobileMenu={setUseMobileMenu}
+        setShowLoginModal={setShowLoginModal}
+        setShowCreateJoinGameModal={setShowCreateJoinGameModal}
+      />
       <Switch>
         <Route path="/" exact>
           <Home />
@@ -61,8 +71,19 @@ function App() {
           <Logout setLoggedIn={() => setLoggedIn(false)} />
         </Route>
         <Route path="/register" render={() => registerPage()} />
+        <Route path="/game" />
       </Switch>
-      {showLoginModal && <Login setLoggedIn={setLoggedIn} setShowLoginModal={setShowLoginModal} showLoginModal={showLoginModal} />}
+      {showLoginModal &&
+        <Login
+          setLoggedIn={setLoggedIn}
+          setShowLoginModal={setShowLoginModal}
+          showLoginModal={showLoginModal} />}
+      {showCreateJoinGameModal &&
+        <CreateJoinGameModal
+          isLoggedIn={loggedIn}
+          setShowLoginModal={setShowLoginModal}
+          show={showCreateJoinGameModal}
+          setOpen={setShowCreateJoinGameModal} />}
     </div>
   );
 }

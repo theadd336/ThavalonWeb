@@ -134,6 +134,7 @@ impl Lobby {
         LobbyResponse::JoinGame(Ok(client_id))
     }
 
+    /// Removes a player from the lobby and game.
     async fn remove_player(&mut self, client_id: String) {
         log::info!(
             "Removing client {} from game {}.",
@@ -208,14 +209,21 @@ impl Lobby {
         LobbyResponse::Standard(Ok(()))
     }
 
+    /// Handles a change to the player list, due to a player joining or leaving the game.
     async fn on_player_list_change(&mut self) {
-        let current_players = self.builder.as_ref().unwrap().get_player_list();
-        let current_players = serde_json::to_string(current_players).unwrap();
-        for client in self.clients.values_mut() {
-            client.send_message(current_players.clone()).await;
+        // Only broadcast to players if the game hasn't started yet.
+        // TODO: Maybe a helpful message to players that someone has disconnected.
+        // Would need to have a way to lookup name by the disconnected client ID.
+        if self.status == DBGameStatus::Lobby {
+            let current_players = self.builder.as_ref().unwrap().get_player_list();
+            self.broadcast_message(&OutgoingMessage::PlayerList(current_players.to_vec()))
+                .await;
         }
     }
 
+    // Handles dealing with a disconnected player.
+    // If the lobby isn't in progress or done, a disconnect should remove the player.
+    // Otherwise, nothing happens.
     async fn on_player_disconnect(&mut self, client_id: String) -> LobbyResponse {
         log::info!(
             "Client {} has disconnected from game {}.",
@@ -231,14 +239,29 @@ impl Lobby {
         LobbyResponse::Standard(Ok(()))
     }
 
-    /// [WIP] - Starts a game.
+    /// Starts the game and updates statuses
     async fn start_game(&mut self) -> LobbyResponse {
-        // TODO: This function is a stub that should be expanded.
-        // It is currently here to remove compiler warnings.
-        let _ = self.database_game.start_game().await;
+        // The only thing that can fail is updating the database. In this case,
+        // the lobby is probably dead, so panic to blow up everything.
+        if let Err(e) = self.database_game.start_game().await {
+            log::error!("Error while starting game {}. {}", self.friend_code, e);
+            panic!();
+        }
+
+        // Tell the players the game is about to start to move to the game page.
+        self.broadcast_message(&OutgoingMessage::StartGame).await;
+        self.status = DBGameStatus::InProgress;
         let builder = self.builder.take().unwrap();
         builder.start();
         return LobbyResponse::Standard(Ok(()));
+    }
+
+    /// Broadcasts a message to all clients in the lobby.
+    async fn broadcast_message(&mut self, message: &OutgoingMessage) {
+        let message = serde_json::to_string(&message).unwrap();
+        for client in self.clients.values_mut() {
+            client.send_message(message.clone()).await;
+        }
     }
 
     /// Begins a loop for the lobby to listen for incoming commands.

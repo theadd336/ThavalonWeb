@@ -34,6 +34,25 @@ pub enum DBGameStatus {
     Finished,
 }
 
+impl Drop for DatabaseGame {
+    fn drop(&mut self) {
+        if self.status == DBGameStatus::Lobby {
+            log::info!("Deleting game {}.", self.friend_code);
+            let friend_code = self.friend_code.clone();
+            let _id = self._id.clone();
+            tokio::spawn(async move {
+                let collection = DatabaseGame::get_collection().await;
+                let doc = doc! {
+                    "_id": bson::to_bson(&_id).unwrap(),
+                };
+                if let Err(e) = collection.delete_one(doc, None).await {
+                    log::error!("Error while deleting game {}. {}.", friend_code, e);
+                }
+            });
+        }
+    }
+}
+
 /// Struct representing a single database game.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DatabaseGame {
@@ -202,7 +221,7 @@ impl DatabaseGame {
         &mut self,
         player_id: &String,
     ) -> Result<Option<String>, DBGameError> {
-        log::info!("Removing player {} to game {}.", player_id, self._id);
+        log::info!("Removing player {} from game {}.", player_id, self._id);
         if self.status != DBGameStatus::Lobby {
             log::error!(
                 "ERROR: attempted to remove player {} to game {} while in state {:?}. 

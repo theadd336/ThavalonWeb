@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import ReactModal from 'react-modal';
 import { useForm } from 'react-hook-form';
 import { Link, Redirect } from 'react-router-dom';
@@ -20,7 +20,7 @@ interface LoginData {
 
 export function Login(props: LoginProps): JSX.Element {
     // hook for register form
-    const {register, handleSubmit} = useForm<LoginData>();
+    const { register, handleSubmit } = useForm<LoginData>();
     // state for setting if form is being submitted or not
     const [formSubmitting, setFormSubmitting] = useState(false);
     // state for setting register error
