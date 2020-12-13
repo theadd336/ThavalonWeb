@@ -1,3 +1,5 @@
+import { SimpleEventDispatcher } from "strongly-typed-events";
+
 interface PingResponse {
     result: boolean,
     errorMessage: string, // only populated if result is false
@@ -5,10 +7,21 @@ interface PingResponse {
 
 export enum OutboundMessageType {
     Ping = "Ping",
+    GetPlayerList = "GetPlayerList",
 }
 
 export interface OutboundMessage {
     messageType: OutboundMessageType,
+    data?: object | string,
+}
+
+export enum InboundMessageType {
+    Pong = "Pong",
+    PlayerList = "PlayerList",
+}
+
+export interface InboundMessage {
+    messageType: InboundMessageType,
     data?: object | string,
 }
 
@@ -22,6 +35,8 @@ export class GameSocket {
     // the instantiated instance of the underlying websocket
     // can also be undefined since it's not explicitly set in constructor
     private websocket: WebSocket;
+    // event handler for lobby events
+    private _onLobbyEvent: SimpleEventDispatcher<InboundMessage>;
 
     /**
      * Construct the underlying websocket instance and set up function handlers.
@@ -29,6 +44,7 @@ export class GameSocket {
      */
     private constructor(socketUrl: string) {
         this.websocket = new WebSocket(socketUrl);
+        this._onLobbyEvent = new SimpleEventDispatcher<InboundMessage>();
         this.websocket.onopen = this.socketOnOpen.bind(this);
         this.websocket.onmessage = this.socketOnMessage.bind(this);
         this.websocket.onclose = this.socketOnClose.bind(this);
@@ -50,6 +66,8 @@ export class GameSocket {
     private socketOnMessage(event: MessageEvent) {
         console.log(event);
         console.log("Received message: " + event.data);
+        const message = JSON.parse(event.data);
+        this._onLobbyEvent.dispatch(message);
     }
 
     /**
@@ -118,5 +136,12 @@ export class GameSocket {
      */
     public getSocketUrl(): string {
         return this.websocket.url;
+    }
+
+    /**
+     * Get the lobby event.
+     */
+    public get onLobbyEvent() {
+        return this._onLobbyEvent.asEvent();
     }
 }

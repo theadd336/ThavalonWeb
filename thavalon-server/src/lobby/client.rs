@@ -25,6 +25,7 @@ enum IncomingMessage {
     Ping,
     StartGame,
     GameCommand(Action),
+    GetPlayerList,
 }
 
 /// An outgoing message to the client.
@@ -32,6 +33,7 @@ enum IncomingMessage {
 #[serde(tag = "messageType", content = "data")]
 pub enum OutgoingMessage {
     Pong(String),
+    GetPlayerList(Vec<String>),
     GameMessage(Message),
     PlayerList(Vec<String>),
     StartGame,
@@ -198,6 +200,16 @@ impl PlayerClient {
                             let _ = to_lobby
                                 .send((
                                     LobbyCommand::Ping {
+                                        client_id: client_id.clone(),
+                                    },
+                                    None,
+                                ))
+                                .await;
+                        }
+                        IncomingMessage::GetPlayerList => {
+                            let _ = to_lobby
+                                .send((
+                                    LobbyCommand::GetPlayerList {
                                         client_id: client_id.clone(),
                                     },
                                     None,

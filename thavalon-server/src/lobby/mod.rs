@@ -51,6 +51,9 @@ pub enum LobbyCommand {
     PlayerDisconnect {
         client_id: String,
     },
+    GetPlayerList {
+        client_id: String,
+    },
 }
 
 /// Enum of possible responses from the lobby.
