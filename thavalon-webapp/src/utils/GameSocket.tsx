@@ -3,6 +3,15 @@ interface PingResponse {
     errorMessage: string, // only populated if result is false
 }
 
+export enum OutboundMessageType {
+    Ping = "Ping",
+}
+
+export interface OutboundMessage {
+    messageType: OutboundMessageType,
+    data?: object | string,
+}
+
 /**
  * The class containing the underlying websocket for playing the game.
  * Will contain a websocket, that can either be retrieved or optionally made.
@@ -16,7 +25,7 @@ export class GameSocket {
 
     /**
      * Construct the underlying websocket instance and set up function handlers.
-     * @param socketUrl 
+     * @param socketUrl The socketUrl for the websocket
      */
     private constructor(socketUrl: string) {
         this.websocket = new WebSocket(socketUrl);
@@ -62,25 +71,25 @@ export class GameSocket {
     /**
      * Send a message on the websocket. This will wait until websocket is
      * open before sending the message.
-     * @param msg The message to be sent to the server, as a JSONified string. 
+     * @param outboundMessage The outboundMessage to be sent to the server. 
      */
-    private sendMessage(msg: string) {
+    public sendMessage(outboundMessage: OutboundMessage) {
         if (this.websocket.readyState === WebSocket.OPEN) {
-            console.log("Sending message");
-            this.websocket.send(msg);
+            console.log("Sending message of type: " + outboundMessage.messageType);
+            this.websocket.send(JSON.stringify(outboundMessage));
             return;
         }
         // check again if websocket ready in 10 milliseconds
-        setTimeout(() => this.sendMessage(msg), 1000);
+        setTimeout(() => this.sendMessage(outboundMessage), 1000);
     }
 
     /**
      * Get the existing instance of the game socket.
-     * @throws Error if gamesocket does not exist.
+     * @throws Error if game socket instance is undefined
      */
     public static getInstance(): GameSocket {
         if (GameSocket.instance === undefined) {
-            throw new Error("Gamesocket does not exist");
+            throw Error("Unable to get gamesocket instance");
         }
         return GameSocket.instance;
     }
@@ -96,16 +105,5 @@ export class GameSocket {
         }
         GameSocket.instance = new GameSocket(socketUrl);
         return GameSocket.instance;
-    }
-
-    /**
-     * Sends a ping through the websocket, for testing.
-     */
-    public sendPing(): boolean {
-        console.log("sending ping");
-        this.sendMessage(JSON.stringify({
-            message_type: "Ping",
-        }));
-        return true;
     }
 }

@@ -1,9 +1,11 @@
 import React from 'react';
-import { GameSocket } from '../utils/GameSocket';
+import { GameSocket, OutboundMessageType } from '../utils/GameSocket';
 
 export function Game(): JSX.Element {
     const gameSocket = GameSocket.getInstance();
-    gameSocket.sendPing();
+    gameSocket.sendMessage({
+        messageType: OutboundMessageType.Ping,
+    });
 
     return (
         <div>
