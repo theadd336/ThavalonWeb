@@ -1,3 +1,5 @@
+import { GameSocket } from "./GameSocket";
+
 enum STATUS {
     OK = 200,
     CREATED = 201,

@@ -9,7 +9,6 @@ import { Redirect } from "react-router-dom";
 
 import "../styles/Modal.scss";
 import "../styles/PlayGameModal.scss";
-import { GameSocket } from '../utils/GameSocket';
 
 /**
  * Props for the CreateJoinGame Modal
@@ -182,8 +181,6 @@ function CreateGameForm(props: FormProps): JSX.Element {
         }
 
         const socketUrl = joinGameResponse.message;
-        // create the gamesocket here, after join game succeeds
-        GameSocket.createInstance(socketUrl);
         setSocketUrl(socketUrl);
         setRedirectToGame(true);
         props.showForm(false);

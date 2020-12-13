@@ -14,7 +14,10 @@ export class GameSocket {
     // can also be undefined since it's not explicitly set in constructor
     private websocket: WebSocket;
 
-    // create the underlying websocket in the constructor
+    /**
+     * Construct the underlying websocket instance and set up function handlers.
+     * @param socketUrl 
+     */
     private constructor(socketUrl: string) {
         this.websocket = new WebSocket(socketUrl);
         this.websocket.onopen = this.socketOnOpen.bind(this);
@@ -23,28 +26,58 @@ export class GameSocket {
         this.websocket.onerror = this.socketOnError.bind(this);
     } 
 
-    private delay(ms: number) {
-        return new Promise( resolve => setTimeout(resolve, ms) );
-    }    
-
-    // functions for handling incoming websocket events
+    /**
+     * Listen to websocket's onopen event.
+     * @param event Event received when socket open.
+     */
     private socketOnOpen(event: Event) {
         console.log("Successfully initiated connection.");
     }
 
+    /**
+     * Listen to websocket's onmessage event.
+     * @param event Event received when socket gets message.
+     */
     private socketOnMessage(event: MessageEvent) {
         console.log(event);
         console.log("Received message: " + event.data);
     }
 
+    /**
+     * Listen to websocket's onclose event.
+     * @param event Event received when socket is closed.
+     */
     private socketOnClose(event: CloseEvent) {
         console.log("Recieved on close message.");
     }
 
+    /**
+     * Listen to websocket's onerror event.
+     * @param event Event received when socket errors.
+     */
     private socketOnError(event: Event) {
         console.log("Received on error message.");
     }
 
+    /**
+     * Send a message on the websocket. This will wait until websocket is
+     * open before sending the message.
+     * @param msg The message to be sent to the server, as a JSONified string. 
+     */
+    private sendMessage(msg: string) {
+        if (this.websocket.readyState === WebSocket.OPEN) {
+            console.log("Sending message");
+            this.websocket.send(msg);
+            return;
+        }
+        // check again if websocket ready in 10 milliseconds
+        setTimeout(() => this.sendMessage(msg), 1000);
+    }
+
+    /**
+     * Get the existing instance of the game socket.
+     * @throws Error if gamesocket does not exist.
+     */
     public static getInstance(): GameSocket {
         if (GameSocket.instance === undefined) {
             throw new Error("Gamesocket does not exist");
@@ -52,6 +85,10 @@ export class GameSocket {
         return GameSocket.instance;
     }
 
+    /**
+     * Create the underlying game socket.
+     * @param socketUrl The URL for the websocket.
+     */
     public static createInstance(socketUrl: string): GameSocket {
         // close existing socket if it's open
         if (GameSocket.instance !== undefined) {
@@ -61,14 +98,13 @@ export class GameSocket {
         return GameSocket.instance;
     }
 
+    /**
+     * Sends a ping through the websocket, for testing.
+     */
     public sendPing(): boolean {
         console.log("sending ping");
-        if (this.websocket.readyState !== WebSocket.OPEN) {
-            return false;
-        }
-        console.log("sent");
-        this.websocket.send(JSON.stringify({
-            message_type: "ping",
+        this.sendMessage(JSON.stringify({
+            message_type: "Ping",
         }));
         return true;
     }
