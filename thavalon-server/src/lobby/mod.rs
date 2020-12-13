@@ -47,6 +47,9 @@ pub enum LobbyCommand {
     Ping {
         client_id: String,
     },
+    GetLobbyState {
+        client_id: String,
+    },
     StartGame,
     PlayerDisconnect {
         client_id: String,
@@ -60,6 +63,7 @@ pub enum LobbyCommand {
 #[derive(Debug)]
 pub enum LobbyResponse {
     Standard(Result<(), LobbyError>),
+    None,
     JoinGame(Result<String, LobbyError>),
     FriendCode(String),
     IsClientRegistered(bool),

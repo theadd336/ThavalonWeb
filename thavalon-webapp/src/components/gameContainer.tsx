@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Lobby } from "./gameComponents/lobby";
-import { GameSocket } from "../utils/GameSocket";
+import { GameSocket, OutboundMessageType, InboundMessage, InboundMessageType } from "../utils/GameSocket";
 
 /**
  * Props interface for the GameContainer. This structure matches the object
@@ -16,8 +16,12 @@ interface GameContainerProps {
 }
 
 enum LobbyState {
-    Lobby,
-    Game,
+    Lobby = "Lobby",
+    Game = "Game",
+}
+
+interface LobbyStateResponse {
+    state: LobbyState
 }
 
 /**
@@ -28,8 +32,17 @@ enum LobbyState {
 export function GameContainer(props: GameContainerProps): JSX.Element {
     const [connection, setConnection] = useState<GameSocket | undefined>(undefined);
     const [lobbyState, setLobbyState] = useState(LobbyState.Lobby);
+
+    function receiveLobbyMessage(message: InboundMessage): void {
+        if (message.messageType === InboundMessageType.LobbyState) {
+            const data = message.data as LobbyStateResponse;
+            setLobbyState(data.state);
+        }
+    }
+
     useEffect(() => {
         return () => {
+            connection?.onLobbyEvent.unsubscribe(receiveLobbyMessage);
             GameSocket.destroyInstance();
         }
     }, []);
@@ -37,8 +50,11 @@ export function GameContainer(props: GameContainerProps): JSX.Element {
     if (connection === undefined ||
         connection.getSocketUrl() !== props.location.state.socketUrl) {
         const newConnection = GameSocket.createInstance(props.location.state.socketUrl);
+        newConnection.onLobbyEvent.subscribe(receiveLobbyMessage);
+        newConnection.sendMessage({ messageType: OutboundMessageType.GetLobbyState });
         setConnection(newConnection);
     }
+
     return (
         <>
             {lobbyState === LobbyState.Lobby && <Lobby friendCode={props.location.state.friendCode} />}

@@ -7,7 +7,9 @@ interface PingResponse {
 
 export enum OutboundMessageType {
     Ping = "Ping",
+    GetLobbyState = "GetLobbyState",
     GetPlayerList = "GetPlayerList",
+    StartGame = "StartGame",
 }
 
 export interface OutboundMessage {
@@ -18,11 +20,12 @@ export interface OutboundMessage {
 export enum InboundMessageType {
     Pong = "Pong",
     PlayerList = "PlayerList",
+    LobbyState = "LobbyState",
 }
 
 export interface InboundMessage {
     messageType: InboundMessageType,
-    data?: object | string,
+    data?: object | string | number,
 }
 
 /**

@@ -1,4 +1,4 @@
-use super::client::{OutgoingMessage, PlayerClient};
+use super::client::{LobbyState, OutgoingMessage, PlayerClient};
 use super::{LobbyChannel, LobbyCommand, LobbyError, LobbyResponse, ResponseChannel};
 use crate::database::games::{DBGameError, DBGameStatus, DatabaseGame};
 use crate::game::builder::GameBuilder;
@@ -21,7 +21,7 @@ pub struct Lobby {
     player_ids_to_client_ids: HashMap<String, String>,
     client_ids_to_player_ids: HashMap<String, String>,
     clients: HashMap<String, PlayerClient>,
-    status: DBGameStatus,
+    status: LobbyState,
     builder: Option<GameBuilder>,
     to_lobby: LobbyChannel,
 }
@@ -45,7 +45,7 @@ impl Lobby {
                 player_ids_to_client_ids: HashMap::with_capacity(10),
                 client_ids_to_player_ids: HashMap::with_capacity(10),
                 clients: HashMap::with_capacity(10),
-                status: DBGameStatus::Lobby,
+                status: LobbyState::Lobby,
                 builder: Some(GameBuilder::new()),
                 to_lobby,
             };
@@ -69,7 +69,7 @@ impl Lobby {
         );
 
         // First, sanity checks. Are we in the right status, and does the player exist already?
-        if self.status != DBGameStatus::Lobby {
+        if self.status != LobbyState::Lobby {
             log::warn!(
                 "Player {} attempted to join in-progress or finished game {}.",
                 player_id,
@@ -214,7 +214,7 @@ impl Lobby {
         // Only broadcast to players if the game hasn't started yet.
         // TODO: Maybe a helpful message to players that someone has disconnected.
         // Would need to have a way to lookup name by the disconnected client ID.
-        if self.status == DBGameStatus::Lobby {
+        if self.status == LobbyState::Lobby {
             let current_players = self.builder.as_ref().unwrap().get_player_list();
             self.broadcast_message(&OutgoingMessage::PlayerList(current_players.to_vec()))
                 .await;
@@ -232,7 +232,7 @@ impl Lobby {
         );
 
         // If we're in the lobby phase, a disconnect counts as leaving the game.
-        if self.status == DBGameStatus::Lobby {
+        if self.status == LobbyState::Lobby {
             self.remove_player(client_id).await;
         }
 
@@ -249,11 +249,12 @@ impl Lobby {
         }
 
         // Tell the players the game is about to start to move to the game page.
-        self.broadcast_message(&OutgoingMessage::StartGame).await;
-        self.status = DBGameStatus::InProgress;
+        self.broadcast_message(&OutgoingMessage::LobbyState(LobbyState::Game))
+            .await;
+        self.status = LobbyState::Game;
         let builder = self.builder.take().unwrap();
         builder.start();
-        return LobbyResponse::Standard(Ok(()));
+        LobbyResponse::None
     }
 
     async fn send_player_list(&mut self, client_id: String) -> LobbyResponse {
@@ -262,7 +263,15 @@ impl Lobby {
         let player_list = OutgoingMessage::GetPlayerList(player_list);
         let player_list = serde_json::to_string(&player_list).unwrap();
         client.send_message(player_list).await;
-        LobbyResponse::Standard(Ok(()))
+        LobbyResponse::None
+    }
+
+    async fn send_current_state(&mut self, client_id: String) -> LobbyResponse {
+        let mut client = self.clients.get_mut(&client_id).unwrap();
+        let state = OutgoingMessage::LobbyState(self.status.clone());
+        let message = serde_json::to_string(&state).unwrap();
+        client.send_message(message).await;
+        LobbyResponse::None
     }
 
     /// Broadcasts a message to all clients in the lobby.
@@ -293,6 +302,9 @@ impl Lobby {
                     self.update_player_connections(client_id, ws).await
                 }
                 LobbyCommand::Ping { client_id } => self.send_pong(client_id).await,
+                LobbyCommand::GetLobbyState { client_id } => {
+                    self.send_current_state(client_id).await
+                }
                 LobbyCommand::StartGame => self.start_game().await,
                 LobbyCommand::PlayerDisconnect { client_id } => {
                     self.on_player_disconnect(client_id).await

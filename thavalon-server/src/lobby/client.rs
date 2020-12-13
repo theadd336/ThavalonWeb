@@ -24,6 +24,7 @@ use warp::filters::ws::{self, WebSocket};
 enum IncomingMessage {
     Ping,
     StartGame,
+    GetLobbyState,
     GameCommand(Action),
     GetPlayerList,
 }
@@ -34,9 +35,17 @@ enum IncomingMessage {
 pub enum OutgoingMessage {
     Pong(String),
     GetPlayerList(Vec<String>),
+    LobbyState(LobbyState),
     GameMessage(Message),
     PlayerList(Vec<String>),
-    StartGame,
+}
+
+#[derive(Serialize, Eq, PartialEq, Clone)]
+#[serde(tag = "state")]
+pub enum LobbyState {
+    Lobby,
+    Game,
+    Finished,
 }
 
 /// Task types that the PlayerClient maintains
@@ -200,6 +209,16 @@ impl PlayerClient {
                             let _ = to_lobby
                                 .send((
                                     LobbyCommand::Ping {
+                                        client_id: client_id.clone(),
+                                    },
+                                    None,
+                                ))
+                                .await;
+                        }
+                        IncomingMessage::GetLobbyState => {
+                            let _ = to_lobby
+                                .send((
+                                    LobbyCommand::GetLobbyState {
                                         client_id: client_id.clone(),
                                     },
                                     None,

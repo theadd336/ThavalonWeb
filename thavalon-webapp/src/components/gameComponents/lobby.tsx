@@ -45,7 +45,7 @@ export function Lobby(props: any): JSX.Element {
             </ListGroup>
             <Button
                 variant="primary"
-                onClick={() => { console.log("hi") }}>
+                onClick={() => connection?.sendMessage({ messageType: OutboundMessageType.StartGame })}>
                 Start Game
             </Button>
         </Container>
