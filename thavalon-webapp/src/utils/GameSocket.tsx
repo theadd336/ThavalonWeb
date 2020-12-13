@@ -1,3 +1,5 @@
+import { SimpleEventDispatcher } from "strongly-typed-events";
+
 interface PingResponse {
     result: boolean,
     errorMessage: string, // only populated if result is false
@@ -12,6 +14,15 @@ export interface OutboundMessage {
     data?: object | string,
 }
 
+export enum InboundMessageType {
+    Pong = "Pong",
+}
+
+export interface InboundMessage {
+    messageType: InboundMessageType,
+    data?: object | string,
+}
+
 /**
  * The class containing the underlying websocket for playing the game.
  * Will contain a websocket, that can either be retrieved or optionally made.
@@ -22,6 +33,8 @@ export class GameSocket {
     // the instantiated instance of the underlying websocket
     // can also be undefined since it's not explicitly set in constructor
     private websocket: WebSocket;
+    // event handler for lobby events
+    private _onLobbyEvent: SimpleEventDispatcher<InboundMessage>;
 
     /**
      * Construct the underlying websocket instance and set up function handlers.
@@ -29,6 +42,7 @@ export class GameSocket {
      */
     private constructor(socketUrl: string) {
         this.websocket = new WebSocket(socketUrl);
+        this._onLobbyEvent = new SimpleEventDispatcher<InboundMessage>();
         this.websocket.onopen = this.socketOnOpen.bind(this);
         this.websocket.onmessage = this.socketOnMessage.bind(this);
         this.websocket.onclose = this.socketOnClose.bind(this);
@@ -50,6 +64,7 @@ export class GameSocket {
     private socketOnMessage(event: MessageEvent) {
         console.log(event);
         console.log("Received message: " + event.data);
+        this._onLobbyEvent.dispatch(event.data);
     }
 
     /**
@@ -109,7 +124,7 @@ export class GameSocket {
      * Destroy the underlying gamesocket by setting it to undefined.
      */
     public static destroyInstance() {
-        GameSocket.instance?.websocket?.close;
+        GameSocket.instance?.websocket?.close();
         GameSocket.instance = undefined;
     }
 
@@ -118,5 +133,12 @@ export class GameSocket {
      */
     public getSocketUrl(): string {
         return this.websocket.url;
+    }
+
+    /**
+     * Get the lobby event.
+     */
+    public get onLobbyEvent() {
+        return this._onLobbyEvent.asEvent();
     }
 }
