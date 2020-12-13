@@ -18,7 +18,7 @@ export interface OutboundMessage {
  */
 export class GameSocket {
     // the underlying gamesocket instance
-    private static instance: GameSocket;
+    private static instance: GameSocket | undefined;
     // the instantiated instance of the underlying websocket
     // can also be undefined since it's not explicitly set in constructor
     private websocket: WebSocket;
@@ -100,10 +100,23 @@ export class GameSocket {
      */
     public static createInstance(socketUrl: string): GameSocket {
         // close existing socket if it's open
-        if (GameSocket.instance !== undefined) {
-            GameSocket.instance.websocket?.close();
-        }
+        GameSocket.instance?.websocket?.close();
         GameSocket.instance = new GameSocket(socketUrl);
         return GameSocket.instance;
+    }
+
+    /**
+     * Destroy the underlying gamesocket by setting it to undefined.
+     */
+    public static destroyInstance() {
+        GameSocket.instance?.websocket?.close;
+        GameSocket.instance = undefined;
+    }
+
+    /**
+     * Return the url used to establish the websocket connection.
+     */
+    public getSocketUrl(): string {
+        return this.websocket.url;
     }
 }

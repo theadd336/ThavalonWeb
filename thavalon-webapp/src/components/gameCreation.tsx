@@ -277,6 +277,7 @@ function JoinGameForm(props: FormProps): JSX.Element {
                     maxLength={20} />
                 <InputElement
                     autoComplete="off"
+                    autoCapitalize
                     formRef={register}
                     type="text"
                     label="Friend Code"
