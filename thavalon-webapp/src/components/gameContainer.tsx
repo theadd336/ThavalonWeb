@@ -1,9 +1,22 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { } from "react-router";
 import { Lobby } from "./gameComponents/lobby";
+import { GameSocket } from "../utils/GameSocket";
 
-export function GameContainer(props: any): JSX.Element {
-    const [friendCode, setFriendCode] = useState("");
-    const [socketUrl, setSocketUrl] = useState("");
+interface GameContainerProps {
+    location: {
+        state: {
+            socketUrl: string,
+            friendCode: string
+        }
+    }
+}
 
-    return <Lobby friendCode={friendCode} />;
+export function GameContainer(props: GameContainerProps): JSX.Element {
+    const [connection, setConnection] = useState<GameSocket | undefined>(undefined);
+    if (connection === undefined || connection.socketUrl !== props.location.state.socketUrl) {
+        const temp = GameSocket.createInstance(props.location.state.socketUrl);
+        setConnection(temp);
+    }
+        return <Lobby friendCode={props.location.state.friendCode} />;
 }

@@ -22,7 +22,7 @@ export function Lobby(props: any): JSX.Element {
 
     return (
         <Container>
-            <h1>Friend Code:</h1>
+            <h1>Friend Code: {props.friendCode}</h1>
             <ListGroup variant="flush">
                 {players}
             </ListGroup>
