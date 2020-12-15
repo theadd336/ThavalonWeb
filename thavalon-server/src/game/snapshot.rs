@@ -107,6 +107,11 @@ impl GameSnapshot {
         self.missions.last_mut().unwrap()
     }
 
+    /// Updates the game snapshot based on a message sent to the player.
+    ///
+    /// If the message cannot be reconciled with the current snapshot, this returns a [`SnapshotError`]. For example,
+    /// if some messages are lost, the snapshot might receive an Agravaine declaration when it has not received the
+    /// results of the mission, which is an error.
     pub fn on_message(&mut self, message: Message) -> Result<(), SnapshotError> {
         self.log.push(message.clone());
 
@@ -179,7 +184,8 @@ impl GameSnapshot {
                 passed,
             } => {
                 let state = self.mission_mut(mission);
-                if state.results.is_none() {
+                if state.results.is_some() {
+                    // This means we already recorded results for this mission
                     return Err(SnapshotError::UnexpectedMessage(Message::MissionResults {
                         mission,
                         successes,
