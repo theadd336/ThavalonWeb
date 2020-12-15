@@ -28,6 +28,8 @@ impl GameState<OnMission> {
         if self.includes_player(player) {
             if let Some(card) = self.phase.cards.get(player).cloned() {
                 self.player_error(format!("You already played a {}", card))
+            } else if !self.game.players.by_name(player).unwrap().role.can_play(card) {
+                self.player_error(format!("You can't play a {}", card))
             } else {
                 self.phase.cards.insert(player.to_string(), card);
                 log::debug!("{} played a {}", player, card);
