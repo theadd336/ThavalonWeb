@@ -5,6 +5,7 @@ use mongodb::{options::ClientOptions, Client, Database};
 use std::sync::RwLock;
 
 pub mod accounts;
+pub mod games;
 
 const MONGO_HOST: &str = "mongodb://admin:secret@database:27017";
 const THAVALON_DB: &str = "thavalon_db";

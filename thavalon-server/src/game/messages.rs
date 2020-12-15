@@ -83,7 +83,7 @@ pub enum VoteCounts {
     Obscured { upvotes: u32, downvotes: u32 },
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Serialize)]
 pub enum GameError {
     #[error("Could not communicate with player")]
     PlayerDisconnected,

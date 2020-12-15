@@ -49,6 +49,23 @@ pub struct RoleDetails {
 }
 
 impl Role {
+    /// All Good roles
+    pub const ALL_GOOD: &'static [Role] = &[
+        Role::Merlin,
+        Role::Lancelot,
+        Role::Percival,
+        Role::Tristan,
+        Role::Iseult,
+    ];
+
+    /// All Evil roles
+    pub const ALL_EVIL: &'static [Role] = &[
+        Role::Mordred,
+        Role::Morgana,
+        Role::Maelegant,
+        Role::Agravaine,    
+    ];
+
     pub fn is_good(self) -> bool {
         use Role::*;
         match self {

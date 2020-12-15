@@ -5,7 +5,9 @@ use fern::colors::{Color, ColoredLevelConfig};
 mod connections;
 mod database;
 mod game;
+mod lobby;
 mod notifications;
+mod utils;
 
 fn setup_logger() -> Result<(), fern::InitError> {
     let colors = ColoredLevelConfig::new()
