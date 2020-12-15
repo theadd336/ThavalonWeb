@@ -1,14 +1,19 @@
-import React from 'react';
-import { GameSocket, InboundMessage, OutboundMessageType } from '../utils/GameSocket';
+import React, { useEffect } from 'react';
+import { GameSocket, InboundMessage } from '../utils/GameSocket';
 
 export function Game(): JSX.Element {
-    const gameSocket = GameSocket.getInstance();
-    gameSocket.onLobbyEvent.subscribe((inboundMessage: InboundMessage) => {
-        console.log(inboundMessage);
-    });
-    gameSocket.sendMessage({
-        messageType: OutboundMessageType.Ping,
-    });
+    useEffect(() => {
+        const gameSocket = GameSocket.getInstance();
+        // on component did mount, subscribe to lobby events
+        const unsubscribe = gameSocket.onLobbyEvent.subscribe((inboundMessage: InboundMessage) => {
+            console.log(inboundMessage);
+        });
+        return () => {
+            // on component unmount, unsubscribe from lobby events
+            unsubscribe();
+        }},
+    // empty array should make it so above useEffect is only called on first render
+    []);
 
     return (
         <div>

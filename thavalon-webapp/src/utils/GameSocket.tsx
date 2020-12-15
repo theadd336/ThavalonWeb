@@ -1,4 +1,4 @@
-import { SimpleEventDispatcher } from "strongly-typed-events";
+import { ISimpleEvent, SimpleEventDispatcher } from "strongly-typed-events";
 
 interface PingResponse {
     result: boolean,
@@ -138,7 +138,7 @@ export class GameSocket {
     /**
      * Get the lobby event.
      */
-    public get onLobbyEvent() {
+    public get onLobbyEvent(): ISimpleEvent<InboundMessage> {
         return this._onLobbyEvent.asEvent();
     }
 }
