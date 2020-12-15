@@ -1,7 +1,7 @@
 //! Module containing the PlayerClient struct, which contains connections
 //! to and from the game, lobby, and frontend.
 
-use super::{LobbyChannel, LobbyCommand};
+use super::{IncomingMessage, LobbyChannel, LobbyCommand, OutgoingMessage};
 use crate::game::{Action, Message};
 
 use std::collections::HashMap;
@@ -17,36 +17,6 @@ use tokio::{
     task,
 };
 use warp::filters::ws::{self, WebSocket};
-
-/// An incoming message from the client.
-#[derive(Deserialize)]
-#[serde(tag = "messageType", content = "data")]
-enum IncomingMessage {
-    Ping,
-    StartGame,
-    GetLobbyState,
-    GameCommand(Action),
-    GetPlayerList,
-}
-
-/// An outgoing message to the client.
-#[derive(Serialize)]
-#[serde(tag = "messageType", content = "data")]
-pub enum OutgoingMessage {
-    Pong(String),
-    GetPlayerList(Vec<String>),
-    LobbyState(LobbyState),
-    GameMessage(Message),
-    PlayerList(Vec<String>),
-}
-
-#[derive(Serialize, Eq, PartialEq, Clone)]
-#[serde(tag = "state")]
-pub enum LobbyState {
-    Lobby,
-    Game,
-    Finished,
-}
 
 /// Task types that the PlayerClient maintains
 #[derive(Hash, PartialEq, Eq)]

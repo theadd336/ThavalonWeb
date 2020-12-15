@@ -15,11 +15,17 @@ interface GameContainerProps {
     }
 }
 
+/**
+ * Enum of lobby states to determine what is shown to the user.
+ */
 enum LobbyState {
     Lobby = "Lobby",
     Game = "Game",
 }
 
+/**
+ * Interface for the incoming lobby state message.
+ */
 interface LobbyStateResponse {
     state: LobbyState
 }
@@ -30,9 +36,16 @@ interface LobbyStateResponse {
  * @param props Props object for the GameContainer
  */
 export function GameContainer(props: GameContainerProps): JSX.Element {
+    // State to maintain a connection instance so we don't have to getInstance every time.
     const [connection, setConnection] = useState<GameSocket | undefined>(undefined);
+    // State to maintain the current status of hte lobby.
     const [lobbyState, setLobbyState] = useState(LobbyState.Lobby);
 
+    /**
+     * Handles an incoming lobby message. If the message is a state change,
+     * the GameContainer will update states appropriately.
+     * @param message An incoming message from the server.
+     */
     function receiveLobbyMessage(message: InboundMessage): void {
         if (message.messageType === InboundMessageType.LobbyState) {
             const data = message.data as LobbyStateResponse;
@@ -40,6 +53,8 @@ export function GameContainer(props: GameContainerProps): JSX.Element {
         }
     }
 
+    // useEffect return === componentWillUnmount in class React. Use componentWillUnmount
+    // to remove our event handler.
     useEffect(() => {
         return () => {
             connection?.onLobbyEvent.unsubscribe(receiveLobbyMessage);
@@ -47,6 +62,7 @@ export function GameContainer(props: GameContainerProps): JSX.Element {
         }
     }, []);
 
+    // If we don't have a connection or the state URL changed, update with a new connection.
     if (connection === undefined ||
         connection.getSocketUrl() !== props.location.state.socketUrl) {
         const newConnection = GameSocket.createInstance(props.location.state.socketUrl);

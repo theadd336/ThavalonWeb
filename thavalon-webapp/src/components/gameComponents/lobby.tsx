@@ -3,36 +3,48 @@ import { Container, ListGroup, Button } from "react-bootstrap";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
 
 /**
+ * Interface for the Lobby props object.
+ */
+interface LobbyProps {
+    friendCode: string
+}
+
+/**
  * Component listing players currently in the lobby and a button to start the game.
  */
-export function Lobby(props: any): JSX.Element {
-    // useEffect handles componentDidMount and componentWillUnmount
+export function Lobby(props: LobbyProps): JSX.Element {
+    // State for maintaining a connection.
     const [connection, setConnection] = useState<GameSocket | undefined>(undefined);
+    // State for maintaining the player list.
     const [playerList, setPlayerList] = useState<string[]>([]);
 
-    function handleLobbyMessage(message: InboundMessage) {
-        console.log(message.messageType);
-        switch (message.messageType) {
-            case InboundMessageType.PlayerList:
-                setPlayerList(message.data as string[]);
-                break;
+    /**
+     * Handles any lobby messages that come from the server. If the message type
+     * is a PlayerList change, the playerList is updated accordingly.
+     * @param message An incoming message from the server
+     */
+    function handleLobbyMessage(message: InboundMessage): void {
+        if (message.messageType === InboundMessageType.PlayerList) {
+            setPlayerList(message.data as string[]);
         }
-        return;
     }
 
+    // useEffect handles componentDidMount and componentWillUnmount steps.
     useEffect(() => {
+        // On mount, get the connection instance and set up event handlers.
+        // Then, get the player list.
         const newConnection = GameSocket.getInstance();
         newConnection.onLobbyEvent.subscribe(handleLobbyMessage);
         newConnection.sendMessage({ messageType: OutboundMessageType.GetPlayerList });
         setConnection(newConnection);
 
+        // On unmount, unsubscribe our event handlers.
         return () => {
-            if (connection !== undefined) {
-                connection.onLobbyEvent.unsubscribe(handleLobbyMessage);
-            }
+            connection?.onLobbyEvent.unsubscribe(handleLobbyMessage);
         }
     }, []);
 
+    // Create the player ListGroup items with each player name.
     const players = playerList.map((player) =>
         <ListGroup.Item key={player}>{player}</ListGroup.Item>
     );

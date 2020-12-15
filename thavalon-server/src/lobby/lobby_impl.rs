@@ -1,4 +1,5 @@
-use super::client::{LobbyState, OutgoingMessage, PlayerClient};
+use super::client::PlayerClient;
+use super::{IncomingMessage, LobbyState, OutgoingMessage};
 use super::{LobbyChannel, LobbyCommand, LobbyError, LobbyResponse, ResponseChannel};
 use crate::database::games::{DBGameError, DBGameStatus, DatabaseGame};
 use crate::game::builder::GameBuilder;
@@ -257,6 +258,7 @@ impl Lobby {
         LobbyResponse::None
     }
 
+    /// Sends teh current player list to the client.
     async fn send_player_list(&mut self, client_id: String) -> LobbyResponse {
         let mut client = self.clients.get_mut(&client_id).unwrap();
         let player_list = self.builder.as_ref().unwrap().get_player_list().to_vec();
@@ -266,6 +268,7 @@ impl Lobby {
         LobbyResponse::None
     }
 
+    /// Sends the current state of the lobby to the client.
     async fn send_current_state(&mut self, client_id: String) -> LobbyResponse {
         let mut client = self.clients.get_mut(&client_id).unwrap();
         let state = OutgoingMessage::LobbyState(self.status.clone());
