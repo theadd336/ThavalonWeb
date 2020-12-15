@@ -245,7 +245,7 @@ impl Lobby {
         // the lobby is probably dead, so panic to blow up everything.
         if let Err(e) = self.database_game.start_game().await {
             log::error!("Error while starting game {}. {}", self.friend_code, e);
-            panic!();
+            return LobbyResponse::Standard(Err(LobbyError::UnknownError));
         }
 
         // Tell the players the game is about to start to move to the game page.
