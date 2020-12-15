@@ -33,6 +33,8 @@ enum IncomingMessage {
 pub enum OutgoingMessage {
     Pong(String),
     GameMessage(Message),
+    PlayerList(Vec<String>),
+    StartGame,
 }
 
 /// Task types that the PlayerClient maintains
@@ -156,7 +158,7 @@ impl PlayerClient {
                 while let Some(incoming_msg) = from_client.next().await {
                     if let Err(e) = incoming_msg {
                         log::error!("An error occurred while reading messages from the incoming connection for client {}. {}", client_id, e);
-                        return;
+                        break;
                     }
 
                     let incoming_msg = incoming_msg.unwrap();
@@ -182,7 +184,7 @@ impl PlayerClient {
                                 e
                             );
                             // TODO: Implement sending an error code to the client.
-                            todo!();
+                            break;
                         }
                     };
 
@@ -205,6 +207,10 @@ impl PlayerClient {
                         }
                     }
                 }
+
+                to_lobby
+                    .send((LobbyCommand::PlayerDisconnect { client_id }, None))
+                    .await;
             },
             abort_registration,
         );
@@ -240,19 +246,9 @@ impl PlayerClient {
 
                     // Can't unwrap, but this should never fail, since the task is
                     // stable.
-                    if let Err(e) = game_to_outbound_task
+                    let _ = game_to_outbound_task
                         .send(OutboundTaskMessageType::ToClient(game_msg))
-                        .await
-                    {
-                        log::error!(
-                            "Error while sending an outbound game message for client {}. {}",
-                            client_id,
-                            e
-                        );
-                        // An error here is unrecoverable, since the client is never
-                        // rebuilt to this extent. Just give up on everything and panic!
-                        panic!();
-                    }
+                        .await;
                 }
             },
             abort_registration,
