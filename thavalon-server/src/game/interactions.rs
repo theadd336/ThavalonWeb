@@ -69,7 +69,7 @@ impl Interactions for ChannelInteractions {
     }
 
     async fn send(&mut self, message: Message) -> Result<(), GameError> {
-        let sends = self.outbox.iter_mut().map(|(name, sender)| {
+        let sends = self.outbox.iter_mut().map(|(_name, sender)| {
             sender
                 .send(message.clone())
                 .map_err(move |_| GameError::PlayerDisconnected)
