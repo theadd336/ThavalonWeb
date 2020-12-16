@@ -20,7 +20,7 @@ use warp::filters::ws::{self, WebSocket};
 
 /// An incoming message from the client.
 #[derive(Deserialize)]
-#[serde(tag = "message_type", content = "data")]
+#[serde(tag = "messageType", content = "data")]
 enum IncomingMessage {
     Ping,
     StartGame,
@@ -29,7 +29,7 @@ enum IncomingMessage {
 
 /// An outgoing message to the client.
 #[derive(Serialize)]
-#[serde(tag = "message_type", content = "data")]
+#[serde(tag = "messageType", content = "data")]
 pub enum OutgoingMessage {
     Pong(String),
     GameMessage(Message),

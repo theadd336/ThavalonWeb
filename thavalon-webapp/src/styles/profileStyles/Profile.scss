@@ -1,0 +1,12 @@
+#profileContainer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    align-items: stretch;
+
+    // swap to column view on mobile
+    @media screen and (max-width: 500px) {
+        flex-direction: column;
+    }      
+}
