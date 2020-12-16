@@ -1,6 +1,4 @@
 import React from 'react';
-import { AccountManager, HttpResponse } from '../utils/AccountManager';
-import { GameSocket } from '../utils/GameSocket';
 
 export function Home(): JSX.Element {
     return (

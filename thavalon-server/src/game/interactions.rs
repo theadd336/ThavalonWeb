@@ -44,6 +44,11 @@ impl ChannelInteractions {
         self.inbox.insert(name.clone(), incoming);
         self.outbox.insert(name, outgoing);
     }
+
+    pub fn remove_player(&mut self, name: &String) {
+        self.inbox.remove(name);
+        self.outbox.remove(name);
+    }
 }
 
 #[async_trait]

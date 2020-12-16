@@ -19,6 +19,7 @@ pub struct Lobby {
     database_game: DatabaseGame,
     friend_code: String,
     player_ids_to_client_ids: HashMap<String, String>,
+    client_ids_to_player_ids: HashMap<String, String>,
     clients: HashMap<String, PlayerClient>,
     status: DBGameStatus,
     builder: Option<GameBuilder>,
@@ -42,6 +43,7 @@ impl Lobby {
                 database_game,
                 friend_code,
                 player_ids_to_client_ids: HashMap::with_capacity(10),
+                client_ids_to_player_ids: HashMap::with_capacity(10),
                 clients: HashMap::with_capacity(10),
                 status: DBGameStatus::Lobby,
                 builder: Some(GameBuilder::new()),
@@ -126,8 +128,44 @@ impl Lobby {
         );
         self.player_ids_to_client_ids
             .insert(player_id.clone(), client_id.clone());
+        self.client_ids_to_player_ids
+            .insert(client_id.clone(), player_id);
         self.clients.insert(client_id.clone(), client);
         LobbyResponse::JoinGame(Ok(client_id))
+    }
+
+    /// Removes a player from the lobby and game.
+    async fn remove_player(&mut self, client_id: String) {
+        log::info!(
+            "Removing client {} from game {}.",
+            client_id,
+            self.friend_code
+        );
+        let player_id = match self.client_ids_to_player_ids.remove(&client_id) {
+            Some(player_id) => player_id,
+            None => {
+                log::warn!("No player ID found matching client ID {}.", client_id);
+                return;
+            }
+        };
+
+        log::info!(
+            "Found player {} for client {}. Removing player.",
+            player_id,
+            client_id
+        );
+
+        let display_name = self.database_game.remove_player(&player_id).await.unwrap();
+        if display_name == None {
+            log::warn!("No player display name found for player {}.", player_id);
+            return;
+        }
+        let display_name = display_name.unwrap();
+        self.builder.as_mut().unwrap().remove_player(&display_name);
+        self.player_ids_to_client_ids.remove(&player_id);
+        self.clients.remove(&client_id);
+        self.on_player_list_change().await;
+        log::info!("Successfully removed player {} from the game.", player_id);
     }
 
     /// Updates a player's connections to and from the game and to and from the
@@ -152,6 +190,7 @@ impl Lobby {
         };
 
         client.update_websocket(ws).await;
+        self.on_player_list_change().await;
         LobbyResponse::Standard(Ok(()))
     }
 
@@ -170,14 +209,59 @@ impl Lobby {
         LobbyResponse::Standard(Ok(()))
     }
 
-    /// [WIP] - Starts a game.
+    /// Handles a change to the player list, due to a player joining or leaving the game.
+    async fn on_player_list_change(&mut self) {
+        // Only broadcast to players if the game hasn't started yet.
+        // TODO: Maybe a helpful message to players that someone has disconnected.
+        // Would need to have a way to lookup name by the disconnected client ID.
+        if self.status == DBGameStatus::Lobby {
+            let current_players = self.builder.as_ref().unwrap().get_player_list();
+            self.broadcast_message(&OutgoingMessage::PlayerList(current_players.to_vec()))
+                .await;
+        }
+    }
+
+    // Handles dealing with a disconnected player.
+    // If the lobby isn't in progress or done, a disconnect should remove the player.
+    // Otherwise, nothing happens.
+    async fn on_player_disconnect(&mut self, client_id: String) -> LobbyResponse {
+        log::info!(
+            "Client {} has disconnected from game {}.",
+            client_id,
+            self.friend_code
+        );
+
+        // If we're in the lobby phase, a disconnect counts as leaving the game.
+        if self.status == DBGameStatus::Lobby {
+            self.remove_player(client_id).await;
+        }
+
+        LobbyResponse::Standard(Ok(()))
+    }
+
+    /// Starts the game and updates statuses
     async fn start_game(&mut self) -> LobbyResponse {
-        // TODO: This function is a stub that should be expanded.
-        // It is currently here to remove compiler warnings.
-        let _ = self.database_game.start_game().await;
+        // The only thing that can fail is updating the database. In this case,
+        // the lobby is probably dead, so panic to blow up everything.
+        if let Err(e) = self.database_game.start_game().await {
+            log::error!("Error while starting game {}. {}", self.friend_code, e);
+            return LobbyResponse::Standard(Err(LobbyError::UnknownError));
+        }
+
+        // Tell the players the game is about to start to move to the game page.
+        self.broadcast_message(&OutgoingMessage::StartGame).await;
+        self.status = DBGameStatus::InProgress;
         let builder = self.builder.take().unwrap();
         builder.start();
         return LobbyResponse::Standard(Ok(()));
+    }
+
+    /// Broadcasts a message to all clients in the lobby.
+    async fn broadcast_message(&mut self, message: &OutgoingMessage) {
+        let message = serde_json::to_string(&message).unwrap();
+        for client in self.clients.values_mut() {
+            client.send_message(message.clone()).await;
+        }
     }
 
     /// Begins a loop for the lobby to listen for incoming commands.
@@ -201,6 +285,9 @@ impl Lobby {
                 }
                 LobbyCommand::Ping { client_id } => self.send_pong(client_id).await,
                 LobbyCommand::StartGame => self.start_game().await,
+                LobbyCommand::PlayerDisconnect { client_id } => {
+                    self.on_player_disconnect(client_id).await
+                }
             };
 
             if let Some(channel) = result_channel {
