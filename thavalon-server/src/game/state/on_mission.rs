@@ -201,11 +201,7 @@ fn conclude_mission<P: Phase>(
         (next_state, effects)
     } else if fails == 3 {
         log::debug!("3 missions have failed, the Evil team has won");
-        effects.push(Effect::Broadcast(Message::GameOver {
-            winning_team: Team::Evil,
-        }));
-        let next_state = GameStateWrapper::Done(state.with_phase(Done::new(Team::Evil)));
-        (next_state, effects)
+        state.into_done(Team::Evil, effects)
     } else {
         let mission_proposer = &state.proposals[proposal].proposer;
         let next_proposer = state.game.next_proposer(mission_proposer).to_string();

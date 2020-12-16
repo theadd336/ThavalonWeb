@@ -141,7 +141,8 @@ impl<P: Phase> GameState<P> {
         }
     }
 
-    /// Switch into the `Proposing` state with `proposer` as the next player to propose.
+    /// Switch into the `Proposing` state with `proposer` as the next player to propose. In addition to effects
+    /// related to the next proposal, the returned [`ActionResult`] will include `effects`.
     fn into_proposing(self, proposer: String, mut effects: Vec<Effect>) -> ActionResult {
         effects.push(Effect::Broadcast(Message::NextProposal {
             proposer: proposer.clone(),
@@ -151,6 +152,17 @@ impl<P: Phase> GameState<P> {
         }));
         let next_state = self.with_phase(Proposing::new(proposer));
         (GameStateWrapper::Proposing(next_state), effects)
+    }
+
+    /// Switch into the `Done` state with `winning_team` as the winners. The returned [`ActionResult`]
+    /// will include `effects`.
+    fn into_done(self, winning_team: Team, mut effects: Vec<Effect>) -> ActionResult {
+        effects.push(Effect::Broadcast(Message::GameOver {
+            winning_team,
+            roles: self.game.info.clone()
+        }));
+        let next_state = self.with_phase(Done::new(winning_team));
+        (GameStateWrapper::Done(next_state), effects)
     }
 }
 
@@ -182,7 +194,6 @@ macro_rules! in_phases {
 impl GameStateWrapper {
     /// Creates the [`GameState`] wrapper for a new game.
     pub fn new(game: Game) -> GameStateWrapper {
-        // TODO: should this start with the second-to-last player, or does that not matter?
         let first_proposer = &game.proposal_order()[0];
         let phase = Proposing::new(first_proposer.clone());
         GameStateWrapper::Proposing(GameState {

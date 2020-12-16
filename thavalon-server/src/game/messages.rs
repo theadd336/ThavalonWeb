@@ -1,6 +1,6 @@
 //! Asynchronous engine for running THavalon games
 
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -104,7 +104,10 @@ pub enum Message {
     },
 
     /// Sent when the game is over to announce who won.
-    GameOver { winning_team: Team },
+    GameOver {
+        winning_team: Team,
+        roles: HashMap<String, RoleDetails>,
+    },
 }
 
 /// How players voted on a proposal

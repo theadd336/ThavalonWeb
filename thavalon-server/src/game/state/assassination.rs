@@ -61,15 +61,10 @@ impl GameState<Assassination> {
 
             if is_correct {
                 log::debug!("Assassination was correct!");
-                todo!("Assassination is a future problem")
+                self.into_done(Team::Evil, effects)
             } else {
                 log::debug!("Assassination was incorrect!");
-                effects.push(Effect::Broadcast(Message::GameOver {
-                    winning_team: Team::Good,
-                }));
-
-                let next_state = self.with_phase(Done::new(Team::Good));
-                (GameStateWrapper::Done(next_state), effects)
+                self.into_done(Team::Good, effects)
             }
         } else {
             self.player_error("You are not the assassin")
