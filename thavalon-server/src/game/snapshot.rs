@@ -123,7 +123,6 @@ impl GameSnapshot {
 
             Message::NextProposal {
                 mission,
-                proposer,
                 ..
             } => {
                 // If it's the first proposal of a round, we need to add a new Mission struct

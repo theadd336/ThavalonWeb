@@ -53,7 +53,7 @@ impl GameState<Assassination> {
                 }
             }
 
-            let mut effects = vec![Effect::Broadcast(Message::AssassinationResult {
+            let effects = vec![Effect::Broadcast(Message::AssassinationResult {
                 players,
                 target,
                 correct: is_correct,

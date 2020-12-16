@@ -30,7 +30,7 @@ impl GameBuilder {
         (action_tx, message_rx)
     }
 
-    pub fn remove_player(&mut self, name: &String) {
+    pub fn remove_player(&mut self, name: &str) {
         self.interactions.remove_player(name);
         self.players.retain(|player| player != name);
     }

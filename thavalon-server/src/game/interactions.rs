@@ -45,7 +45,7 @@ impl ChannelInteractions {
         self.outbox.insert(name, outgoing);
     }
 
-    pub fn remove_player(&mut self, name: &String) {
+    pub fn remove_player(&mut self, name: &str) {
         self.inbox.remove(name);
         self.outbox.remove(name);
     }
