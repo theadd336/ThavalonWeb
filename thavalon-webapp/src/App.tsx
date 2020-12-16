@@ -6,11 +6,12 @@ import { Logout } from './components/Logout';
 import { Register } from './components/Register';
 import { Home } from './components/Home';
 import { AccountManager, HttpResponse } from './utils/AccountManager';
-import { Account } from './components/Account';
 import { CreateJoinGameModal } from './components/gameCreation';
 import ReactModal from 'react-modal';
+import { Game } from './components/Game';
 
 import "bootstrap/dist/css/bootstrap.min.css";
+import { Profile } from './components/profileComponents/Profile';
 // Used by react modal for screen readers
 ReactModal.setAppElement("#root");
 
@@ -64,14 +65,16 @@ function App() {
         <Route path="/rules">
           <h1>Rules</h1>
         </Route>
-        <Route path="/account">
-          <Account />
+        <Route path="/profile">
+          <Profile />
         </Route>
         <Route path="/logout">
           <Logout setLoggedIn={() => setLoggedIn(false)} />
         </Route>
         <Route path="/register" render={() => registerPage()} />
-        <Route path="/game" />
+        <Route path="/game/:friendCode">
+          <Game />
+        </Route>
       </Switch>
       {showLoginModal &&
         <Login

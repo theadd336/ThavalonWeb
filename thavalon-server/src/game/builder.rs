@@ -30,6 +30,15 @@ impl GameBuilder {
         (action_tx, message_rx)
     }
 
+    pub fn remove_player(&mut self, name: &String) {
+        self.interactions.remove_player(name);
+        self.players.retain(|player| player != name);
+    }
+
+    pub fn get_player_list(&self) -> &Vec<String> {
+        &self.players
+    }
+
     /// Start the game. This consumes `self` because no new players can be added once the game starts.
     /// The returned [`task::JoinHandle`] will complete once the game has ended. The [`Snapshots`] may be
     /// used to track per-player snapshots of the game state.

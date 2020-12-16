@@ -1,3 +1,5 @@
+import { GameSocket } from "./GameSocket";
+
 enum STATUS {
     OK = 200,
     CREATED = 201,
@@ -365,6 +367,8 @@ export class AccountManager {
         if (response.status === STATUS.OK) {
             const joinGameResponse: JoinGameResponse = await response.json();
             httpResponse.message = joinGameResponse.socketUrl;
+            // create the gamesocket here, after join game succeeds
+            GameSocket.createInstance(joinGameResponse.socketUrl);
         } else {
             console.log("Unexpected return code from server: " + response.status);
             httpResponse.result = false;
