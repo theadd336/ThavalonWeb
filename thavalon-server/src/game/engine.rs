@@ -30,7 +30,12 @@ pub async fn run_game<I: Interactions>(game: Game, interactions: &mut I) -> Resu
 
     while !state.is_done() {
         let ((next_state, effects), player) = tokio::select! {
-            _ = &mut timeout => (state.handle_timeout(), None),
+            _ = &mut timeout => {
+                // Once the timeout future completes, we should reset it to the pending future. Otherwise, we'd keep
+                // polling the time::delay_for future after it's completed, which isn't necessarily supported.
+                timeout = future::pending().left_future();
+                (state.handle_timeout(), None)
+            },
             msg = interactions.receive() => match msg {
                 Ok((player, action)) => (state.handle_action(&player, action), Some(player)),
                 Err(e) => {
