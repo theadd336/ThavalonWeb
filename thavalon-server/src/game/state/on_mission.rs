@@ -28,7 +28,14 @@ impl GameState<OnMission> {
         if self.includes_player(player) {
             if let Some(card) = self.phase.cards.get(player).cloned() {
                 self.player_error(format!("You already played a {}", card))
-            } else if !self.game.players.by_name(player).unwrap().role.can_play(card) {
+            } else if !self
+                .game
+                .players
+                .by_name(player)
+                .unwrap()
+                .role
+                .can_play(card)
+            {
                 self.player_error(format!("You can't play a {}", card))
             } else {
                 self.phase.cards.insert(player.to_string(), card);
@@ -179,7 +186,7 @@ impl_phase!(WaitingForAgravaine);
 /// * `effects` - additional side-effects to apply (this varies depending on whether or not Agravaine declared)
 /// * `proposal` - the proposal the mission was based on, used to figure out who is proposing next
 fn conclude_mission<P: Phase>(
-    state: GameState<P>,
+    mut state: GameState<P>,
     mut effects: Vec<Effect>,
     proposal: usize,
 ) -> ActionResult {
@@ -205,6 +212,7 @@ fn conclude_mission<P: Phase>(
     } else {
         let mission_proposer = &state.proposals[proposal].proposer;
         let next_proposer = state.game.next_proposer(mission_proposer).to_string();
+        state.role_state.on_round_start();
         state.into_proposing(next_proposer, effects)
     }
 }
