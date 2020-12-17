@@ -13,6 +13,8 @@ use warp::filters::ws::WebSocket;
 
 use std::collections::HashMap;
 
+const MAX_NUM_PLAYERS: usize = 10;
+
 /// A lobby for an individual game. The Lobby acts as an interface between the
 /// Thavalon game instance, the DatabaseGame which keeps the game state in sync
 /// with the database, and all players connected to the game.
@@ -43,9 +45,9 @@ impl Lobby {
             let lobby = Lobby {
                 database_game,
                 friend_code,
-                player_ids_to_client_ids: HashMap::with_capacity(10),
-                client_ids_to_player_ids: HashMap::with_capacity(10),
-                clients: HashMap::with_capacity(10),
+                player_ids_to_client_ids: HashMap::with_capacity(MAX_NUM_PLAYERS),
+                client_ids_to_player_ids: HashMap::with_capacity(MAX_NUM_PLAYERS),
+                clients: HashMap::with_capacity(MAX_NUM_PLAYERS),
                 status: LobbyState::Lobby,
                 builder: Some(GameBuilder::new()),
                 to_lobby,
@@ -258,7 +260,7 @@ impl Lobby {
         LobbyResponse::None
     }
 
-    /// Sends teh current player list to the client.
+    /// Sends the current player list to the client.
     async fn send_player_list(&mut self, client_id: String) -> LobbyResponse {
         let mut client = self.clients.get_mut(&client_id).unwrap();
         let player_list = self.builder.as_ref().unwrap().get_player_list().to_vec();

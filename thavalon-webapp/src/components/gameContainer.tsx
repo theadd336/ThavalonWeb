@@ -38,7 +38,7 @@ interface LobbyStateResponse {
 export function GameContainer(props: GameContainerProps): JSX.Element {
     // State to maintain a connection instance so we don't have to getInstance every time.
     const [connection, setConnection] = useState<GameSocket | undefined>(undefined);
-    // State to maintain the current status of hte lobby.
+    // State to maintain the current status of the lobby.
     const [lobbyState, setLobbyState] = useState(LobbyState.Lobby);
 
     /**

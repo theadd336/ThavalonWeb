@@ -101,7 +101,7 @@ export class GameSocket {
             return;
         }
         // check again if websocket ready in 10 milliseconds
-        setTimeout(() => this.sendMessage(outboundMessage), 1000);
+        setTimeout(() => this.sendMessage(outboundMessage), 10);
     }
 
     /**
