@@ -264,7 +264,7 @@ impl Lobby {
     async fn send_player_list(&mut self, client_id: String) -> LobbyResponse {
         let mut client = self.clients.get_mut(&client_id).unwrap();
         let player_list = self.builder.as_ref().unwrap().get_player_list().to_vec();
-        let player_list = OutgoingMessage::GetPlayerList(player_list);
+        let player_list = OutgoingMessage::PlayerList(player_list);
         let player_list = serde_json::to_string(&player_list).unwrap();
         client.send_message(player_list).await;
         LobbyResponse::None

@@ -106,12 +106,8 @@ export class GameSocket {
 
     /**
      * Get the existing instance of the game socket.
-     * @throws Error if game socket instance is undefined
      */
-    public static getInstance(): GameSocket {
-        if (GameSocket.instance === undefined) {
-            throw Error("Unable to get gamesocket instance");
-        }
+    public static getInstance(): GameSocket | undefined {
         return GameSocket.instance;
     }
 

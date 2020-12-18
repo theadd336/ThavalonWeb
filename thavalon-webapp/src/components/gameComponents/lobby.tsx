@@ -13,8 +13,6 @@ interface LobbyProps {
  * Component listing players currently in the lobby and a button to start the game.
  */
 export function Lobby(props: LobbyProps): JSX.Element {
-    // State for maintaining a connection.
-    const [connection, setConnection] = useState<GameSocket | undefined>(undefined);
     // State for maintaining the player list.
     const [playerList, setPlayerList] = useState<string[]>([]);
 
@@ -33,17 +31,18 @@ export function Lobby(props: LobbyProps): JSX.Element {
     useEffect(() => {
         // On mount, get the connection instance and set up event handlers.
         // Then, get the player list.
-        const newConnection = GameSocket.getInstance();
-        newConnection.onLobbyEvent.subscribe(handleLobbyMessage);
-        newConnection.sendMessage({ messageType: OutboundMessageType.GetPlayerList });
-        setConnection(newConnection);
+        const connection = GameSocket.getInstance();
+        connection?.onLobbyEvent.subscribe(handleLobbyMessage);
+        connection?.sendMessage({ messageType: OutboundMessageType.GetPlayerList });
 
         // On unmount, unsubscribe our event handlers.
         return () => {
+            const connection = GameSocket.getInstance();
             connection?.onLobbyEvent.unsubscribe(handleLobbyMessage);
         }
     }, []);
 
+    const connection = GameSocket.getInstance();
     // Create the player ListGroup items with each player name.
     const players = playerList.map((player) =>
         <ListGroup.Item key={player}>{player}</ListGroup.Item>

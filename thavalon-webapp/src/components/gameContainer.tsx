@@ -19,6 +19,7 @@ interface GameContainerProps {
  * Enum of lobby states to determine what is shown to the user.
  */
 enum LobbyState {
+    Loading = "Loading",
     Lobby = "Lobby",
     Game = "Game",
 }
@@ -36,10 +37,8 @@ interface LobbyStateResponse {
  * @param props Props object for the GameContainer
  */
 export function GameContainer(props: GameContainerProps): JSX.Element {
-    // State to maintain a connection instance so we don't have to getInstance every time.
-    const [connection, setConnection] = useState<GameSocket | undefined>(undefined);
     // State to maintain the current status of the lobby.
-    const [lobbyState, setLobbyState] = useState(LobbyState.Lobby);
+    const [lobbyState, setLobbyState] = useState(LobbyState.Loading);
 
     /**
      * Handles an incoming lobby message. If the message is a state change,
@@ -56,23 +55,23 @@ export function GameContainer(props: GameContainerProps): JSX.Element {
     // useEffect return === componentWillUnmount in class React. Use componentWillUnmount
     // to remove our event handler.
     useEffect(() => {
+        // The game container maintains the connection. If one exists, destroy it.
+        if (GameSocket.getInstance()) {
+            GameSocket.destroyInstance();
+        }
+        const connection = GameSocket.createInstance(props.location.state.socketUrl);
+        connection.onLobbyEvent.subscribe(receiveLobbyMessage);
+        connection.sendMessage({ messageType: OutboundMessageType.GetLobbyState });
         return () => {
+            const connection = GameSocket.getInstance();
             connection?.onLobbyEvent.unsubscribe(receiveLobbyMessage);
             GameSocket.destroyInstance();
         }
     }, []);
 
-    // If we don't have a connection or the state URL changed, update with a new connection.
-    if (connection === undefined ||
-        connection.getSocketUrl() !== props.location.state.socketUrl) {
-        const newConnection = GameSocket.createInstance(props.location.state.socketUrl);
-        newConnection.onLobbyEvent.subscribe(receiveLobbyMessage);
-        newConnection.sendMessage({ messageType: OutboundMessageType.GetLobbyState });
-        setConnection(newConnection);
-    }
-
     return (
         <>
+            {lobbyState === LobbyState.Loading && <h1>Loading</h1>}
             {lobbyState === LobbyState.Lobby && <Lobby friendCode={props.location.state.friendCode} />}
             {lobbyState === LobbyState.Game && <h1>Not Implemented (yet..)</h1>}
         </>

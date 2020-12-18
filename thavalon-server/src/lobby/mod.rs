@@ -87,10 +87,9 @@ enum IncomingMessage {
 #[serde(tag = "messageType", content = "data")]
 pub enum OutgoingMessage {
     Pong(String),
-    GetPlayerList(Vec<String>),
+    PlayerList(Vec<String>),
     LobbyState(LobbyState),
     GameMessage(Message),
-    PlayerList(Vec<String>),
 }
 
 #[derive(Serialize, Eq, PartialEq, Clone)]
