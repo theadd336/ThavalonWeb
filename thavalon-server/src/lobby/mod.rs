@@ -4,7 +4,7 @@
 mod client;
 mod lobby_impl;
 
-use crate::game::{Action, Message};
+use crate::game::{snapshot::GameSnapshot, Action, Message};
 pub use lobby_impl::Lobby;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -59,6 +59,9 @@ pub enum LobbyCommand {
     GetPlayerList {
         client_id: String,
     },
+    GetSnapshots {
+        client_id: String,
+    },
 }
 
 /// Enum of possible responses from the lobby.
@@ -80,6 +83,7 @@ enum IncomingMessage {
     GetLobbyState,
     GameCommand(Action),
     GetPlayerList,
+    GetSnapshot,
 }
 
 /// An outgoing message to the client.
@@ -90,6 +94,7 @@ pub enum OutgoingMessage {
     PlayerList(Vec<String>),
     LobbyState(LobbyState),
     GameMessage(Message),
+    Snapshot(GameSnapshot),
 }
 
 #[derive(Serialize, Eq, PartialEq, Clone)]
