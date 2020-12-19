@@ -7,6 +7,9 @@ interface PingResponse {
 
 export enum OutboundMessageType {
     Ping = "Ping",
+    GetLobbyState = "GetLobbyState",
+    GetPlayerList = "GetPlayerList",
+    StartGame = "StartGame",
 }
 
 export interface OutboundMessage {
@@ -16,11 +19,13 @@ export interface OutboundMessage {
 
 export enum InboundMessageType {
     Pong = "Pong",
+    PlayerList = "PlayerList",
+    LobbyState = "LobbyState",
 }
 
 export interface InboundMessage {
     messageType: InboundMessageType,
-    data?: object | string,
+    data?: object | string | number,
 }
 
 /**
@@ -47,7 +52,7 @@ export class GameSocket {
         this.websocket.onmessage = this.socketOnMessage.bind(this);
         this.websocket.onclose = this.socketOnClose.bind(this);
         this.websocket.onerror = this.socketOnError.bind(this);
-    } 
+    }
 
     /**
      * Listen to websocket's onopen event.
@@ -64,7 +69,8 @@ export class GameSocket {
     private socketOnMessage(event: MessageEvent) {
         console.log(event);
         console.log("Received message: " + event.data);
-        this._onLobbyEvent.dispatch(event.data);
+        const message = JSON.parse(event.data);
+        this._onLobbyEvent.dispatch(message);
     }
 
     /**
@@ -95,17 +101,13 @@ export class GameSocket {
             return;
         }
         // check again if websocket ready in 10 milliseconds
-        setTimeout(() => this.sendMessage(outboundMessage), 1000);
+        setTimeout(() => this.sendMessage(outboundMessage), 10);
     }
 
     /**
      * Get the existing instance of the game socket.
-     * @throws Error if game socket instance is undefined
      */
-    public static getInstance(): GameSocket {
-        if (GameSocket.instance === undefined) {
-            throw Error("Unable to get gamesocket instance");
-        }
+    public static getInstance(): GameSocket | undefined {
         return GameSocket.instance;
     }
 

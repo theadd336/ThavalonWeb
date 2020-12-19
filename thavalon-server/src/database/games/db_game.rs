@@ -236,7 +236,14 @@ impl DatabaseGame {
         self.players.remove(player_id);
         let display_name = match self.players_to_display_names.remove(player_id) {
             Some(name) => name,
-            None => return Ok(None),
+            None => {
+                log::warn!(
+                    "Tried to remove nonexistant player {} from game {}.",
+                    player_id,
+                    self._id
+                );
+                return Ok(None);
+            }
         };
         self.display_names.remove(&display_name);
         self.players_to_display_names.remove(player_id);
