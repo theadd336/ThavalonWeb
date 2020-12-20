@@ -33,6 +33,7 @@ impl GameState<Assassination> {
 
             // All priority assassinations (so far) take the form of "X players are one of Y roles", so we model that as
             // `expected_targets` and `matches` methods on `PriorityTarget` to cut down on duplication.
+            // The `None` priority target is special, because it matches no players.
 
             if players.len() != target.expected_targets() {
                 return self.player_error(format!(
@@ -43,14 +44,19 @@ impl GameState<Assassination> {
             }
 
             let mut is_correct = true;
-            for name in players.iter() {
-                if let Some(player) = self.game.players.by_name(name) {
-                    if !target.matches(player) {
-                        is_correct = false;
+            if target == PriorityTarget::None {
+                // If there are no assassination targets in the game, we'll have checked for that at the beginning
+                is_correct = self.game.priority_target == PriorityTarget::None
+            } else {
+                for name in players.iter() {
+                    if let Some(player) = self.game.players.by_name(name) {
+                        if !target.matches(player) {
+                            is_correct = false;
+                        }
+                    } else {
+                        return self.player_error(format!("{} is not in the game", name));
                     }
-                } else {
-                    return self.player_error(format!("{} is not in the game", name));
-                }
+                }    
             }
 
             let effects = vec![Effect::Broadcast(Message::AssassinationResult {

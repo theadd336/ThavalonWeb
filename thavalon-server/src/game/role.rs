@@ -59,6 +59,7 @@ pub enum PriorityTarget {
     Merlin,
     Lovers,
     Guinevere,
+    None,
 }
 
 impl Role {
@@ -236,6 +237,7 @@ impl PriorityTarget {
             PriorityTarget::Merlin => player.role == Role::Merlin,
             PriorityTarget::Guinevere => todo!("Need a Guinevere role"),
             PriorityTarget::Lovers => player.role.is_lover(),
+            PriorityTarget::None => false,
         }
     }
 
@@ -243,6 +245,7 @@ impl PriorityTarget {
     pub fn expected_targets(self) -> usize {
         match self {
             PriorityTarget::Lovers => 2,
+            PriorityTarget::None => 0,
             _ => 1,
         }
     }

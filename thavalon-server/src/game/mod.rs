@@ -112,9 +112,10 @@ impl Game {
             priority_targets.push(PriorityTarget::Lovers);
         }
         // TODO: Guinevere
-        let priority_target = *priority_targets
+        let priority_target = priority_targets
             .choose(&mut rng)
-            .expect("No valid priority target!");
+            .copied()
+            .unwrap_or(PriorityTarget::None);
 
         let mut info = HashMap::with_capacity(players.len());
         for player in players.iter() {
