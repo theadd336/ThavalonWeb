@@ -4,7 +4,9 @@
 mod client;
 mod lobby_impl;
 
+use crate::game::{Action, Message};
 pub use lobby_impl::Lobby;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::sync::{mpsc::Sender, oneshot};
 use warp::filters::ws::WebSocket;
@@ -47,8 +49,14 @@ pub enum LobbyCommand {
     Ping {
         client_id: String,
     },
+    GetLobbyState {
+        client_id: String,
+    },
     StartGame,
     PlayerDisconnect {
+        client_id: String,
+    },
+    GetPlayerList {
         client_id: String,
     },
 }
@@ -57,7 +65,37 @@ pub enum LobbyCommand {
 #[derive(Debug)]
 pub enum LobbyResponse {
     Standard(Result<(), LobbyError>),
+    None,
     JoinGame(Result<String, LobbyError>),
     FriendCode(String),
     IsClientRegistered(bool),
+}
+
+/// An incoming message from the client.
+#[derive(Deserialize)]
+#[serde(tag = "messageType", content = "data")]
+enum IncomingMessage {
+    Ping,
+    StartGame,
+    GetLobbyState,
+    GameCommand(Action),
+    GetPlayerList,
+}
+
+/// An outgoing message to the client.
+#[derive(Serialize)]
+#[serde(tag = "messageType", content = "data")]
+pub enum OutgoingMessage {
+    Pong(String),
+    PlayerList(Vec<String>),
+    LobbyState(LobbyState),
+    GameMessage(Message),
+}
+
+#[derive(Serialize, Eq, PartialEq, Clone)]
+#[serde(tag = "state")]
+pub enum LobbyState {
+    Lobby,
+    Game,
+    Finished,
 }

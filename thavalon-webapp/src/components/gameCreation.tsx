@@ -329,7 +329,7 @@ function triggerRedirectToGame(friendCode: string, socketUrl: string): JSX.Eleme
     return (
         <Redirect to={{
             pathname: `/game/${ friendCode }`,
-            state: { socketUrl: socketUrl }
+            state: { socketUrl, friendCode }
         }} />
     );
 }

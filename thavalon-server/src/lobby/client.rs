@@ -1,7 +1,7 @@
 //! Module containing the PlayerClient struct, which contains connections
 //! to and from the game, lobby, and frontend.
 
-use super::{LobbyChannel, LobbyCommand};
+use super::{IncomingMessage, LobbyChannel, LobbyCommand, OutgoingMessage};
 use crate::game::{Action, Message};
 
 use std::collections::HashMap;
@@ -17,25 +17,6 @@ use tokio::{
     task,
 };
 use warp::filters::ws::{self, WebSocket};
-
-/// An incoming message from the client.
-#[derive(Deserialize)]
-#[serde(tag = "messageType", content = "data")]
-enum IncomingMessage {
-    Ping,
-    StartGame,
-    GameCommand(Action),
-}
-
-/// An outgoing message to the client.
-#[derive(Serialize)]
-#[serde(tag = "messageType", content = "data")]
-pub enum OutgoingMessage {
-    Pong(String),
-    GameMessage(Message),
-    PlayerList(Vec<String>),
-    StartGame,
-}
 
 /// Task types that the PlayerClient maintains
 #[derive(Hash, PartialEq, Eq)]
@@ -168,7 +149,12 @@ impl PlayerClient {
                         client_id
                     );
 
-                    let incoming_msg = incoming_msg.to_str().unwrap();
+                    let incoming_msg = match incoming_msg.to_str() {
+                        Ok(msg) => msg,
+                        Err(_) => {
+                            break;
+                        }
+                    };
                     log::debug!(
                         "Attempting to deserialize message {} from client {}.",
                         incoming_msg,
@@ -193,6 +179,26 @@ impl PlayerClient {
                             let _ = to_lobby
                                 .send((
                                     LobbyCommand::Ping {
+                                        client_id: client_id.clone(),
+                                    },
+                                    None,
+                                ))
+                                .await;
+                        }
+                        IncomingMessage::GetLobbyState => {
+                            let _ = to_lobby
+                                .send((
+                                    LobbyCommand::GetLobbyState {
+                                        client_id: client_id.clone(),
+                                    },
+                                    None,
+                                ))
+                                .await;
+                        }
+                        IncomingMessage::GetPlayerList => {
+                            let _ = to_lobby
+                                .send((
+                                    LobbyCommand::GetPlayerList {
                                         client_id: client_id.clone(),
                                     },
                                     None,
