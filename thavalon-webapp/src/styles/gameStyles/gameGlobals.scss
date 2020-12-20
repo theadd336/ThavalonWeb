@@ -1,0 +1,17 @@
+$border-thickness: 5px;
+$border-color: black;
+$border-style: solid;
+$game-background-color: #E5E5E5;
+
+.game-root-container {
+    background-color: $game-background-color;
+    border: $border-thickness $border-style $border-color;
+}
+
+.border-left {
+    border-left: $border-thickness $border-style $border-color;
+}
+
+.border-bottom {
+    border-bottom: $border-thickness $border-style $border-color;
+}
