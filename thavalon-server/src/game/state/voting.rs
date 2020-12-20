@@ -86,12 +86,13 @@ impl GameState<Voting> {
         }
     }
 
-    pub fn handle_obscure(self, player: &str) -> ActionResult {
+    pub fn handle_obscure(mut self, player: &str) -> ActionResult {
         if self.game.players.by_name(player).unwrap().role == Role::Maeve {
             if self.phase.obscured {
                 self.player_error("You already obscured the votes for this proposal")
             } else if self.role_state.maeve.can_obscure() {
                 log::debug!("Maeve obscured the votes!");
+                self.role_state.maeve.mark_obscure();
                 (GameStateWrapper::Voting(self), vec![])
             } else {
                 self.player_error("You can't obscure this round")
