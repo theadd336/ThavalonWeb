@@ -30,7 +30,7 @@ impl GameBuilder {
         (action_tx, message_rx)
     }
 
-    pub fn remove_player(&mut self, name: &String) {
+    pub fn remove_player(&mut self, name: &str) {
         self.interactions.remove_player(name);
         self.players.retain(|player| player != name);
     }
@@ -47,7 +47,7 @@ impl GameBuilder {
         let mut interactions = SnapshotInteractions::new(self.interactions);
         let snapshots = interactions.snapshots();
         let task_handle = task::spawn(async move {
-            if let Err(e) = engine::run_game(&game, &mut interactions).await {
+            if let Err(e) = engine::run_game(game, &mut interactions).await {
                 log::error!("Fatal game error: {}", e);
             }
         });

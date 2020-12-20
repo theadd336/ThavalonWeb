@@ -1,4 +1,12 @@
 //! THavalon game logic
+//!
+//! The game implementation is broken into several layers:
+//! - [`GameSpec`] describes static game rules based on the number of players, such as the size of each mission and
+//!   which roles may be in the game.
+//! - [`Game`] holds configuration from when the game is rolled, such as which players have which roles and who the
+//!   assassin is.
+//! - [`GameState`] and [`Phase`] implement a state machine for while the game is running.
+//! - [`Interactions`] abstracts over communication with the players.
 
 use std::collections::HashMap;
 use std::fmt;
@@ -9,11 +17,12 @@ use serde::{Deserialize, Serialize};
 pub mod builder;
 mod engine;
 mod interactions;
-mod messages;
+pub mod messages;
 mod role;
 pub mod snapshot;
+mod state;
 
-pub use self::messages::*;
+pub use self::messages::{Action, Message};
 pub use self::role::*;
 
 /// A mission number (from 1 to 5)
@@ -66,6 +75,8 @@ pub struct Game {
     players: Players,
     info: HashMap<String, RoleDetails>,
     proposal_order: Vec<String>,
+    assassin: String,
+    priority_target: PriorityTarget,
     spec: &'static GameSpec,
 }
 
@@ -87,11 +98,36 @@ impl Game {
             players.add_player(name, role);
         }
 
+        let assassin = players
+            .evil_players()
+            .choose(&mut rng)
+            .cloned()
+            .expect("Could not choose an assassin, game contained no evil players");
+
+        let mut priority_targets = Vec::new();
+        if players.has_role(Role::Merlin) {
+            priority_targets.push(PriorityTarget::Merlin);
+        }
+        if players.has_role(Role::Tristan) && players.has_role(Role::Iseult) {
+            priority_targets.push(PriorityTarget::Lovers);
+        }
+        // TODO: Guinevere
+        let priority_target = priority_targets
+            .choose(&mut rng)
+            .copied()
+            .unwrap_or(PriorityTarget::None);
+
         let mut info = HashMap::with_capacity(players.len());
         for player in players.iter() {
             info.insert(
                 player.name.clone(),
-                player.role.generate_info(&mut rng, &player.name, &players),
+                player.role.generate_info(
+                    &mut rng,
+                    &player.name,
+                    &players,
+                    &assassin,
+                    priority_target,
+                ),
             );
         }
 
@@ -102,6 +138,8 @@ impl Game {
             players,
             info,
             proposal_order,
+            assassin,
+            priority_target,
             spec,
         }
     }
@@ -219,6 +257,15 @@ impl GameSpec {
 
     pub fn double_fail_mission_four(&self) -> bool {
         self.double_fail_mission_four
+    }
+
+    /// Tests if `role` is allowed in games of this size
+    pub fn has_role(&self, role: Role) -> bool {
+        if role.is_evil() {
+            self.evil_roles.contains(&role)
+        } else {
+            self.good_roles.contains(&role)
+        }
     }
 }
 
