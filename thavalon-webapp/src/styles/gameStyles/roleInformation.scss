@@ -1,0 +1,13 @@
+@import 'gameGlobals';
+
+#playerInfo {
+    .evil {
+        color: $evil-role-color;
+        font-weight: bold;
+    }
+
+    .good {
+        color: $good-role-color;
+        font-weight: bold;
+    }
+}

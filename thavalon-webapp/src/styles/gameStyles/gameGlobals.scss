@@ -3,6 +3,11 @@ $border-color: black;
 $border-style: solid;
 $game-background-color: #E5E5E5;
 $game-root-padding: 5px;
+$game-section-header-color: #003A06;
+
+// colors related to good/evil roles and passed/failed missions
+$evil-role-color: #9D0000;
+$good-role-color: #003A06;
 
 .game-root-container {    
     display: flex;
@@ -33,3 +38,10 @@ $game-root-padding: 5px;
     border-left: $border-thickness $border-style $border-color;
 }
 
+// Title of each game section header
+.gameSectionHeader {
+    font-size: 40px;
+    line-height: 46px;
+    color: $game-section-header-color;
+    text-align: center;
+}
