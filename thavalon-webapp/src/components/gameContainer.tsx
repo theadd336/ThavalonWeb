@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Lobby } from "./gameComponents/lobby";
-import { GameRoot } from "./gameComponents/root";
+import { GameRoot } from "./gameComponents/gameRoot";
 import { GameSocket, OutboundMessageType, InboundMessage, InboundMessageType } from "../utils/GameSocket";
 
 /**

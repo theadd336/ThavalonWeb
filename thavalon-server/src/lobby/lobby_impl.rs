@@ -25,6 +25,7 @@ pub struct Lobby {
     database_game: DatabaseGame,
     friend_code: String,
     player_ids_to_client_ids: HashMap<String, String>,
+    // Map of client IDs to player ID and display name.
     client_ids_to_player_info: HashMap<String, (String, String)>,
     clients: HashMap<String, PlayerClient>,
     status: LobbyState,
