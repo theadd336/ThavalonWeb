@@ -10,6 +10,7 @@ export enum OutboundMessageType {
     GetLobbyState = "GetLobbyState",
     GetPlayerList = "GetPlayerList",
     StartGame = "StartGame",
+    GetSnapshot = "GetSnapshot"
 }
 
 export interface OutboundMessage {
@@ -21,6 +22,8 @@ export enum InboundMessageType {
     Pong = "Pong",
     PlayerList = "PlayerList",
     LobbyState = "LobbyState",
+    GameMessage = "GameMessage",
+    Snapshot = "Snapshot",
 }
 
 export interface InboundMessage {
@@ -40,6 +43,8 @@ export class GameSocket {
     private websocket: WebSocket;
     // event handler for lobby events
     private _onLobbyEvent: SimpleEventDispatcher<InboundMessage>;
+    // Event handler for game events
+    private _onGameEvent: SimpleEventDispatcher<InboundMessage>;
 
     /**
      * Construct the underlying websocket instance and set up function handlers.
@@ -48,6 +53,7 @@ export class GameSocket {
     private constructor(socketUrl: string) {
         this.websocket = new WebSocket(socketUrl);
         this._onLobbyEvent = new SimpleEventDispatcher<InboundMessage>();
+        this._onGameEvent = new SimpleEventDispatcher<InboundMessage>();
         this.websocket.onopen = this.socketOnOpen.bind(this);
         this.websocket.onmessage = this.socketOnMessage.bind(this);
         this.websocket.onclose = this.socketOnClose.bind(this);
@@ -69,8 +75,29 @@ export class GameSocket {
     private socketOnMessage(event: MessageEvent) {
         console.log(event);
         console.log("Received message: " + event.data);
-        const message = JSON.parse(event.data);
-        this._onLobbyEvent.dispatch(message);
+        const message: InboundMessage = JSON.parse(event.data);
+        switch (message.messageType) {
+            case InboundMessageType.Pong: {
+                // send pong to all event types, for testing
+                this._onLobbyEvent.dispatch(message);
+                this._onGameEvent.dispatch(message);
+                break;
+            }
+            case InboundMessageType.PlayerList:
+            case InboundMessageType.LobbyState: {
+                this._onLobbyEvent.dispatch(message);
+                break;
+            }
+            case InboundMessageType.GameMessage:
+            case InboundMessageType.Snapshot: {
+                this._onGameEvent.dispatch(message);
+                break;
+            }
+            default: {
+                console.log("Unsupported message type: " + message.messageType);
+                break;
+            }
+        }
     }
 
     /**
@@ -142,5 +169,26 @@ export class GameSocket {
      */
     public get onLobbyEvent(): ISimpleEvent<InboundMessage> {
         return this._onLobbyEvent.asEvent();
+    }
+
+    public get onGameEvent(): ISimpleEvent<InboundMessage> {
+        return this._onGameEvent.asEvent();
+    }
+}
+
+/**
+ * An error representing a problem with the connection.
+ */
+export class ConnectionError extends Error {
+    /**
+     * Creates a new ConnectionError
+     * @param message A custom error message to display.
+     */
+    constructor(message?: string) {
+        if (message === undefined) {
+            message = "The game connection is missing or is in a broken state.";
+        }
+        super(message);
+        Object.setPrototypeOf(this, new.target.prototype);
     }
 }

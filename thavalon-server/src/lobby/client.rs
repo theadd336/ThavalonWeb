@@ -1,7 +1,7 @@
 //! Module containing the PlayerClient struct, which contains connections
 //! to and from the game, lobby, and frontend.
 
-use super::{IncomingMessage, LobbyChannel, LobbyCommand, OutgoingMessage};
+use super::{IncomingMessage, Lobby, LobbyChannel, LobbyCommand, OutgoingMessage};
 use crate::game::{Action, Message};
 
 use std::collections::HashMap;
@@ -210,6 +210,16 @@ impl PlayerClient {
                         }
                         IncomingMessage::GameCommand(cmd) => {
                             let _ = to_game.send(cmd).await;
+                        }
+                        IncomingMessage::GetSnapshot => {
+                            let _ = to_lobby
+                                .send((
+                                    LobbyCommand::GetSnapshots {
+                                        client_id: client_id.clone(),
+                                    },
+                                    None,
+                                ))
+                                .await;
                         }
                     }
                 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Lobby } from "./gameComponents/lobby";
+import { GameRoot } from "./gameComponents/gameRoot";
 import { GameSocket, OutboundMessageType, InboundMessage, InboundMessageType } from "../utils/GameSocket";
 
 /**
@@ -73,7 +74,7 @@ export function GameContainer(props: GameContainerProps): JSX.Element {
         <>
             {lobbyState === LobbyState.Loading && <h1>Loading</h1>}
             {lobbyState === LobbyState.Lobby && <Lobby friendCode={props.location.state.friendCode} />}
-            {lobbyState === LobbyState.Game && <h1>Not Implemented (yet..)</h1>}
+            {lobbyState === LobbyState.Game && <GameRoot />}
         </>
     );
 

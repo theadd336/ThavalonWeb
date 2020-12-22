@@ -2,7 +2,10 @@ use super::client::PlayerClient;
 use super::{IncomingMessage, LobbyState, OutgoingMessage};
 use super::{LobbyChannel, LobbyCommand, LobbyError, LobbyResponse, ResponseChannel};
 use crate::database::games::{DBGameError, DBGameStatus, DatabaseGame};
-use crate::game::builder::GameBuilder;
+use crate::game::{
+    builder::GameBuilder,
+    snapshot::{GameSnapshot, Snapshots},
+};
 use crate::utils;
 
 use tokio::{
@@ -22,10 +25,12 @@ pub struct Lobby {
     database_game: DatabaseGame,
     friend_code: String,
     player_ids_to_client_ids: HashMap<String, String>,
-    client_ids_to_player_ids: HashMap<String, String>,
+    // Map of client IDs to player ID and display name.
+    client_ids_to_player_info: HashMap<String, (String, String)>,
     clients: HashMap<String, PlayerClient>,
     status: LobbyState,
     builder: Option<GameBuilder>,
+    snapshots: Option<Snapshots>,
     to_lobby: LobbyChannel,
 }
 
@@ -46,10 +51,11 @@ impl Lobby {
                 database_game,
                 friend_code,
                 player_ids_to_client_ids: HashMap::with_capacity(MAX_NUM_PLAYERS),
-                client_ids_to_player_ids: HashMap::with_capacity(MAX_NUM_PLAYERS),
+                client_ids_to_player_info: HashMap::with_capacity(MAX_NUM_PLAYERS),
                 clients: HashMap::with_capacity(MAX_NUM_PLAYERS),
                 status: LobbyState::Lobby,
                 builder: Some(GameBuilder::new()),
+                snapshots: None,
                 to_lobby,
             };
             lobby.listen(rx).await
@@ -118,7 +124,11 @@ impl Lobby {
         }
 
         // Player added to the database game. Now add the player to the game instance.
-        let (sender, receiver) = self.builder.as_mut().unwrap().add_player(display_name);
+        let (sender, receiver) = self
+            .builder
+            .as_mut()
+            .unwrap()
+            .add_player(display_name.clone());
 
         // Generate a unique client ID for the player and update all our dictionaries.
         let client_id = utils::generate_random_string(32, false);
@@ -131,8 +141,8 @@ impl Lobby {
         );
         self.player_ids_to_client_ids
             .insert(player_id.clone(), client_id.clone());
-        self.client_ids_to_player_ids
-            .insert(client_id.clone(), player_id);
+        self.client_ids_to_player_info
+            .insert(client_id.clone(), (player_id, display_name));
         self.clients.insert(client_id.clone(), client);
         LobbyResponse::JoinGame(Ok(client_id))
     }
@@ -144,8 +154,8 @@ impl Lobby {
             client_id,
             self.friend_code
         );
-        let player_id = match self.client_ids_to_player_ids.remove(&client_id) {
-            Some(player_id) => player_id,
+        let player_id = match self.client_ids_to_player_info.remove(&client_id) {
+            Some((player_id, _)) => player_id,
             None => {
                 log::warn!("No player ID found matching client ID {}.", client_id);
                 return;
@@ -256,7 +266,8 @@ impl Lobby {
             .await;
         self.status = LobbyState::Game;
         let builder = self.builder.take().unwrap();
-        builder.start();
+        let (snapshots, _) = builder.start();
+        self.snapshots = Some(snapshots);
         LobbyResponse::None
     }
 
@@ -275,6 +286,25 @@ impl Lobby {
         let mut client = self.clients.get_mut(&client_id).unwrap();
         let state = OutgoingMessage::LobbyState(self.status.clone());
         let message = serde_json::to_string(&state).unwrap();
+        client.send_message(message).await;
+        LobbyResponse::None
+    }
+
+    /// Gets all snapshots that have occurred for a given client ID.
+    async fn get_snapshots(&mut self, client_id: String) -> LobbyResponse {
+        let (_, display_name) = &self.client_ids_to_player_info[&client_id];
+        let snapshot = self
+            .snapshots
+            .as_ref()
+            .unwrap()
+            .get(display_name)
+            .unwrap()
+            .lock()
+            .unwrap()
+            .clone();
+        let mut client = self.clients.get_mut(&client_id).unwrap();
+        let message = OutgoingMessage::Snapshot(snapshot);
+        let message = serde_json::to_string(&message).unwrap();
         client.send_message(message).await;
         LobbyResponse::None
     }
@@ -315,6 +345,7 @@ impl Lobby {
                     self.on_player_disconnect(client_id).await
                 }
                 LobbyCommand::GetPlayerList { client_id } => self.send_player_list(client_id).await,
+                LobbyCommand::GetSnapshots { client_id } => self.get_snapshots(client_id).await,
             };
 
             if let Some(channel) = result_channel {
