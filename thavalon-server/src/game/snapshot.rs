@@ -15,6 +15,7 @@ use super::MissionNumber;
 
 /// Snapshot of game state.
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GameSnapshot {
     pub role_info: Option<RoleDetails>,
     missions: Vec<Mission>,
@@ -31,6 +32,7 @@ pub struct PlayerInfo {
 
 /// Details about a mission. If the mission is in process, data may be missing.
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Mission {
     /// Submitted proposals. Every proposal that has been voted on will have a corresponding entry in `voting_results`.
     pub proposals: Vec<Proposal>,
@@ -46,6 +48,7 @@ pub struct Mission {
 
 /// The outcome of a mission, including details on which cards were played and whether or not the mission passed.
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MissionResults {
     pub successes: usize,
     pub fails: usize,
@@ -56,6 +59,7 @@ pub struct MissionResults {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Proposal {
     pub proposed_by: String,
     pub players: HashSet<String>,
@@ -100,7 +104,7 @@ impl GameSnapshot {
     }
 
     /// Get a mutable reference to the current mission
-    /// 
+    ///
     /// # Panics
     /// If there is *no* current mission, which would only happen if messages were received in an invalid
     /// order.
@@ -122,10 +126,7 @@ impl GameSnapshot {
                 Ok(())
             }
 
-            Message::NextProposal {
-                mission,
-                ..
-            } => {
+            Message::NextProposal { mission, .. } => {
                 // If it's the first proposal of a round, we need to add a new Mission struct
                 if self.missions.is_empty() || self.current_mission() != mission {
                     self.missions.push(Mission {

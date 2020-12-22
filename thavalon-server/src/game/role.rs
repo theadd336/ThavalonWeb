@@ -29,6 +29,7 @@ pub enum Team {
 
 /// Information a player receives based on their role.
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RoleDetails {
     /// The team the player is on.
     team: Team,
@@ -77,7 +78,7 @@ impl Role {
         Role::Mordred,
         Role::Morgana,
         Role::Maelegant,
-        Role::Agravaine,    
+        Role::Agravaine,
     ];
 
     pub fn is_good(self) -> bool {
