@@ -22,6 +22,7 @@ export enum InboundMessageType {
     Pong = "Pong",
     PlayerList = "PlayerList",
     LobbyState = "LobbyState",
+    GameMessage = "GameMessage",
     Snapshot = "Snapshot",
 }
 
@@ -74,8 +75,35 @@ export class GameSocket {
     private socketOnMessage(event: MessageEvent) {
         console.log(event);
         console.log("Received message: " + event.data);
-        const message = JSON.parse(event.data);
-        this._onLobbyEvent.dispatch(message);
+        const message: InboundMessage = JSON.parse(event.data);
+        switch (message.messageType) {
+            case InboundMessageType.Pong: {
+                // send pong to all event types, for testing
+                this._onLobbyEvent.dispatch(message);
+                this._onGameEvent.dispatch(message);
+                break;
+            }
+            case InboundMessageType.PlayerList: {
+                this._onLobbyEvent.dispatch(message);
+                break;
+            }
+            case InboundMessageType.LobbyState: {
+                this._onLobbyEvent.dispatch(message);
+                break;
+            }
+            case InboundMessageType.GameMessage: {
+                this._onGameEvent.dispatch(message);
+                break;
+            }
+            case InboundMessageType.Snapshot: {
+                this._onGameEvent.dispatch(message);
+                break;
+            }
+            default: {
+                console.log("Unsupported message type: " + message.messageType);
+                break;
+            }
+        }
     }
 
     /**
