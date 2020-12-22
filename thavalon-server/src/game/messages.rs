@@ -1,11 +1,11 @@
 //! Asynchronous engine for running THavalon games
 
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use super::role::RoleDetails;
+use super::role::{PriorityTarget, RoleDetails, Team};
 use super::{Card, MissionNumber};
 
 // Game-related messages
@@ -13,11 +13,22 @@ use super::{Card, MissionNumber};
 /// Something the player tries to do
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize)]
 pub enum Action {
-    Propose { players: HashSet<String> },
-    Vote { upvote: bool },
-    Play { card: Card },
+    Propose {
+        players: HashSet<String>,
+    },
+    Vote {
+        upvote: bool,
+    },
+    Play {
+        card: Card,
+    },
     QuestingBeast,
     Declare,
+    Assassinate {
+        players: HashSet<String>,
+        target: PriorityTarget,
+    },
+    MoveToAssassination,
 }
 
 /// A message from the game to a player
@@ -57,6 +68,12 @@ pub enum Message {
     /// Announces the results of a vote
     VotingResults { sent: bool, counts: VoteCounts },
 
+    /// Announces that a mission is going
+    MissionGoing {
+        mission: MissionNumber,
+        players: HashSet<String>,
+    },
+
     /// Announces the results of a mission going
     MissionResults {
         mission: MissionNumber,
@@ -68,7 +85,29 @@ pub enum Message {
     },
 
     /// Agravaine declared, so the given mission now failed.
-    AgravaineDeclaration { mission: MissionNumber },
+    AgravaineDeclaration {
+        mission: MissionNumber,
+        player: String,
+    },
+
+    /// Assassination has begun. This can either be because 3 missions passed or because the assassin moved to assassinate.
+    BeginAssassination { assassin: String },
+
+    /// The results of an assassination attempt.
+    AssassinationResult {
+        /// The players that were assassinated (usually just 1)
+        players: HashSet<String>,
+        /// What the players were assassinated as
+        target: PriorityTarget,
+        /// Whether or not the assassination was correct
+        correct: bool,
+    },
+
+    /// Sent when the game is over to announce who won.
+    GameOver {
+        winning_team: Team,
+        roles: HashMap<String, RoleDetails>,
+    },
 }
 
 /// How players voted on a proposal

@@ -1,9 +1,9 @@
 use std::fmt::{self, Write};
 
 use rand::prelude::*;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-use super::{Card, Players};
+use super::{Card, Player, Players};
 
 /// A THavalon role
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize)]
@@ -44,8 +44,22 @@ pub struct RoleDetails {
     other_info: String,
     /// Special abilities the player has.
     abilities: String,
-    /// Whether or not the player can be assassinated.
+    /// Whether or not the player can be assassinated. Only ever true for good players.
     assassinatable: bool,
+    /// Whether or not the player is the Assassin. Only ever true for evil players.
+    is_assassin: bool,
+    /// If the player is the Assassin, this is the Priority Target that they may assassinate.
+    priority_target: Option<PriorityTarget>,
+}
+
+/// A priority assassination target. If the Good team passes 3 missions, then the Assassin must correctly identify
+/// the Priority Target in order to win.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub enum PriorityTarget {
+    Merlin,
+    Lovers,
+    Guinevere,
+    None,
 }
 
 impl Role {
@@ -87,17 +101,11 @@ impl Role {
     }
 
     pub fn is_lover(self) -> bool {
-        match self {
-            Role::Tristan | Role::Iseult => true,
-            _ => false,
-        }
+        matches!(self, Role::Tristan | Role::Iseult)
     }
 
     pub fn is_assassinatable(self) -> bool {
-        match self {
-            Role::Merlin | Role::Tristan | Role::Iseult => true,
-            _ => false,
-        }
+        matches!(self, Role::Merlin | Role::Tristan | Role::Iseult)
     }
 
     pub fn can_play(self, card: Card) -> bool {
@@ -114,7 +122,14 @@ impl Role {
     }
 
     /// Create role information for a player, `me`, given all `players` in the game.
-    pub fn generate_info<R: Rng>(self, rng: &mut R, me: &str, players: &Players) -> RoleDetails {
+    pub fn generate_info<R: Rng>(
+        self,
+        rng: &mut R,
+        me: &str,
+        players: &Players,
+        assassin: &str,
+        priority_target: PriorityTarget,
+    ) -> RoleDetails {
         let mut seen_players = Vec::new();
         let mut description = String::new();
         let mut abilities = String::new();
@@ -187,6 +202,8 @@ impl Role {
             Vec::new()
         };
 
+        let is_assassin = me == assassin;
+
         RoleDetails {
             team: self.team(),
             role: self,
@@ -196,6 +213,12 @@ impl Role {
             team_members,
             other_info,
             assassinatable: self.is_assassinatable(),
+            is_assassin,
+            priority_target: if is_assassin {
+                Some(priority_target)
+            } else {
+                None
+            },
         }
     }
 }
@@ -204,5 +227,26 @@ impl fmt::Display for Role {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Can use debug since it's still the role name
         writeln!(f, "{:?}", self)
+    }
+}
+
+impl PriorityTarget {
+    /// Checks if assassinating `player` as this target is correct.
+    pub fn matches(self, player: &Player) -> bool {
+        match self {
+            PriorityTarget::Merlin => player.role == Role::Merlin,
+            PriorityTarget::Guinevere => todo!("Need a Guinevere role"),
+            PriorityTarget::Lovers => player.role.is_lover(),
+            PriorityTarget::None => false,
+        }
+    }
+
+    /// The number of expected players in an assassination attempt for this target.
+    pub fn expected_targets(self) -> usize {
+        match self {
+            PriorityTarget::Lovers => 2,
+            PriorityTarget::None => 0,
+            _ => 1,
+        }
     }
 }

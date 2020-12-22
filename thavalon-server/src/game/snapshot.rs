@@ -99,8 +99,8 @@ impl GameSnapshot {
         self.missions.len() as MissionNumber
     }
 
-    /// Get a mutable reference to the current mission.alloc
-    ///
+    /// Get a mutable reference to the current mission
+    /// 
     /// # Panics
     /// If there is *no* current mission, which would only happen if messages were received in an invalid
     /// order.
@@ -123,7 +123,8 @@ impl GameSnapshot {
             }
 
             Message::NextProposal {
-                mission, proposer, ..
+                mission,
+                ..
             } => {
                 // If it's the first proposal of a round, we need to add a new Mission struct
                 if self.missions.is_empty() || self.current_mission() != mission {
@@ -205,7 +206,7 @@ impl GameSnapshot {
                 Ok(())
             }
 
-            Message::AgravaineDeclaration { mission } => {
+            Message::AgravaineDeclaration { mission, player } => {
                 let state = self.mission_mut(mission);
                 if let Some(mut results) = state.results.as_mut() {
                     results.agravaine_declared = true;
@@ -213,7 +214,7 @@ impl GameSnapshot {
                     Ok(())
                 } else {
                     Err(SnapshotError::UnexpectedMessage(
-                        Message::AgravaineDeclaration { mission },
+                        Message::AgravaineDeclaration { mission, player },
                     ))
                 }
             }
@@ -299,12 +300,17 @@ impl<I: Interactions + Send> Interactions for SnapshotInteractions<I> {
         self.inner.send(message).await
     }
 
+<<<<<<< HEAD
     async fn receive<F, R>(&mut self, f: F) -> Result<R, GameError>
     where
         R: Send,
         F: FnMut(String, Action) -> Result<R, String> + Send,
     {
         self.inner.receive(f).await
+=======
+    async fn receive(&mut self) -> Result<(String, Action), GameError> {
+        self.inner.receive().await
+>>>>>>> 1682e12160a7f53afd4c329804e740aa2dca2cc6
     }
 }
 
