@@ -10,6 +10,7 @@ export enum OutboundMessageType {
     GetLobbyState = "GetLobbyState",
     GetPlayerList = "GetPlayerList",
     StartGame = "StartGame",
+    GetSnapshot = "GetSnapshot"
 }
 
 export interface OutboundMessage {
@@ -21,6 +22,7 @@ export enum InboundMessageType {
     Pong = "Pong",
     PlayerList = "PlayerList",
     LobbyState = "LobbyState",
+    Snapshot = "Snapshot",
 }
 
 export interface InboundMessage {
@@ -40,6 +42,8 @@ export class GameSocket {
     private websocket: WebSocket;
     // event handler for lobby events
     private _onLobbyEvent: SimpleEventDispatcher<InboundMessage>;
+    // Event handler for game events
+    private _onGameEvent: SimpleEventDispatcher<InboundMessage>;
 
     /**
      * Construct the underlying websocket instance and set up function handlers.
@@ -48,6 +52,7 @@ export class GameSocket {
     private constructor(socketUrl: string) {
         this.websocket = new WebSocket(socketUrl);
         this._onLobbyEvent = new SimpleEventDispatcher<InboundMessage>();
+        this._onGameEvent = new SimpleEventDispatcher<InboundMessage>();
         this.websocket.onopen = this.socketOnOpen.bind(this);
         this.websocket.onmessage = this.socketOnMessage.bind(this);
         this.websocket.onclose = this.socketOnClose.bind(this);
@@ -142,5 +147,26 @@ export class GameSocket {
      */
     public get onLobbyEvent(): ISimpleEvent<InboundMessage> {
         return this._onLobbyEvent.asEvent();
+    }
+
+    public get onGameEvent(): ISimpleEvent<InboundMessage> {
+        return this._onGameEvent.asEvent();
+    }
+}
+
+/**
+ * An error representing a problem with the connection.
+ */
+export class ConnectionError extends Error {
+    /**
+     * Creates a new ConnectionError
+     * @param message A custom error message to display.
+     */
+    constructor(message?: string) {
+        if (message === undefined) {
+            message = "The game connection is missing or is in a broken state.";
+        }
+        super(message);
+        Object.setPrototypeOf(this, new.target.prototype);
     }
 }

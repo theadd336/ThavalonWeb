@@ -1,17 +1,35 @@
-$border-thickness: 5px;
+$border-thickness: 1px;
 $border-color: black;
 $border-style: solid;
 $game-background-color: #E5E5E5;
+$game-root-padding: 5px;
 
-.game-root-container {
-    background-color: $game-background-color;
-    border: $border-thickness $border-style $border-color;
+.game-root-container {    
+    display: flex;
+    flex-direction: row;
+    padding: 0px $game-root-padding;
 }
 
-.border-left {
+.game-background-color {
+    background-color: $game-background-color;
+}
+
+// Use padding-right here so that the border remains connected
+.row-top {
+    padding-right: $game-root-padding;
+}
+.row-bottom {
+    border-top: $border-thickness $border-style $border-color;
+    padding-right: $game-root-padding;
+}
+
+// Left column is one-third of the screen.
+.col-left {
+    width: 33%;
+}
+
+.col-right {
+    padding-left: $game-root-padding;
     border-left: $border-thickness $border-style $border-color;
 }
 
-.border-bottom {
-    border-bottom: $border-thickness $border-style $border-color;
-}
