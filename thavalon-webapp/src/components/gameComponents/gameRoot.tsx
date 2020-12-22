@@ -19,20 +19,15 @@ export function GameRoot(): JSX.Element {
         if (connection === undefined) {
             throw new ConnectionError();
         }
-        connection.onGameEvent.subscribe(testFunction);
         connection.sendMessage({ messageType: OutboundMessageType.GetSnapshot });
 
         // Destroy the existing connection when this unmounts.
         return () => {
-            connection.onGameEvent.unsubscribe(testFunction);
             GameSocket.destroyInstance();
             document.body.classList.remove("game-background-color");
         }
     }, []);
 
-    // This is a hack. We should support a light and dark mode theme for this
-    // at the app level.
-    document.body.classList.add("game-background-color");
     return (
         <div className="game-root-container">
             <div className="col-left">
@@ -48,10 +43,4 @@ export function GameRoot(): JSX.Element {
             </div>
         </div>
     );
-}
-
-function testFunction(message: InboundMessage): void {
-    console.log(message);
-    console.log(message.messageType);
-    console.log(message.data);
 }
