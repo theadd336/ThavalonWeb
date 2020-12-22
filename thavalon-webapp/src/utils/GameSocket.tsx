@@ -83,18 +83,12 @@ export class GameSocket {
                 this._onGameEvent.dispatch(message);
                 break;
             }
-            case InboundMessageType.PlayerList: {
-                this._onLobbyEvent.dispatch(message);
-                break;
-            }
+            case InboundMessageType.PlayerList:
             case InboundMessageType.LobbyState: {
                 this._onLobbyEvent.dispatch(message);
                 break;
             }
-            case InboundMessageType.GameMessage: {
-                this._onGameEvent.dispatch(message);
-                break;
-            }
+            case InboundMessageType.GameMessage:
             case InboundMessageType.Snapshot: {
                 this._onGameEvent.dispatch(message);
                 break;
