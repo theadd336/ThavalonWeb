@@ -134,7 +134,10 @@ export class GameSocket {
     /**
      * Get the existing instance of the game socket.
      */
-    public static getInstance(): GameSocket | undefined {
+    public static getInstance(): GameSocket {
+        if (GameSocket.instance === undefined) {
+            throw new ConnectionError();
+        }
         return GameSocket.instance;
     }
 
