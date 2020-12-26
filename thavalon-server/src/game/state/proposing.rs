@@ -16,8 +16,8 @@ impl GameState<Proposing> {
         }
 
         self.phase.selected_players.insert(added_player.clone());
-        let effects = vec![Effect::Broadcast(Message::PlayerSelected {
-            player: added_player,
+        let effects = vec![Effect::Broadcast(Message::ProposalUpdated {
+            players: self.phase.selected_players.clone(),
         })];
 
         (GameStateWrapper::Proposing(self), effects)
@@ -33,8 +33,8 @@ impl GameState<Proposing> {
         }
 
         if self.phase.selected_players.remove(&removed_player) {
-            let effects = vec![Effect::Broadcast(Message::PlayerUnselected {
-                player: removed_player,
+            let effects = vec![Effect::Broadcast(Message::ProposalUpdated {
+                players: self.phase.selected_players.clone(),
             })];
 
             (GameStateWrapper::Proposing(self), effects)

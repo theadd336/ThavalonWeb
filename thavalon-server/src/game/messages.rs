@@ -59,11 +59,10 @@ pub enum Message {
         max_proposals: usize,
     },
 
-    /// A player was added to the current proposal
-    PlayerSelected { player: String },
-
-    /// A player was removed from the current proposal
-    PlayerUnselected { player: String },
+    /// The current proposal was updated
+    ProposalUpdated {
+        players: HashSet<String>
+    },
 
     /// Announces that a player made a proposal
     ProposalMade {
