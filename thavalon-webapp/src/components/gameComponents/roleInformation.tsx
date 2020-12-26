@@ -21,9 +21,6 @@ export function RoleInformation(): JSX.Element {
                 setRoleInfo(snapshot.roleInfo);
                 break;
             }
-            default: {
-                break;
-            }
         }
     }
 
