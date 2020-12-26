@@ -1,6 +1,6 @@
 //! Asynchronous engine for running THavalon games
 
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -22,6 +22,7 @@ pub enum Action {
     Play {
         card: Card,
     },
+    Obscure,
     QuestingBeast,
     Declare,
     Assassinate {
@@ -133,7 +134,10 @@ pub enum GameError {
 }
 
 #[allow(clippy::borrowed_box)] // We need &Box<T> instead of &T here to match what serde expects and to add the Send + 'static constraints
-fn serialize_internal_error<S: serde::Serializer>(error: &Box<dyn std::error::Error + Send + 'static>, ser: S) -> Result<S::Ok, S::Error> {
+fn serialize_internal_error<S: serde::Serializer>(
+    error: &Box<dyn std::error::Error + Send + 'static>,
+    ser: S,
+) -> Result<S::Ok, S::Error> {
     let error_message = error.to_string();
     ser.serialize_str(&error_message)
 }

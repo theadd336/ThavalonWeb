@@ -3,7 +3,7 @@ use std::fmt::{self, Write};
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::{Card, Player, Players};
+use super::{Card, GameSpec, Player, Players};
 
 /// A THavalon role
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize)]
@@ -17,6 +17,7 @@ pub enum Role {
     Mordred,
     Morgana,
     Maelegant,
+    Maeve,
     Agravaine,
 }
 
@@ -78,6 +79,7 @@ impl Role {
         Role::Mordred,
         Role::Morgana,
         Role::Maelegant,
+        Role::Maeve,
         Role::Agravaine,
     ];
 
@@ -85,7 +87,7 @@ impl Role {
         use Role::*;
         match self {
             Merlin | Lancelot | Percival | Tristan | Iseult => true,
-            Mordred | Morgana | Maelegant | Agravaine => false,
+            Mordred | Morgana | Maelegant | Maeve | Agravaine => false,
         }
     }
 
@@ -127,6 +129,7 @@ impl Role {
         self,
         rng: &mut R,
         me: &str,
+        spec: &GameSpec,
         players: &Players,
         assassin: &str,
         priority_target: PriorityTarget,
@@ -184,6 +187,9 @@ impl Role {
                 } else {
                     let _ = writeln!(&mut other_info, "There is not a Lancelot in the game.");
                 }
+            }
+            Role::Maeve => {
+                let _ = writeln!(&mut abilities, "{} times per game, and only once per round, during a vote on a proposal you may secretly obscure the voting so that only the number of upvotes and downvotes is shown.", spec.max_maeve_obscures);
             }
             Role::Agravaine => {
                 let _ = writeln!(&mut abilities, "You may declare to fail a mission you were on that would have otherwise succeeded.");

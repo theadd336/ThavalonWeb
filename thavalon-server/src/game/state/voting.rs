@@ -6,6 +6,8 @@ use super::prelude::*;
 pub struct Voting {
     /// Map from players to whether they up- or down-voted the proposal.
     votes: HashMap<String, bool>,
+    /// Whether or not the voting results are obscured
+    obscured: bool,
 }
 
 impl GameState<Voting> {
@@ -23,19 +25,11 @@ impl GameState<Voting> {
 
         if self.phase.votes.len() == self.game.size() {
             let mission = self.mission();
-            let spent_proposals = self.spent_proposals();
-            // TODO: avoid destructuring so we can use GameState helpers
-            let GameState {
-                game,
-                proposals,
-                mission_results,
-                phase: Voting { votes },
-            } = self;
 
             let mut upvotes = HashSet::new();
             let mut downvotes = HashSet::new();
 
-            for (player, vote) in votes.into_iter() {
+            for (player, vote) in self.phase.votes.drain() {
                 if vote {
                     upvotes.insert(player);
                 } else {
@@ -44,62 +38,67 @@ impl GameState<Voting> {
             }
 
             let sent = upvotes.len() > downvotes.len();
+            let vote_counts = if self.phase.obscured {
+                messages::VoteCounts::Obscured {
+                    upvotes: upvotes.len() as u32,
+                    downvotes: downvotes.len() as u32,
+                }
+            } else {
+                messages::VoteCounts::Public { upvotes, downvotes }
+            };
+
             let mut effects = vec![Effect::Broadcast(Message::VotingResults {
                 sent,
-                counts: messages::VoteCounts::Public { upvotes, downvotes },
+                counts: vote_counts,
             })];
 
             if mission == 1 {
                 let proposal_index = if sent { 0 } else { 1 };
-                let proposal = &proposals[proposal_index];
+                let proposal = &self.proposals[proposal_index];
                 log::debug!("Voted to send {} on mission 1", proposal);
                 effects.push(Effect::Broadcast(Message::MissionGoing {
                     mission,
                     players: proposal.players.clone(),
                 }));
-                let next_game = GameStateWrapper::OnMission(GameState {
-                    phase: OnMission::new(proposal_index),
-                    game,
-                    proposals,
-                    mission_results,
-                });
-                (next_game, effects)
+                let next_state = self.with_phase(OnMission::new(proposal_index));
+                (GameStateWrapper::OnMission(next_state), effects)
             } else {
-                let proposal = proposals.last().expect("Voted with no proposals!");
+                let proposal = self.proposals.last().expect("Voted with no proposals!");
                 if sent {
                     log::debug!("Voted to send {} on mission {}", proposal, mission);
                     effects.push(Effect::Broadcast(Message::MissionGoing {
                         mission,
                         players: proposal.players.clone(),
                     }));
-                    let next_game = GameStateWrapper::OnMission(GameState {
-                        phase: OnMission::new(proposals.len() - 1),
-                        game,
-                        proposals,
-                        mission_results,
-                    });
-                    (next_game, effects)
+                    let proposal_index = self.proposals.len() - 1;
+                    let next_state = self.with_phase(OnMission::new(proposal_index));
+                    (GameStateWrapper::OnMission(next_state), effects)
                 } else {
                     log::debug!("Voted not to send {}", proposal);
-                    let next_proposer = game.next_proposer(&proposal.proposer);
-                    effects.push(Effect::Broadcast(Message::NextProposal {
-                        proposer: next_proposer.to_string(),
-                        mission,
-                        proposals_made: spent_proposals,
-                        max_proposals: game.spec.max_proposals,
-                    }));
-                    let next_game = GameStateWrapper::Proposing(GameState {
-                        phase: Proposing::new(next_proposer.to_string()),
-                        game,
-                        proposals,
-                        mission_results,
-                    });
-                    (next_game, effects)
+
+                    let next_proposer = self.game.next_proposer(&proposal.proposer).to_string();
+                    self.into_proposing(next_proposer, effects)
                 }
             }
         } else {
             // If we don't have all the votes yet, there's no state change
             (GameStateWrapper::Voting(self), vec![])
+        }
+    }
+
+    pub fn handle_obscure(mut self, player: &str) -> ActionResult {
+        if self.game.players.by_name(player).unwrap().role == Role::Maeve {
+            if self.phase.obscured {
+                self.player_error("You already obscured the votes for this proposal")
+            } else if self.role_state.maeve.can_obscure() {
+                log::debug!("Maeve obscured the votes!");
+                self.role_state.maeve.mark_obscure();
+                (GameStateWrapper::Voting(self), vec![])
+            } else {
+                self.player_error("You can't obscure this round")
+            }
+        } else {
+            self.player_error("You can't obscure votes")
         }
     }
 }
@@ -109,6 +108,7 @@ impl Voting {
     pub fn new() -> Voting {
         Voting {
             votes: HashMap::new(),
+            obscured: false,
         }
     }
 }
