@@ -44,7 +44,7 @@ export function RoleInformation(): JSX.Element {
     }, []);
     
     if (roleInfo === undefined) {
-        return <h1>Loading role info...</h1>
+        return <></>
     }
 
     return <div id="playerInfo">
