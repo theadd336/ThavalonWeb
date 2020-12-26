@@ -1,80 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
 import "../../styles/gameStyles/roleInformation.scss";
+import { RoleInfo, Snapshot } from "./constants";
 
-interface RoleInfo {
-    abilities: string,
-    assassinatable: boolean,
-    description: string,
-    isAssassin: boolean,
-    otherInfo: string,
-    priorityTarget: string | undefined,
-    role: string,
-    seenPlayers: string[],
-    team: string,
-    teamMembers: string[],
-}
-
-interface Snapshot {
-    roleInfo: RoleInfo,
-    missions: string[],
-    log: string[],
-}
-
+/**
+ * The role info of the player in the game.
+ */
 export function RoleInformation(): JSX.Element {
-    const [roleInfoElement, setRoleInfoElement] = useState<JSX.Element>(<h1>Loading Role Info...</h1>);
-
-    /**
-     * Creates the JSX Element for representing the role information
-     * section of a game page.
-     * @param roleInfo The role info received in a snapshot message.
-     */
-    function createRoleInfoElement(roleInfo: RoleInfo): JSX.Element {
-        return (
-            <div id="playerInfo">
-                <h1 className="gameSectionHeader">Player Info</h1>
-                You are <span className={roleInfo.team.toLowerCase()}>{roleInfo.role}: {roleInfo.team.toUpperCase()}</span>
-                <br />
-                {roleInfo.description && <>
-                    <span className="roleDescription">{roleInfo.description}</span>
-                    <br />
-                </>}
-
-                {roleInfo.abilities && <>
-                    <span className="abilities">{roleInfo.abilities}</span>
-                    <br />
-                </>}
-
-                {roleInfo.seenPlayers.length > 0 && <>
-                    <span className="seenPlayers">You see {roleInfo.seenPlayers.join(", ")}</span>
-                    <br />
-                </>}
-
-                {roleInfo.team == "Evil" && roleInfo.teamMembers.length > 0 && <>
-                    <span className="teamMembers">You see {roleInfo.teamMembers.join(", ")} as evil</span>
-                    <br />
-                </>}
-
-                {roleInfo.otherInfo && <>
-                    <span className="otherInfo">{roleInfo.otherInfo}</span>
-                    <br />
-                </>}
-
-                {roleInfo.assassinatable && <>
-                    <span className="assassinatable">You are assassinatable!</span>
-                    <br />
-                </>}
-
-                {roleInfo.isAssassin && <>
-                    <span className="assassin">You are the assassin!</span>
-                    <br />
-                    {roleInfo.priorityTarget !== "None" && <span className="priorityTarget">{roleInfo.priorityTarget} is the priority target!</span>}
-                    {roleInfo.priorityTarget === "None" && <span className="priorityTarget">There is no priority target.</span>}
-                    <br />
-                </>}
-            </div>
-        )
-    }
+    const [roleInfo, setRoleInfo] = useState<RoleInfo | undefined>(undefined);
 
     /**
      * Handles any lobby messages that come from the server. If the message type
@@ -85,12 +18,10 @@ export function RoleInformation(): JSX.Element {
         switch (message.messageType) {
             case InboundMessageType.Snapshot: {
                 const snapshot = message.data as Snapshot;
-                console.log("SETTING ROLE INFO ELEMENT!");
-                setRoleInfoElement(createRoleInfoElement(snapshot.roleInfo));
+                setRoleInfo(snapshot.roleInfo);
                 break;
             }
             default: {
-                console.log("Received unsupported message type: " + message.messageType);
                 break;
             }
         }
@@ -112,5 +43,44 @@ export function RoleInformation(): JSX.Element {
         }
     }, []);
     
-    return roleInfoElement;
+    if (roleInfo === undefined) {
+        return <h1>Loading role info...</h1>
+    }
+
+    return <div id="playerInfo">
+        <h1 className="game-section-header">Player Info</h1>
+        You are <span className={roleInfo.team.toLowerCase()}>{roleInfo.role}: {roleInfo.team.toUpperCase()}</span>
+        <ul>
+            {roleInfo.description && 
+                <li><span className="role-description">{roleInfo.description}</span></li>
+            }
+
+            {roleInfo.abilities && 
+                <li><span className="abilities">{roleInfo.abilities}</span></li>
+            }
+
+            {roleInfo.seenPlayers.length > 0 && 
+                <li><span className="seen-players">You see {roleInfo.seenPlayers.join(", ")}</span></li>
+            }
+
+            {roleInfo.team == "Evil" && roleInfo.teamMembers.length > 0 && 
+                <li><span className="team-members">You see {roleInfo.teamMembers.join(", ")} as evil</span></li>
+            }
+
+            {roleInfo.otherInfo && 
+                <li><span className="other-info">{roleInfo.otherInfo}</span></li>
+            }
+
+            {roleInfo.assassinatable && 
+                <li><span className="assassinatable">You are assassinatable!</span></li>
+            }
+
+            {roleInfo.isAssassin && 
+                <li><span className="assassin">You are the assassin! </span>
+                {roleInfo.priorityTarget !== "None" && <span className="priority-target">{roleInfo.priorityTarget} is the priority target!</span>}
+                {roleInfo.priorityTarget === "None" && <span className="priority-target">There is no priority target.</span>}</li>
+            }
+        </ul>
+    </div>
+
 }

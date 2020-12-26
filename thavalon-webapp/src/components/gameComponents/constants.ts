@@ -24,3 +24,28 @@ export enum Vote {
     Downvote = "Downvote",
 }
 
+/**
+ * The role info provided by the server in the snapshot.
+ */
+export interface RoleInfo {
+    abilities: string,
+    assassinatable: boolean,
+    description: string,
+    isAssassin: boolean,
+    otherInfo: string,
+    priorityTarget: string | undefined,
+    role: string,
+    seenPlayers: string[],
+    team: string,
+    teamMembers: string[],
+}
+
+/**
+ * The snapshot message sent by the server.
+ */
+export interface Snapshot {
+    roleInfo: RoleInfo,
+    missions: any[],
+    log: any[],
+}
+
