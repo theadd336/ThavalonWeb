@@ -6,9 +6,43 @@ use super::prelude::*;
 pub struct Proposing {
     /// The player whose turn it is to propose
     proposer: String,
+    selected_players: HashSet<String>,
 }
 
 impl GameState<Proposing> {
+    pub fn handle_player_selected(mut self, player: &str, added_player: String) -> ActionResult {
+        if player != self.phase.proposer {
+            return self.player_error("It's not your proposal");
+        }
+
+        self.phase.selected_players.insert(added_player.clone());
+        let effects = vec![Effect::Broadcast(Message::PlayerSelected {
+            player: added_player,
+        })];
+
+        (GameStateWrapper::Proposing(self), effects)
+    }
+
+    pub fn handle_player_unselected(
+        mut self,
+        player: &str,
+        removed_player: String,
+    ) -> ActionResult {
+        if player != self.phase.proposer {
+            return self.player_error("It's not your proposal");
+        }
+
+        if self.phase.selected_players.remove(&removed_player) {
+            let effects = vec![Effect::Broadcast(Message::PlayerUnselected {
+                player: removed_player,
+            })];
+
+            (GameStateWrapper::Proposing(self), effects)
+        } else {
+            self.player_error(format!("{} wasn't on the proposal!", removed_player))
+        }
+    }
+
     /// Respond to a proposal. If the proposal is invalid, or it's not the player's turn to propose, this returns
     /// an error reply. Otherwise, the proposal is sent to all players and the game moves into the [`Voting`] phase.
     /// On mission 1, we instead ask for two proposals before voting. Once force is active, we skip the voting phase
@@ -85,7 +119,10 @@ impl GameState<Proposing> {
 impl Proposing {
     /// Create a new `Proposing` phase given the player proposing.
     pub fn new(proposer: String) -> Proposing {
-        Proposing { proposer }
+        Proposing {
+            proposer,
+            selected_players: HashSet::new(),
+        }
     }
 }
 
