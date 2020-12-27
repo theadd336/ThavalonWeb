@@ -44,6 +44,8 @@ pub struct GameSpec {
     /// The maximum number of proposals allowed before force activates. Proposals on mission 1 and proposals that are
     /// sent do not count towards this limit.
     pub max_proposals: usize,
+    /// The maximum number of times Maeve can obscure voting results in a game
+    pub max_maeve_obscures: usize,
     /// True if mission 4 requires at least two failures
     double_fail_mission_four: bool,
 }
@@ -124,6 +126,7 @@ impl Game {
                 player.role.generate_info(
                     &mut rng,
                     &player.name,
+                    spec,
                     &players,
                     &assassin,
                     priority_target,
@@ -283,10 +286,12 @@ static FIVE_PLAYER: GameSpec = GameSpec {
         Role::Mordred,
         Role::Morgana,
         Role::Maelegant,
+        Role::Maeve,
         Role::Agravaine,
     ],
     good_players: 3,
     max_proposals: 5,
+    max_maeve_obscures: 2,
     double_fail_mission_four: false,
 };
 
@@ -298,7 +303,8 @@ static TWO_PLAYER: GameSpec = GameSpec {
     evil_roles: Role::ALL_EVIL,
     good_players: 1,
     max_proposals: 2,
-    double_fail_mission_four: false
+    max_maeve_obscures: 2,
+    double_fail_mission_four: false,
 };
 
 /// Three-player games, for testing
@@ -309,7 +315,8 @@ static THREE_PLAYER: GameSpec = GameSpec {
     evil_roles: Role::ALL_EVIL,
     good_players: 2,
     max_proposals: 3,
-    double_fail_mission_four: false
+    max_maeve_obscures: 2,
+    double_fail_mission_four: false,
 };
 
 static FOUR_PLAYER: GameSpec = GameSpec {
@@ -319,6 +326,6 @@ static FOUR_PLAYER: GameSpec = GameSpec {
     evil_roles: Role::ALL_EVIL,
     good_players: 2,
     max_proposals: 4,
-    double_fail_mission_four: true
+    max_maeve_obscures: 2,
+    double_fail_mission_four: true,
 };
-

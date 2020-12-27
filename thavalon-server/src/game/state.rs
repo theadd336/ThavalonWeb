@@ -10,7 +10,10 @@ use super::{Game, MissionNumber};
 use self::assassination::Assassination;
 use self::on_mission::{OnMission, WaitingForAgravaine};
 use self::proposing::Proposing;
+use self::role_state::RoleState;
 use self::voting::Voting;
+
+mod role_state;
 
 /// Result of handling a player action. The [`GameStateWrapper`] is the new state of the game and the [`Effect`]
 /// [`Vec`] describes side-effects of the state transition.
@@ -34,6 +37,7 @@ pub struct GameState<P: Phase> {
     phase: P,
     /// Game configuration
     game: Game,
+    role_state: RoleState,
     /// All proposals made in the game
     proposals: Vec<Proposal>,
     /// Results of all completed missions
@@ -136,6 +140,7 @@ impl<P: Phase> GameState<P> {
         GameState {
             phase: next_phase,
             game: self.game,
+            role_state: self.role_state,
             proposals: self.proposals,
             mission_results: self.mission_results,
         }
@@ -159,7 +164,7 @@ impl<P: Phase> GameState<P> {
     fn into_done(self, winning_team: Team, mut effects: Vec<Effect>) -> ActionResult {
         effects.push(Effect::Broadcast(Message::GameOver {
             winning_team,
-            roles: self.game.info.clone()
+            roles: self.game.info.clone(),
         }));
         let next_state = self.with_phase(Done::new(winning_team));
         (GameStateWrapper::Done(next_state), effects)
@@ -196,8 +201,13 @@ impl GameStateWrapper {
     pub fn new(game: Game) -> GameStateWrapper {
         let first_proposer = &game.proposal_order()[0];
         let phase = Proposing::new(first_proposer.clone());
+
+        let mut role_state = RoleState::new(&game);
+        role_state.on_round_start();
+
         GameStateWrapper::Proposing(GameState {
             phase,
+            role_state,
             game,
             proposals: vec![],
             mission_results: vec![],
@@ -213,6 +223,9 @@ impl GameStateWrapper {
             }
             (GameStateWrapper::Voting(inner), Action::Vote { upvote }) => {
                 inner.handle_vote(player, upvote)
+            }
+            (GameStateWrapper::Voting(inner), Action::Obscure) => {
+                inner.handle_obscure(player)
             }
             (GameStateWrapper::OnMission(inner), Action::Play { card }) => {
                 inner.handle_card(player, card)
