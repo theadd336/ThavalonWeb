@@ -28,7 +28,7 @@ export enum Vote {
  * An enum of all GameMessage types
  */
 export enum GameMessageType {
-    Error = "Error",
+    Error = "error",
     ProposalOrder = "proposalOrder",
     RoleInformation = "roleInformation",
     NextProposal = "nextProposal",
