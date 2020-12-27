@@ -221,12 +221,12 @@ impl PlayerClient {
                                 ))
                                 .await;
                         }
-                        IncomingMessage::PlayerFocusChange(visibility) => {
+                        IncomingMessage::PlayerFocusChange(is_tabbed_out) => {
                             let _ = to_lobby
                                 .send((
                                     LobbyCommand::PlayerFocusChange {
                                         client_id: client_id.clone(),
-                                        visibility,
+                                        is_tabbed_out,
                                     },
                                     None,
                                 ))

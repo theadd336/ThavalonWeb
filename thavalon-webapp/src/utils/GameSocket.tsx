@@ -16,7 +16,7 @@ export enum OutboundMessageType {
 
 export interface OutboundMessage {
     messageType: OutboundMessageType,
-    data?: object | string,
+    data?: object | string | boolean,
 }
 
 export enum InboundMessageType {

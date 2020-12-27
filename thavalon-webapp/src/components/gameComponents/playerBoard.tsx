@@ -26,7 +26,7 @@ interface PlayerCardProps {
  */
 interface PlayerFocusChangeMessage {
     displayName: string,
-    visibility: VisibilityState
+    isTabbedOut: boolean
 }
 
 /**
@@ -40,7 +40,7 @@ export function PlayerBoard(): JSX.Element {
         const connection = GameSocket.getInstance();
         connection.onGameEvent.subscribe(handleMessage);
         connection.onLobbyEvent.subscribe(handleMessage);
-        document.onvisibilitychange = () => sendPlayerVisibilitychange();
+        document.onvisibilitychange = () => sendPlayerVisibilityChange();
         return () => {
             connection.onGameEvent.unsubscribe(handleMessage);
             document.onvisibilitychange = null;
@@ -65,8 +65,8 @@ export function PlayerBoard(): JSX.Element {
                 handleGameMessage(snapshot.log[0]);
                 break;
             case InboundMessageType.PlayerFocusChange:
-                const { displayName, visibility } = message.data as PlayerFocusChangeMessage;
-                playerFocusChanged(displayName, visibility);
+                const { displayName, isTabbedOut } = message.data as PlayerFocusChangeMessage;
+                playerFocusChanged(displayName, isTabbedOut);
                 break;
             case InboundMessageType.GameMessage:
                 handleGameMessage(message.data as GameMessage);
@@ -98,10 +98,10 @@ export function PlayerBoard(): JSX.Element {
     /**
      * Sends a message to the server that the player is tabbed in or out.
      */
-    function sendPlayerVisibilitychange(): void {
+    function sendPlayerVisibilityChange(): void {
         const connection = GameSocket.getInstance();
-        // visibilityState is either "hidden" or "visible." It can also be "prerender," but we don't talk about that.
-        const message = { messageType: OutboundMessageType.PlayerFocusChange, data: document.visibilityState };
+        const isTabbedOut = document.visibilityState === "hidden" ? true : false;
+        const message = { messageType: OutboundMessageType.PlayerFocusChange, data: isTabbedOut };
         connection.sendMessage(message);
     }
 
@@ -110,11 +110,11 @@ export function PlayerBoard(): JSX.Element {
      * @param player The player whose focus has changed
      * @param visibility The new visibility for that player
      */
-    function playerFocusChanged(player: string, visibility: VisibilityState) {
+    function playerFocusChanged(player: string, isTabbedOut: boolean): void {
         const tempSet = new Set(tabbedOutPlayers.values());
-        if (visibility === "hidden") {
+        if (isTabbedOut) {
             tempSet.add(player);
-        } else if (visibility === "visible") {
+        } else {
             tempSet.delete(player);
         }
         setTabbedOutPlayers(tempSet);
@@ -131,7 +131,7 @@ export function PlayerBoard(): JSX.Element {
         if (!tempSet.delete(valueToToggle)) {
             tempSet.add(valueToToggle);
         }
-        reactSetter(new Set<T>(tempSet.values()));
+        reactSetter(tempSet);
     }
 
     // Create the player cards with the state we have.

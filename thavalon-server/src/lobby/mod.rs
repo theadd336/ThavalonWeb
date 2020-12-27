@@ -66,7 +66,7 @@ pub enum LobbyCommand {
     },
     PlayerFocusChange {
         client_id: String,
-        visibility: String,
+        is_tabbed_out: bool,
     },
 }
 
@@ -90,7 +90,7 @@ enum IncomingMessage {
     GameCommand(Action),
     GetPlayerList,
     GetSnapshot,
-    PlayerFocusChange(String),
+    PlayerFocusChange(bool),
 }
 
 /// An outgoing message to the client.
@@ -104,7 +104,7 @@ pub enum OutgoingMessage {
     Snapshot(GameSnapshot),
     PlayerFocusChange {
         displayName: String,
-        visibility: String,
+        isTabbedOut: bool,
     },
 }
 

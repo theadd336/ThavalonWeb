@@ -11,10 +11,10 @@ use super::state::{Effect, GameStateWrapper};
 
 /// Runs a THavalon game to completion.
 pub async fn run_game<I: Interactions>(game: Game, interactions: &mut I) -> Result<(), GameError> {
+    interactions
+        .send(Message::ProposalOrder(game.proposal_order.clone()))
+        .await?;
     for player in game.players.iter() {
-        interactions
-            .send_to(&player.name, Message::ProposalOrder(game.proposal_order.clone()))
-            .await?;
         interactions
             .send_to(
                 &player.name,

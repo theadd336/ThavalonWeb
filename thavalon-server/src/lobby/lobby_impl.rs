@@ -315,13 +315,13 @@ impl Lobby {
     async fn player_focus_changed(
         &mut self,
         client_id: String,
-        visibility: String,
+        is_tabbed_out: bool,
     ) -> LobbyResponse {
         let (_, display_name) = &self.client_ids_to_player_info[&client_id];
         let display_name = display_name.clone();
         let message = OutgoingMessage::PlayerFocusChange {
             displayName: display_name,
-            visibility,
+            isTabbedOut: is_tabbed_out,
         };
         self.broadcast_message(&message).await;
         LobbyResponse::None
@@ -366,8 +366,8 @@ impl Lobby {
                 LobbyCommand::GetSnapshots { client_id } => self.get_snapshots(client_id).await,
                 LobbyCommand::PlayerFocusChange {
                     client_id,
-                    visibility,
-                } => self.player_focus_changed(client_id, visibility).await,
+                    is_tabbed_out,
+                } => self.player_focus_changed(client_id, is_tabbed_out).await,
             };
 
             if let Some(channel) = result_channel {
