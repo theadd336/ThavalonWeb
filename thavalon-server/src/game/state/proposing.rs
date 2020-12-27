@@ -9,13 +9,23 @@ pub struct Proposing {
     selected_players: HashSet<String>,
 }
 
+const NOT_PROPOSER_ERROR: &str = "It's not your proposal";
+
 impl GameState<Proposing> {
+    /// Respond to the proposer adding a player to their proposal. If the player performing the action
+    /// is not the proposer, this sends them an error message. It validates that the added player is
+    /// in the game, but does not check if they are already on the proposal or if the proposal is the
+    /// correct size, since final validation is done when the proposal is submitted.
     pub fn handle_player_selected(mut self, player: &str, added_player: String) -> ActionResult {
         if player != self.phase.proposer {
-            return self.player_error("It's not your proposal");
+            return self.player_error(NOT_PROPOSER_ERROR);
         }
 
-        self.phase.selected_players.insert(added_player.clone());
+        if self.game.players.by_name(&added_player).is_none() {
+            return self.player_error(format!("{} is not in the game!", added_player));
+        }
+
+        self.phase.selected_players.insert(added_player);
         let effects = vec![Effect::Broadcast(Message::ProposalUpdated {
             players: self.phase.selected_players.clone(),
         })];
@@ -23,13 +33,20 @@ impl GameState<Proposing> {
         (GameStateWrapper::Proposing(self), effects)
     }
 
+    /// Respond to the proposer removing a player from their proposal. If the player performing the action is not
+    /// the proposer, this sends them an error message. It also validates that the removed player is in the game
+    /// and was on the proposal.
     pub fn handle_player_unselected(
         mut self,
         player: &str,
         removed_player: String,
     ) -> ActionResult {
         if player != self.phase.proposer {
-            return self.player_error("It's not your proposal");
+            return self.player_error(NOT_PROPOSER_ERROR);
+        }
+
+        if self.game.players.by_name(&removed_player).is_none() {
+            return self.player_error(format!("{} is not in the game!", removed_player));
         }
 
         if self.phase.selected_players.remove(&removed_player) {
@@ -49,7 +66,7 @@ impl GameState<Proposing> {
     /// and go straight to [`OnMission`].
     pub fn handle_proposal(mut self, player: &str, players: HashSet<String>) -> ActionResult {
         if player != self.phase.proposer {
-            return self.player_error("It's not your proposal");
+            return self.player_error(NOT_PROPOSER_ERROR);
         }
 
         let mission = self.mission();
