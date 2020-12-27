@@ -16,5 +16,10 @@ $player-selected-border-thickness: 3px;
 
 .player-selected {
     padding: $player-card-padding-vertical - $player-selected-border-thickness $player-card-padding-horizontal;
-    border: 1px + $player-selected-border-thickness solid $game-green;
+    border: 1px + $player-selected-border-thickness solid $player-selected-color;
+}
+
+.tabbed-out-indicator {
+    margin-right: 5px;
+    margin-bottom: 2px;
 }

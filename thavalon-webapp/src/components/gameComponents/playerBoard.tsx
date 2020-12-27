@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
-import { Vote, GameMessageType, GameMessage } from "./constants";
+import { Vote, GameMessageType, GameMessage, Snapshot } from "./constants";
 import { Spinner } from "react-bootstrap";
 
 import "../../styles/gameStyles/playerBoard.scss";
 
 
+/**
+ * Props object for the PlayerCard component. Some of these aren't used yet,
+ * pending future development.
+ */
 interface PlayerCardProps {
     name: string
     toggleSelected: (name: string) => void,
@@ -17,18 +21,30 @@ interface PlayerCardProps {
     declaredAs?: string
 }
 
+/**
+ * Message for the tabbed out indicator message.
+ */
 interface PlayerFocusChangeMessage {
     displayName: string,
     visibility: VisibilityState
 }
 
+/**
+ * Board containing the player list and all related functions. This is a container
+ * for all PlayerCards and has handlers for game and lobby events.
+ */
 export function PlayerBoard(): JSX.Element {
+    // On mount, set up event handlers for the game socket and the DOM.
+    // On unmount, clean up event handlers.
     useEffect(() => {
         const connection = GameSocket.getInstance();
         connection.onGameEvent.subscribe(handleMessage);
         connection.onLobbyEvent.subscribe(handleMessage);
-        document.onvisibilitychange = () => toggleTabbedIndicator();
-        return () => connection.onGameEvent.unsubscribe(handleMessage);
+        document.onvisibilitychange = () => sendPlayerVisibilitychange();
+        return () => {
+            connection.onGameEvent.unsubscribe(handleMessage);
+            document.onvisibilitychange = null;
+        }
     }, [])
 
     // State for maintaining the player list.
@@ -37,14 +53,16 @@ export function PlayerBoard(): JSX.Element {
     const [selectedPlayers, setSelectedPlayers] = useState(new Set<string>());
     // State for maintaining players who are tabbed out. These players have a tab indicator.
     const [tabbedOutPlayers, setTabbedOutPlayers] = useState(new Set<string>());
-    // I hate react sometimes
-    const [test, setTest] = useState(0);
 
+    /**
+     * Generic message handler for all messages from the server
+     * @param message The InboundMessage from the server.
+     */
     function handleMessage(message: InboundMessage): void {
         switch (message.messageType) {
             case InboundMessageType.Snapshot:
-                const snapshot = message.data as any
-                handleGameMessage(snapshot.log[0] as GameMessage);
+                const snapshot = message.data as Snapshot
+                handleGameMessage(snapshot.log[0]);
                 break;
             case InboundMessageType.PlayerFocusChange:
                 const { displayName, visibility } = message.data as PlayerFocusChangeMessage;
@@ -56,6 +74,11 @@ export function PlayerBoard(): JSX.Element {
         }
     }
 
+    /**
+     * GameMessage specific message handler. This is needed because the GameMessage
+     * has internal types to parse.
+     * @param message The GameMessage from the server
+     */
     function handleGameMessage(message: GameMessage): void {
         switch (message.messageType) {
             case GameMessageType.ProposalOrder:
@@ -64,41 +87,54 @@ export function PlayerBoard(): JSX.Element {
         }
     }
 
+    /**
+     * Updates the selected player list with a new name.
+     * @param name The player name to select.
+     */
     function updateSelectedPlayers(name: string): void {
         updateSet(selectedPlayers, name, setSelectedPlayers);
     }
 
-    function toggleTabbedIndicator(): void {
+    /**
+     * Sends a message to the server that the player is tabbed in or out.
+     */
+    function sendPlayerVisibilitychange(): void {
         const connection = GameSocket.getInstance();
         // visibilityState is either "hidden" or "visible." It can also be "prerender," but we don't talk about that.
         const message = { messageType: OutboundMessageType.PlayerFocusChange, data: document.visibilityState };
         connection.sendMessage(message);
     }
 
+    /**
+     * Updates the tabbed out player list with a new player and visibility
+     * @param player The player whose focus has changed
+     * @param visibility The new visibility for that player
+     */
     function playerFocusChanged(player: string, visibility: VisibilityState) {
-        console.log("Updating focus");
-        console.log(`${ player } - ${ visibility }`);
-        console.log(tabbedOutPlayers);
-        console.log(test);
-        if ((tabbedOutPlayers.has(player) && visibility === "visible")
-            || (!tabbedOutPlayers.has(player) && visibility === "hidden")) {
-            updateSet(tabbedOutPlayers, player, setTabbedOutPlayers);
-            return;
+        const tempSet = new Set(tabbedOutPlayers.values());
+        if (visibility === "hidden") {
+            tempSet.add(player);
+        } else if (visibility === "visible") {
+            tempSet.delete(player);
         }
+        setTabbedOutPlayers(tempSet);
     }
 
+    /**
+     * Helper function to update a set.
+     * @param setToUpdate The set to update
+     * @param valueToToggle The value in the set to toggle
+     * @param reactSetter The React setter for the state to update
+     */
     function updateSet<T>(setToUpdate: Set<T>, valueToToggle: T, reactSetter: React.Dispatch<React.SetStateAction<Set<T>>>): void {
         const tempSet = new Set<T>(setToUpdate.values());
-        setTest(test + 1);
         if (!tempSet.delete(valueToToggle)) {
             tempSet.add(valueToToggle);
         }
         reactSetter(new Set<T>(tempSet.values()));
     }
 
-    console.log("Prior to render");
-    console.log(test);
-    console.log(tabbedOutPlayers);
+    // Create the player cards with the state we have.
     const playerCards = playerList.map((playerName) => {
         return (
             <PlayerCard
@@ -117,6 +153,11 @@ export function PlayerBoard(): JSX.Element {
     );
 }
 
+/**
+ * React component representing an interactive player button. This button doesn't
+ * directly communicate with the server but handles all styling of relevant icons.
+ * @param props The props for the player card
+ */
 function PlayerCard(props: PlayerCardProps): JSX.Element {
     return (
         <button
@@ -125,8 +166,8 @@ function PlayerCard(props: PlayerCardProps): JSX.Element {
             <div>
                 {props.tabbedOut &&
                     <Spinner
+                        className="tabbed-out-indicator"
                         size="sm"
-                        style={{ marginRight: "5px", marginBottom: "2px", position: "sticky" }}
                         variant="dark"
                         animation="border" />}
                 {props.name}

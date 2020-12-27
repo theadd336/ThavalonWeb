@@ -22,6 +22,7 @@ pub enum Action {
     Play {
         card: Card,
     },
+    Obscure,
     QuestingBeast,
     Declare,
     Assassinate {

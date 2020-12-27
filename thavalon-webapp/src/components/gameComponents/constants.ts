@@ -24,7 +24,9 @@ export enum Vote {
     Downvote = "Downvote",
 }
 
-
+/**
+ * An enum of all GameMessage types
+ */
 export enum GameMessageType {
     Error = "Error",
     ProposalOrder = "proposalOrder",
@@ -40,7 +42,35 @@ export enum GameMessageType {
     GameOver = "gameOver"
 }
 
+/**
+ * An interface for the game message from the server
+ */
 export interface GameMessage {
     messageType: GameMessageType,
     data?: object | string
 }
+/**
+ * The role info provided by the server in the snapshot.
+ */
+export interface RoleInfo {
+    abilities: string,
+    assassinatable: boolean,
+    description: string,
+    isAssassin: boolean,
+    otherInfo: string,
+    priorityTarget: string | undefined,
+    role: string,
+    seenPlayers: string[],
+    team: string,
+    teamMembers: string[],
+}
+
+/**
+ * The snapshot message sent by the server.
+ */
+export interface Snapshot {
+    roleInfo: RoleInfo,
+    missions: any[],
+    log: GameMessage[],
+}
+
