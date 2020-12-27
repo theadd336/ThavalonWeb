@@ -29,14 +29,13 @@ export function RoleInformation(): JSX.Element {
         // On mount, get the connection instance and set up event handlers.
         // Then, get the player list.
         const connection = GameSocket.getInstance();
-        connection?.onGameEvent.subscribe(handleGameMessage);
-        console.log("SET UP MESSAGE!");
-        connection?.sendMessage({ messageType: OutboundMessageType.GetSnapshot });
+        connection.onGameEvent.subscribe(handleGameMessage);
+        connection.sendMessage({ messageType: OutboundMessageType.GetSnapshot });
 
         // On unmount, unsubscribe our event handlers.
         return () => {
             const connection = GameSocket.getInstance();
-            connection?.onGameEvent.unsubscribe(handleGameMessage);
+            connection.onGameEvent.unsubscribe(handleGameMessage);
         }
     }, []);
 
