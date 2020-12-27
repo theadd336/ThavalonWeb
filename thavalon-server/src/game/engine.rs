@@ -13,6 +13,9 @@ use super::state::{Effect, GameStateWrapper};
 pub async fn run_game<I: Interactions>(game: Game, interactions: &mut I) -> Result<(), GameError> {
     for player in game.players.iter() {
         interactions
+            .send_to(&player.name, Message::ProposalOrder(game.proposal_order.clone()))
+            .await?;
+        interactions
             .send_to(
                 &player.name,
                 Message::RoleInformation {

@@ -10,7 +10,8 @@ export enum OutboundMessageType {
     GetLobbyState = "GetLobbyState",
     GetPlayerList = "GetPlayerList",
     StartGame = "StartGame",
-    GetSnapshot = "GetSnapshot"
+    GetSnapshot = "GetSnapshot",
+    PlayerFocusChange = "PlayerFocusChange"
 }
 
 export interface OutboundMessage {
@@ -24,6 +25,7 @@ export enum InboundMessageType {
     LobbyState = "LobbyState",
     GameMessage = "GameMessage",
     Snapshot = "Snapshot",
+    PlayerFocusChange = "PlayerFocusChange"
 }
 
 export interface InboundMessage {
@@ -83,6 +85,7 @@ export class GameSocket {
                 this._onGameEvent.dispatch(message);
                 break;
             }
+            case InboundMessageType.PlayerFocusChange:
             case InboundMessageType.PlayerList:
             case InboundMessageType.LobbyState: {
                 this._onLobbyEvent.dispatch(message);

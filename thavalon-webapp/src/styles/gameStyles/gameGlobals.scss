@@ -3,6 +3,7 @@ $border-color: black;
 $border-style: solid;
 $game-background-color: #E5E5E5;
 $game-root-padding: 5px;
+$game-green: #003A06;
 
 .game-root-container {    
     display: flex;
@@ -29,6 +30,7 @@ $game-root-padding: 5px;
 }
 
 .col-right {
+    width: 67%;
     padding-left: $game-root-padding;
     border-left: $border-thickness $border-style $border-color;
 }

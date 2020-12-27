@@ -24,3 +24,23 @@ export enum Vote {
     Downvote = "Downvote",
 }
 
+
+export enum GameMessageType {
+    Error = "Error",
+    ProposalOrder = "proposalOrder",
+    RoleInformation = "roleInformation",
+    NextProposal = "nextProposal",
+    ProposalMade = "proposalMade",
+    CommenceVoting = "commenceVoting",
+    MissionGoing = "missionGoing",
+    MissionResults = "missionResults",
+    AgravaineDeclaration = "agravaineDeclaration",
+    BeginAssassination = "beginAssassination",
+    AssassinationResult = "assassinationResult",
+    GameOver = "gameOver"
+}
+
+export interface GameMessage {
+    messageType: GameMessageType,
+    data?: object | string
+}
