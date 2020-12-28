@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType } from "../../utils/GameSocket";
 import { GameMessage, GameMessageType, Snapshot, NextProposalMessage } from "./constants";
 
+import "../../styles/gameStyles/gameGlobals.scss";
+
 enum GamePhaseHeader {
     ProposalOther = "Waiting for Proposal",
     ProposalSelf = "Propose",
@@ -68,16 +70,12 @@ export function GameHeader(): JSX.Element {
 
     return (
         <div>
-            <div>
-                <h1>
-                    Game: {gamePhaseHeader}
-                </h1>
-            </div>
-            <div>
-                <h3>
-                    Turns until force: {turnsUntilForce}
-                </h3>
-            </div>
+            <h1 className="game-section-header">
+                Game: {gamePhaseHeader}
+            </h1>
+            <h3 className="game-section-subheader">
+                Turns until force: {turnsUntilForce}
+            </h3>
         </div>
     );
 }

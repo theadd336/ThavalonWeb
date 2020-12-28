@@ -47,3 +47,11 @@ $good-role-color: #003A06;
     color: $game-section-header-color;
     text-align: center;
 }
+
+// Title of any subheader in a game
+.game-section-subheader {
+    font-size: 20px;
+    line-height: 26px;
+    color: $game-section-header-color;
+    text-align: center;
+}
