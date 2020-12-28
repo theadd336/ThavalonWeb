@@ -80,7 +80,7 @@ impl Lobby {
         // First, check if this player is already in game. If so, this is a reconnect. Otherwise,
         // this is a new player.
         if self.player_ids_to_client_ids.contains_key(&player_id) {
-            return self.reconnect_player(player_id, display_name);
+            return self.reconnect_player(&player_id, &display_name);
         }
 
         // Unlike reconnecting, new players may only join when the game is in Lobby.
@@ -142,7 +142,7 @@ impl Lobby {
     }
 
     /// Reconnect a player to an existing game in progress. Helper for add_player.
-    fn reconnect_player(&self, player_id: String, display_name: String) -> LobbyResponse {
+    fn reconnect_player(&self, player_id: &str, display_name: &str) -> LobbyResponse {
         log::info!(
             "Player {} is already in game {}, reconnecting.",
             player_id,
@@ -158,7 +158,7 @@ impl Lobby {
             );
             return LobbyResponse::Standard(Err(LobbyError::InvalidStateError));
         }
-        let client_id = self.player_ids_to_client_ids.get(&player_id).unwrap().clone();
+        let client_id = self.player_ids_to_client_ids.get(player_id).unwrap().clone();
         let existing_display_name = &self.client_ids_to_player_info.get(&client_id).unwrap().1;
         if existing_display_name != &display_name {
             log::warn!(
@@ -168,7 +168,7 @@ impl Lobby {
                 existing_display_name);
             return LobbyResponse::Standard(Err(LobbyError::NameChangeOnReconnectError));
         }
-        return LobbyResponse::JoinGame(Ok(client_id));;
+        return LobbyResponse::JoinGame(Ok(client_id));
     }
 
     /// Removes a player from the lobby and game.
