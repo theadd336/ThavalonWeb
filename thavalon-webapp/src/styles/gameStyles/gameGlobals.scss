@@ -31,11 +31,17 @@ $good-role-color: #003A06;
 
 // Left column is one-third of the screen.
 .col-left {
-    width: 33%;
+    width: 25%;
 }
 
+.col-center {
+    width: 50%;
+    padding-left: $game-root-padding;
+    padding-right: $game-root-padding;
+    border-left: $border-thickness $border-style $border-color;
+}
 .col-right {
-    width: 67%;
+    width: 25%;
     padding-left: $game-root-padding;
     border-left: $border-thickness $border-style $border-color;
 }

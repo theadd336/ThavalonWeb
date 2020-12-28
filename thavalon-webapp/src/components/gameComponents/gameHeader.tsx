@@ -4,6 +4,9 @@ import { GameMessage, GameMessageType, Snapshot, NextProposalMessage } from "./c
 
 import "../../styles/gameStyles/gameGlobals.scss";
 
+/**
+ * An enum of game phase header titles.
+ */
 enum GamePhaseHeader {
     ProposalOther = "Waiting for Proposal",
     ProposalSelf = "Propose",
@@ -14,11 +17,14 @@ enum GamePhaseHeader {
 }
 
 /**
- * 
+ * Creates the gamephase header and force count component.
  */
 export function GameHeader(): JSX.Element {
+    // State for the current phase of the game
     const [gamePhaseHeader, setGamePhaseHeader] = useState(GamePhaseHeader.ProposalOther);
+    // State for the number of turns until force. Initialized to 1 to prevent any force-specific actions from occurring.
     const [turnsUntilForce, setTurnsUntilForce] = useState(1);
+    // State to determine the name of this player.
     const [me, setMe] = useState("");
 
     useEffect(() => {
@@ -31,20 +37,30 @@ export function GameHeader(): JSX.Element {
         }
     });
 
+    /**
+     * Handles any message received from the server.
+     * @param message An inbound message from the server
+     */
     function handleMessage(message: InboundMessage): void {
         switch (message.messageType) {
+            // If it's a snapshot, check the last message to get the current phase.
             case InboundMessageType.Snapshot:
                 const snapshot = message.data as Snapshot;
                 setMe(snapshot.me);
                 const lastLogIndex = snapshot.log.length - 1;
                 mapMessageToState(snapshot.log[lastLogIndex]);
                 break;
+            // If it's a normal game message, just pass in the data to determine the phase.
             case InboundMessageType.GameMessage:
                 mapMessageToState(message.data as GameMessage);
                 break;
         }
     }
 
+    /**
+     * Given a message, determines which phase of the game the player is currently in.
+     * @param message A GameMessage from the server
+     */
     function mapMessageToState(message: GameMessage): void {
         switch (message.messageType) {
             case GameMessageType.BeginAssassination:
@@ -54,6 +70,8 @@ export function GameHeader(): JSX.Element {
                 setGamePhaseHeader(GamePhaseHeader.Vote);
                 break;
             case GameMessageType.NextProposal:
+                // If it's the next proposal, we need to see if it's us proposing or not.
+                // Also, update the force counter here.
                 const proposalMessage = message.data as NextProposalMessage;
                 setTurnsUntilForce(proposalMessage.maxProposals - proposalMessage.proposalsMade);
                 if (proposalMessage.proposer === me) {

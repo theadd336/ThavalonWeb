@@ -39,9 +39,12 @@ export function GameRoot(): JSX.Element {
                     <MissionResults />
                 </div>
             </div>
-            <div className="col-right">
+            <div className="col-center">
                 <GameHeader />
                 <PlayerBoard />
+            </div>
+            <div className="col-right">
+                <h1>Right Col</h1>
             </div>
         </div>
     );
