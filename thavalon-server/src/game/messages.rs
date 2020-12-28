@@ -16,6 +16,12 @@ pub enum Action {
     Propose {
         players: HashSet<String>,
     },
+    SelectPlayer {
+        player: String,
+    },
+    UnselectPlayer {
+        player: String,
+    },
     Vote {
         upvote: bool,
     },
@@ -57,6 +63,9 @@ pub enum Message {
         /// The maximum number of unsent proposals before force activates
         max_proposals: usize,
     },
+
+    /// The current proposal was updated
+    ProposalUpdated { players: HashSet<String> },
 
     /// Announces that a player made a proposal
     ProposalMade {
