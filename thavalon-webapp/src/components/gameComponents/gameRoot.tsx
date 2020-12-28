@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
-import { GameSocket, ConnectionError, OutboundMessageType, InboundMessage } from "../../utils/GameSocket";
+import { GameSocket, ConnectionError, OutboundMessageType } from "../../utils/GameSocket";
 import { RoleInformation } from "./roleInformation";
 import { MissionResults } from "./missionResults";
 import { PlayerBoard } from "./playerBoard";
+import { GameHeader } from "./gameHeader";
 
 import "../../styles/gameStyles/gameGlobals.scss";
 
@@ -39,6 +40,7 @@ export function GameRoot(): JSX.Element {
                 </div>
             </div>
             <div className="col-right">
+                <GameHeader />
                 <PlayerBoard />
             </div>
         </div>

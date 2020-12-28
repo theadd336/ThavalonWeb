@@ -17,6 +17,7 @@ use super::MissionNumber;
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameSnapshot {
+    me: String,
     pub role_info: Option<RoleDetails>,
     missions: Vec<Mission>,
     log: Vec<Message>,
@@ -80,8 +81,9 @@ pub enum VotingResults {
 }
 
 impl GameSnapshot {
-    pub fn new() -> GameSnapshot {
+    pub fn new(player: String) -> GameSnapshot {
         GameSnapshot {
+            me: player,
             role_info: None,
             missions: Vec::new(),
             log: Vec::new(),
@@ -271,7 +273,7 @@ impl<I: Interactions> SnapshotInteractions<I> {
         match snapshots.get(player) {
             Some(s) => s.clone(),
             None => {
-                let snapshot = Arc::new(Mutex::new(GameSnapshot::new()));
+                let snapshot = Arc::new(Mutex::new(GameSnapshot::new(player.to_string())));
                 snapshots.insert(player.to_string(), snapshot.clone());
                 snapshot
             }

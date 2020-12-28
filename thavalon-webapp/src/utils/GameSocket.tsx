@@ -10,12 +10,13 @@ export enum OutboundMessageType {
     GetLobbyState = "GetLobbyState",
     GetPlayerList = "GetPlayerList",
     StartGame = "StartGame",
-    GetSnapshot = "GetSnapshot"
+    GetSnapshot = "GetSnapshot",
+    PlayerFocusChange = "PlayerFocusChange"
 }
 
 export interface OutboundMessage {
     messageType: OutboundMessageType,
-    data?: object | string,
+    data?: object | string | boolean,
 }
 
 export enum InboundMessageType {
@@ -24,6 +25,7 @@ export enum InboundMessageType {
     LobbyState = "LobbyState",
     GameMessage = "GameMessage",
     Snapshot = "Snapshot",
+    PlayerFocusChange = "PlayerFocusChange"
 }
 
 export interface InboundMessage {
@@ -83,6 +85,7 @@ export class GameSocket {
                 this._onGameEvent.dispatch(message);
                 break;
             }
+            case InboundMessageType.PlayerFocusChange:
             case InboundMessageType.PlayerList:
             case InboundMessageType.LobbyState: {
                 this._onLobbyEvent.dispatch(message);
@@ -134,7 +137,10 @@ export class GameSocket {
     /**
      * Get the existing instance of the game socket.
      */
-    public static getInstance(): GameSocket | undefined {
+    public static getInstance(): GameSocket {
+        if (GameSocket.instance === undefined) {
+            throw new ConnectionError();
+        }
         return GameSocket.instance;
     }
 
