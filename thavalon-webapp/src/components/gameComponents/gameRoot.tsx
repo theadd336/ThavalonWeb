@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { GameSocket, ConnectionError, OutboundMessageType, InboundMessage } from "../../utils/GameSocket";
+import { GameSocket, ConnectionError, OutboundMessageType } from "../../utils/GameSocket";
 import { RoleInformation } from "./roleInformation";
 import { MissionResults } from "./missionResults";
 import { PlayerBoard } from "./playerBoard";

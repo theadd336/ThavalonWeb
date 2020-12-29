@@ -221,6 +221,17 @@ impl PlayerClient {
                                 ))
                                 .await;
                         }
+                        IncomingMessage::PlayerFocusChange(is_tabbed_out) => {
+                            let _ = to_lobby
+                                .send((
+                                    LobbyCommand::PlayerFocusChange {
+                                        client_id: client_id.clone(),
+                                        is_tabbed_out,
+                                    },
+                                    None,
+                                ))
+                                .await;
+                        }
                     }
                 }
 
@@ -258,6 +269,7 @@ impl PlayerClient {
                         game_msg,
                         client_id
                     );
+                    let game_msg = OutgoingMessage::GameMessage(game_msg);
                     let game_msg = serde_json::to_string(&game_msg).unwrap();
 
                     // Can't unwrap, but this should never fail, since the task is

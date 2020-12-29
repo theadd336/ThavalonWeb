@@ -24,6 +24,8 @@ pub enum DBGameError {
     UpdateError,
     #[error("Invalid state for the requested update.")]
     InvalidStateError,
+    #[error("The display name is already in use.")]
+    DuplicateDisplayName,
 }
 
 /// Enum representing the three possible states of a game in the DB.
@@ -181,7 +183,7 @@ impl DatabaseGame {
 
         if self.status != DBGameStatus::Lobby {
             log::error!(
-                "ERROR: attempted to add player {} to game {} while in state {:?}. 
+                "Attempted to add player {} to game {} while in state {:?}. 
             Players may only be added during the Lobby phase.",
                 player_id,
                 self._id,
@@ -190,6 +192,14 @@ impl DatabaseGame {
             return Err(DBGameError::InvalidStateError);
         }
 
+        if self.display_names.contains(&display_name) {
+            log::warn!(
+                "Name {} is already in game {}. Display names must be unique.",
+                display_name,
+                self._id
+            );
+            return Err(DBGameError::DuplicateDisplayName);
+        }
         self.players.insert(player_id.clone());
         self.display_names.insert(display_name.clone());
         self.players_to_display_names

@@ -77,7 +77,13 @@ impl Lobby {
             self.friend_code
         );
 
-        // First, sanity checks. Are we in the right status, and does the player exist already?
+        // First, check if this player is already in game. If so, this is a reconnect. Otherwise,
+        // this is a new player.
+        if self.player_ids_to_client_ids.contains_key(&player_id) {
+            return self.reconnect_player(&player_id, &display_name);
+        }
+
+        // Unlike reconnecting, new players may only join when the game is in Lobby.
         if self.status != LobbyState::Lobby {
             log::warn!(
                 "Player {} attempted to join in-progress or finished game {}.",
@@ -85,18 +91,6 @@ impl Lobby {
                 self.friend_code
             );
             return LobbyResponse::Standard(Err(LobbyError::InvalidStateError));
-        }
-
-        // TODO: In the worst case, a player could lose the entire link to the game
-        // and only have the friend code. We should support rejoining games from the
-        // add_player path eventually.
-        if self.player_ids_to_client_ids.contains_key(&player_id) {
-            log::warn!(
-                "Player {} is already in game {}.",
-                player_id,
-                self.friend_code
-            );
-            return LobbyResponse::Standard(Err(LobbyError::DuplicatePlayerError));
         }
 
         // The checks passed. Try adding the player into the game.
@@ -114,6 +108,7 @@ impl Lobby {
             let return_err = match e {
                 DBGameError::UpdateError => Err(LobbyError::DatabaseError),
                 DBGameError::InvalidStateError => Err(LobbyError::InvalidStateError),
+                DBGameError::DuplicateDisplayName => Err(LobbyError::DuplicateDisplayName),
                 _ => {
                     log::error!("An unknown error occurred in game {}.", self.friend_code);
                     Err(LobbyError::UnknownError)
@@ -145,6 +140,36 @@ impl Lobby {
             .insert(client_id.clone(), (player_id, display_name));
         self.clients.insert(client_id.clone(), client);
         LobbyResponse::JoinGame(Ok(client_id))
+    }
+
+    /// Reconnect a player to an existing game in progress. Helper for add_player.
+    fn reconnect_player(&self, player_id: &str, display_name: &str) -> LobbyResponse {
+        log::info!(
+            "Player {} is already in game {}, reconnecting.",
+            player_id,
+            self.friend_code
+        );
+        // Reconnecting can only happen for games in progress, as lobbies just kick disconnected players
+        // and finished games are finished.
+        if self.status != LobbyState::Game {
+            log::warn!(
+                "Player {} attempted to join game not in progress {}.",
+                player_id,
+                self.friend_code
+            );
+            return LobbyResponse::Standard(Err(LobbyError::InvalidStateError));
+        }
+        let client_id = self.player_ids_to_client_ids.get(player_id).unwrap().clone();
+        let existing_display_name = &self.client_ids_to_player_info.get(&client_id).unwrap().1;
+        if existing_display_name != &display_name {
+            log::warn!(
+                "Player {} attempted to reconnect with display name {}, but previously had display name {}.",
+                player_id,
+                display_name,
+                existing_display_name);
+            return LobbyResponse::Standard(Err(LobbyError::NameChangeOnReconnectError));
+        }
+        return LobbyResponse::JoinGame(Ok(client_id));
     }
 
     /// Removes a player from the lobby and game.
@@ -309,6 +334,23 @@ impl Lobby {
         LobbyResponse::None
     }
 
+    /// Handles a player focus change event by telling all clients that a player's
+    /// visibility has changed.
+    async fn player_focus_changed(
+        &mut self,
+        client_id: String,
+        is_tabbed_out: bool,
+    ) -> LobbyResponse {
+        let (_, display_name) = &self.client_ids_to_player_info[&client_id];
+        let display_name = display_name.clone();
+        let message = OutgoingMessage::PlayerFocusChange {
+            displayName: display_name,
+            isTabbedOut: is_tabbed_out,
+        };
+        self.broadcast_message(&message).await;
+        LobbyResponse::None
+    }
+
     /// Broadcasts a message to all clients in the lobby.
     async fn broadcast_message(&mut self, message: &OutgoingMessage) {
         let message = serde_json::to_string(&message).unwrap();
@@ -346,6 +388,10 @@ impl Lobby {
                 }
                 LobbyCommand::GetPlayerList { client_id } => self.send_player_list(client_id).await,
                 LobbyCommand::GetSnapshots { client_id } => self.get_snapshots(client_id).await,
+                LobbyCommand::PlayerFocusChange {
+                    client_id,
+                    is_tabbed_out,
+                } => self.player_focus_changed(client_id, is_tabbed_out).await,
             };
 
             if let Some(channel) = result_channel {
