@@ -17,11 +17,12 @@ export enum MissionCard {
 }
 
 /**
- * An enum of votes that a player can use
+ * An enum of votes that a player can use. Note that this is technically an object
+ * literal, since enums don't support booleans, but the server expects them.
  */
 export enum Vote {
-    Upvote = "Upvote",
-    Downvote = "Downvote",
+    Downvote,
+    Upvote
 }
 
 /**
@@ -34,6 +35,8 @@ export enum GameMessageType {
     NextProposal = "nextProposal",
     ProposalMade = "proposalMade",
     CommenceVoting = "commenceVoting",
+    VoteRecieved = "voteReceived",
+    VotingResults = "votingResults",
     MissionGoing = "missionGoing",
     MissionResults = "missionResults",
     AgravaineDeclaration = "agravaineDeclaration",
@@ -49,6 +52,24 @@ export interface GameMessage {
     messageType: GameMessageType,
     data?: object | string
 }
+
+export enum GameActionType {
+    Propose = "Propose",
+    SelectPlayer = "SelectPlayer",
+    UnselectPlayer = "UnselectPlayer",
+    Vote = "Vote",
+    Obscure = "Obscure",
+    QuestingBeast = "QuestingBeast",
+    Declare = "Declare",
+    Assassinate = "Assassinate",
+    MoveToAssassination = "MoveToAssassination"
+}
+
+export interface GameAction {
+    actionType: GameActionType,
+    data?: any
+}
+
 /**
  * The role info provided by the server in the snapshot.
  */

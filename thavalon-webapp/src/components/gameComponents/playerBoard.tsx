@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
-import { Vote, GameMessageType, GameMessage, Snapshot } from "./constants";
-import { Spinner } from "react-bootstrap";
+import { Vote, GameMessageType, GameMessage, Snapshot, GameActionType } from "./constants";
+import { ProgressBar, Spinner } from "react-bootstrap";
 
 import "../../styles/gameStyles/playerBoard.scss";
+import { GamePhase, mapMessageToGamePhase, sendGameAction } from "./gameUtils";
 
 
 /**
@@ -53,6 +54,10 @@ export function PlayerBoard(): JSX.Element {
     const [selectedPlayers, setSelectedPlayers] = useState(new Set<string>());
     // State for maintaining players who are tabbed out. These players have a tab indicator.
     const [tabbedOutPlayers, setTabbedOutPlayers] = useState(new Set<string>());
+    // State for maintaining the current game phase
+    const [gamePhase, setGamePhase] = useState(GamePhase.Proposal);
+    // State for maintaining the current mission number
+    const [missionNumber, setMissionNumber] = useState(1);
 
     /**
      * Generic message handler for all messages from the server
@@ -80,6 +85,7 @@ export function PlayerBoard(): JSX.Element {
      * @param message The GameMessage from the server
      */
     function handleGameMessage(message: GameMessage): void {
+        setGamePhase(mapMessageToGamePhase(message.messageType));
         switch (message.messageType) {
             case GameMessageType.ProposalOrder:
                 setPlayerList(message.data as string[]);
@@ -149,6 +155,13 @@ export function PlayerBoard(): JSX.Element {
     return (
         <div className="player-board">
             {playerCards}
+            {gamePhase === GamePhase.Vote &&
+                <VoteButtonGroup
+                    submitVote={(vote: Vote) => {
+                        sendGameAction(GameActionType.Vote, { upvote: Boolean(vote) });
+                    }}
+                    isFirstMission={missionNumber === 1}
+                    playerCount={playerList.length} />}
         </div>
     );
 }
@@ -173,5 +186,83 @@ function PlayerCard(props: PlayerCardProps): JSX.Element {
                 {props.name}
             </div>
         </button>
+    );
+}
+
+interface VoteButtonGroupProps {
+    submitVote: (vote: Vote) => void,
+    isFirstMission: boolean,
+    playerCount: number
+}
+
+function VoteButtonGroup(props: VoteButtonGroupProps): JSX.Element {
+    const [votesReceived, setVotesReceived] = useState(0);
+    const [hasVoted, setHasVoted] = useState(false);
+    useEffect(() => {
+        const connection = GameSocket.getInstance();
+        connection.onGameEvent.subscribe(handleMessage);
+        return () => connection.onGameEvent.unsubscribe(handleMessage);
+    }, []);
+
+    function handleMessage(message: InboundMessage): void {
+        if (message.messageType !== InboundMessageType.GameMessage) {
+            return;
+        }
+        const gameMessage = message.data as GameMessage;
+        if (gameMessage.messageType === GameMessageType.VoteRecieved) {
+            setVotesReceived(votesReceived + 1);
+        }
+    }
+
+    return (
+        <div className="vote-button-group">
+            {hasVoted ?
+                <VoteCount
+                    votesReceived={votesReceived}
+                    playerCount={props.playerCount} />
+                :
+                <VoteButtons
+                    isFirstMission={props.isFirstMission}
+                    submitVote={props.submitVote}
+                    setHasVoted={setHasVoted} />}
+        </div>
+    );
+}
+
+interface VoteCountProps {
+    votesReceived: number,
+    playerCount: number
+}
+
+function VoteCount(props: VoteCountProps): JSX.Element {
+    return (
+        <ProgressBar now={props.votesReceived / props.playerCount} label={`${ props.votesReceived } / ${ props.playerCount }`} />
+    )
+}
+
+interface VoteButtonProps {
+    isFirstMission: boolean,
+    submitVote: (vote: Vote) => void,
+    setHasVoted: React.Dispatch<React.SetStateAction<boolean>>
+}
+
+function VoteButtons(props: VoteButtonProps): JSX.Element {
+    function handleVoteSubmit(vote: Vote): void {
+        props.submitVote(vote);
+        props.setHasVoted(true);
+    }
+    return (
+        <>
+            <button
+                className="vote-button green"
+                onClick={() => handleVoteSubmit(Vote.Upvote)}>
+                {props.isFirstMission ? "Send Green" : "Accept"}
+            </button>
+            <button
+                className="vote-button red"
+                onClick={() => handleVoteSubmit(Vote.Upvote)}>
+                {props.isFirstMission ? "Send Green" : "Accept"}
+            </button>
+        </>
     );
 }

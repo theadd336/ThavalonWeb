@@ -80,6 +80,9 @@ pub enum Message {
     /// Announces that players should submit votes for the latest proposal.
     CommenceVoting,
 
+    /// Announces that a player has submitted a valid vote.
+    VoteReceived,
+
     /// Announces the results of a vote
     VotingResults { sent: bool, counts: VoteCounts },
 
