@@ -156,6 +156,7 @@ impl<P: Phase> GameState<P> {
             mission: self.mission(),
             proposals_made: self.spent_proposals(),
             max_proposals: self.game.spec.max_proposals,
+            mission_size: self.game.spec.mission_size(self.mission()),
         }));
         let next_state = self.with_phase(Proposing::new(proposer));
         (GameStateWrapper::Proposing(next_state), effects)
@@ -224,6 +225,7 @@ impl GameStateWrapper {
             mission: 1,
             proposals_made: 0,
             max_proposals: game.spec.max_proposals,
+            mission_size: game.spec.mission_size(1),
         }));
 
         let mut role_state = RoleState::new(&game);

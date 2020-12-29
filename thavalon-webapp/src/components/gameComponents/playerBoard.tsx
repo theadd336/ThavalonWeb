@@ -1,17 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
-<<<<<<< HEAD
-import { Vote, GameMessageType, GameMessage, Snapshot, GameActionType } from "./constants";
+import { Vote, GameMessageType, GameMessage, Snapshot, GameActionType, NextProposalMessage } from "./constants";
 import { ProgressBar, Spinner } from "react-bootstrap";
 
 import "../../styles/gameStyles/playerBoard.scss";
 import { GamePhase, mapMessageToGamePhase, sendGameAction } from "./gameUtils";
-=======
-import { Vote, GameMessageType, GameMessage, Snapshot } from "./constants";
-import { Spinner } from "react-bootstrap";
-
-import "../../styles/gameStyles/playerBoard.scss";
->>>>>>> 83b70138ec2a9d665e84944813bf58ea67eda9db
 
 
 /**
@@ -26,7 +19,8 @@ interface PlayerCardProps {
     isProposing?: boolean,
     isSelected?: boolean,
     vote?: Vote,
-    declaredAs?: string
+    declaredAs?: string,
+    enabled?: boolean
 }
 
 /**
@@ -35,6 +29,10 @@ interface PlayerCardProps {
 interface PlayerFocusChangeMessage {
     displayName: string,
     isTabbedOut: boolean
+}
+
+interface ProposalUpdatedMessage {
+    players: string[],
 }
 
 /**
@@ -61,13 +59,18 @@ export function PlayerBoard(): JSX.Element {
     const [selectedPlayers, setSelectedPlayers] = useState(new Set<string>());
     // State for maintaining players who are tabbed out. These players have a tab indicator.
     const [tabbedOutPlayers, setTabbedOutPlayers] = useState(new Set<string>());
-<<<<<<< HEAD
     // State for maintaining the current game phase
     const [gamePhase, setGamePhase] = useState(GamePhase.Proposal);
     // State for maintaining the current mission number
     const [missionNumber, setMissionNumber] = useState(1);
-=======
->>>>>>> 83b70138ec2a9d665e84944813bf58ea67eda9db
+    // State for tracking who this player is
+    const [me, setMe] = useState("");
+    // State for tracking the current proposer
+    const [proposer, setProposer] = useState("");
+    // State for maintaining the number of players on a proposal
+    const [numPlayersOnProposal, setNumPlayersOnProposal] = useState(2);
+    // State for maintaining the number of received votes
+    const [numVotesReceived, setNumVotesReceived] = useState(0);
 
     /**
      * Generic message handler for all messages from the server
@@ -77,7 +80,20 @@ export function PlayerBoard(): JSX.Element {
         switch (message.messageType) {
             case InboundMessageType.Snapshot:
                 const snapshot = message.data as Snapshot
+                setMe(snapshot.me);
                 handleGameMessage(snapshot.log[0]);
+                for (let i = snapshot.log.length - 1; i >= 0; i--) {
+                    const logMessage = snapshot.log[i];
+                    switch (logMessage.messageType) {
+                        case GameMessageType.NextProposal:
+                        case GameMessageType.CommenceVoting:
+                        case GameMessageType.MissionGoing:
+                        case GameMessageType.BeginAssassination:
+                            handleGameMessage(logMessage);
+                            i = -1;
+                            break;
+                    }
+                }
                 break;
             case InboundMessageType.PlayerFocusChange:
                 const { displayName, isTabbedOut } = message.data as PlayerFocusChangeMessage;
@@ -95,13 +111,24 @@ export function PlayerBoard(): JSX.Element {
      * @param message The GameMessage from the server
      */
     function handleGameMessage(message: GameMessage): void {
-<<<<<<< HEAD
         setGamePhase(mapMessageToGamePhase(message.messageType));
-=======
->>>>>>> 83b70138ec2a9d665e84944813bf58ea67eda9db
         switch (message.messageType) {
             case GameMessageType.ProposalOrder:
                 setPlayerList(message.data as string[]);
+                break;
+            case GameMessageType.NextProposal:
+                const data = message.data as NextProposalMessage;
+                setProposer(data.proposer);
+                setMissionNumber(data.mission);
+                setNumPlayersOnProposal(data.mission_size);
+                break;
+            case GameMessageType.ProposalUpdated:
+                const proposalUpdatedMessage = message.data as ProposalUpdatedMessage;
+                const newPlayers = new Set(proposalUpdatedMessage.players);
+                setSelectedPlayers(newPlayers);
+                break;
+            case GameMessageType.VoteRecieved:
+                setNumVotesReceived(numVotesReceived + 1);
                 break;
         }
     }
@@ -111,7 +138,15 @@ export function PlayerBoard(): JSX.Element {
      * @param name The player name to select.
      */
     function updateSelectedPlayers(name: string): void {
-        updateSet(selectedPlayers, name, setSelectedPlayers);
+        // Use tempSet since react stateful variables must never be modified directly
+        const tempSet = new Set(selectedPlayers.values());
+        if (!tempSet.delete(name)) {
+            tempSet.add(name);
+            sendGameAction(GameActionType.SelectPlayer, { player: name });
+        } else {
+            sendGameAction(GameActionType.UnselectPlayer, { player: name });
+        }
+        setSelectedPlayers(tempSet);
     }
 
     /**
@@ -139,21 +174,6 @@ export function PlayerBoard(): JSX.Element {
         setTabbedOutPlayers(tempSet);
     }
 
-    /**
-     * Helper function to update a set.
-     * @param setToUpdate The set to update
-     * @param valueToToggle The value in the set to toggle
-     * @param reactSetter The React setter for the state to update
-     */
-    function updateSet<T>(setToUpdate: Set<T>, valueToToggle: T, reactSetter: React.Dispatch<React.SetStateAction<Set<T>>>): void {
-        // Use tempSet since react stateful variables must never be modified directly
-        const tempSet = new Set<T>(setToUpdate.values());
-        if (!tempSet.delete(valueToToggle)) {
-            tempSet.add(valueToToggle);
-        }
-        reactSetter(tempSet);
-    }
-
     // Create the player cards with the state we have.
     const playerCards = playerList.map((playerName) => {
         return (
@@ -162,7 +182,9 @@ export function PlayerBoard(): JSX.Element {
                 name={playerName}
                 tabbedOut={tabbedOutPlayers.has(playerName)}
                 isSelected={selectedPlayers.has(playerName)}
-                toggleSelected={updateSelectedPlayers} />
+                toggleSelected={updateSelectedPlayers}
+                // TODO: Support roles like guin and oberon here as well as assassination.
+                enabled={gamePhase === GamePhase.Proposal && (proposer === me)} />
         );
     });
 
@@ -170,13 +192,23 @@ export function PlayerBoard(): JSX.Element {
         <div className="player-board">
             {playerCards}
             {
+                gamePhase === GamePhase.Proposal &&
+                <ProposalInteractions
+                    isProposing={proposer === me}
+                    numSelectedPlayers={selectedPlayers.size}
+                    numPlayersOnProposal={numPlayersOnProposal}
+                    submitProposal={() => sendGameAction(GameActionType.Propose, { players: Array.from(selectedPlayers) })}
+                />
+            }
+            {
                 gamePhase === GamePhase.Vote &&
                 <VoteButtonGroup
                     submitVote={(vote: Vote) => {
                         sendGameAction(GameActionType.Vote, { upvote: Boolean(vote) });
                     }}
                     isFirstMission={missionNumber === 1}
-                    playerCount={playerList.length} />
+                    playerCount={playerList.length}
+                    votesReceived={numVotesReceived} />
             }
         </div>
     );
@@ -188,8 +220,13 @@ export function PlayerBoard(): JSX.Element {
  * @param props The props for the player card
  */
 function PlayerCard(props: PlayerCardProps): JSX.Element {
+    let disabled = false;
+    if (props.enabled === false) {
+        disabled = true;
+    }
     return (
         <button
+            disabled={disabled}
             className={`player-card ${ props.isSelected ? "player-selected" : "" }`}
             onClick={() => props.toggleSelected(props.name)}>
             <div>
@@ -210,7 +247,8 @@ function PlayerCard(props: PlayerCardProps): JSX.Element {
 interface VoteButtonGroupProps {
     submitVote: (vote: Vote) => void,
     isFirstMission: boolean,
-    playerCount: number
+    playerCount: number,
+    votesReceived: number,
 }
 
 function VoteButtonGroup(props: VoteButtonGroupProps): JSX.Element {
@@ -254,7 +292,7 @@ interface VoteCountProps {
 
 function VoteCount(props: VoteCountProps): JSX.Element {
     return (
-        <ProgressBar now={props.votesReceived / props.playerCount} label={`${ props.votesReceived } / ${ props.playerCount }`} />
+        <ProgressBar now={props.votesReceived * 100 / props.playerCount} label={`${ props.votesReceived } / ${ props.playerCount }`} />
     )
 }
 
@@ -278,8 +316,8 @@ function VoteButtons(props: VoteButtonProps): JSX.Element {
             </button>
             <button
                 className="vote-button red"
-                onClick={() => handleVoteSubmit(Vote.Upvote)}>
-                {props.isFirstMission ? "Send Green" : "Accept"}
+                onClick={() => handleVoteSubmit(Vote.Downvote)}>
+                {props.isFirstMission ? "Send Red" : "Accept"}
             </button>
         </>
     );
@@ -288,5 +326,28 @@ function VoteButtons(props: VoteButtonProps): JSX.Element {
 //#endregion
 
 //#region Proposals
+interface ProposalInteractionsProps {
+    isProposing: boolean,
+    numPlayersOnProposal: number,
+    numSelectedPlayers: number,
+    submitProposal: () => void,
+}
+
+
+export function ProposalInteractions(props: ProposalInteractionsProps): JSX.Element {
+    return (
+        <div className="proposal-interactions">
+            {!props.isProposing &&
+                <ProgressBar
+                    now={props.numSelectedPlayers * 100 / props.numPlayersOnProposal}
+                    label={`Selected: ${ props.numSelectedPlayers } / ${ props.numPlayersOnProposal }`} />}
+            {props.isProposing &&
+                <button onClick={() => props.submitProposal()}>
+                    Submit Proposal ({`${ props.numSelectedPlayers } / ${ props.numPlayersOnProposal }`})
+                </button>
+            }
+        </div>
+    );
+}
 
 //#endregion

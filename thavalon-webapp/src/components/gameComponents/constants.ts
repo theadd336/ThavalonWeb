@@ -33,6 +33,7 @@ export enum GameMessageType {
     ProposalOrder = "proposalOrder",
     RoleInformation = "roleInformation",
     NextProposal = "nextProposal",
+    ProposalUpdated = "proposalUpdated",
     ProposalMade = "proposalMade",
     CommenceVoting = "commenceVoting",
     VoteRecieved = "voteReceived",
@@ -63,29 +64,6 @@ export enum GameActionType {
     Declare = "Declare",
     Assassinate = "Assassinate",
     MoveToAssassination = "MoveToAssassination"
-}
-
-export interface GameAction {
-    actionType: GameActionType,
-    data?: any
-}
-
-/**
- * An enum of all GameMessage types
- */
-export enum GameMessageType {
-    Error = "error",
-    ProposalOrder = "proposalOrder",
-    RoleInformation = "roleInformation",
-    NextProposal = "nextProposal",
-    ProposalMade = "proposalMade",
-    CommenceVoting = "commenceVoting",
-    MissionGoing = "missionGoing",
-    MissionResults = "missionResults",
-    AgravaineDeclaration = "agravaineDeclaration",
-    BeginAssassination = "beginAssassination",
-    AssassinationResult = "assassinationResult",
-    GameOver = "gameOver"
 }
 
 /**
@@ -126,4 +104,5 @@ export interface NextProposalMessage {
     mission: number,
     proposals_made: number,
     max_proposals: number,
+    mission_size: number
 }

@@ -62,6 +62,8 @@ pub enum Message {
         proposals_made: usize,
         /// The maximum number of unsent proposals before force activates
         max_proposals: usize,
+        /// The number of players to include on the proposal
+        mission_size: usize,
     },
 
     /// The current proposal was updated

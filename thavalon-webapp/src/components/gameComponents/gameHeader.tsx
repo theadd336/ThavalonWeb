@@ -27,6 +27,8 @@ export function GameHeader(): JSX.Element {
     const [turnsUntilForce, setTurnsUntilForce] = useState(1);
     // State to determine the name of this player.
     const [me, setMe] = useState("");
+    // Current phase of the game
+    const [gamePhase, setGamePhase] = useState(GamePhase.Proposal);
 
     useEffect(() => {
         const connection = GameSocket.getInstance();
@@ -88,6 +90,12 @@ export function GameHeader(): JSX.Element {
                 setGamePhaseHeader(GamePhaseHeader.Vote);
                 break;
             case GamePhase.Proposal:
+                // Technically, proposal made is still in the proposal phase, but
+                // we shouldn't make any state updates on it, since we're about
+                // to be in voting.
+                if (message.messageType !== GameMessageType.NextProposal) {
+                    return;
+                }
                 // If it's the next proposal, we need to see if it's us proposing or not.
                 // Also, update the force counter here.
                 const proposalMessage = message.data as NextProposalMessage;

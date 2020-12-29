@@ -14,6 +14,8 @@ export enum GamePhase {
 /**
  * Given a message, determines which phase of the game the player is currently in.
  * @param messageType A type of GameMessage from the server
+ * @param priorGamePhase The previous game phase. 
+ * Used as a default if none of the messages match, if provided
  */
 export function mapMessageToGamePhase(messageType: GameMessageType): GamePhase {
     let gamePhase = GamePhase.Proposal;
@@ -26,6 +28,9 @@ export function mapMessageToGamePhase(messageType: GameMessageType): GamePhase {
             gamePhase = GamePhase.Vote;
             break;
         // Technically not needed, but it's nice to explicitly map message types.
+        case GameMessageType.ProposalMade:
+        case GameMessageType.ProposalOrder:
+        case GameMessageType.ProposalUpdated:
         case GameMessageType.NextProposal:
             gamePhase = GamePhase.Proposal;
             break;
@@ -40,10 +45,7 @@ export function sendGameAction(actionType: GameActionType, data?: object | strin
     const connection = GameSocket.getInstance();
     const message: OutboundMessage = {
         messageType: OutboundMessageType.GameCommand,
-        data: {
-            messageType: actionType,
-            data: data
-        }
+        data: { [actionType]: data }
     }
     connection.sendMessage(message);
 }
