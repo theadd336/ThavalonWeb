@@ -40,9 +40,14 @@ pub enum Action {
 
 /// A message from the game to a player
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[serde(tag = "messageType", content = "data")]
+#[serde(rename_all = "camelCase")]
 pub enum Message {
     /// Error message, usually when a player does something wrong
     Error(String),
+
+    /// The proposal order of the players in the game. Sent at the start of the game.
+    ProposalOrder(Vec<String>),
 
     /// Sends the player their role and information
     RoleInformation { details: RoleDetails },
