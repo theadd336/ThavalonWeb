@@ -65,9 +65,7 @@ pub enum Message {
     },
 
     /// The current proposal was updated
-    ProposalUpdated {
-        players: HashSet<String>
-    },
+    ProposalUpdated { players: HashSet<String> },
 
     /// Announces that a player made a proposal
     ProposalMade {

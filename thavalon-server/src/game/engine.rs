@@ -4,28 +4,30 @@ use futures::future::{self, FutureExt};
 use tokio::time;
 
 use super::interactions::Interactions;
-use super::messages::{GameError, Message};
+use super::messages::GameError;
 use super::Game;
 
 use super::state::{Effect, GameStateWrapper};
 
 /// Runs a THavalon game to completion.
 pub async fn run_game<I: Interactions>(game: Game, interactions: &mut I) -> Result<(), GameError> {
-    interactions
-        .send(Message::ProposalOrder(game.proposal_order.clone()))
-        .await?;
-    for player in game.players.iter() {
-        interactions
-            .send_to(
-                &player.name,
-                Message::RoleInformation {
-                    details: game.info[&player.name].clone(),
-                },
-            )
-            .await?;
+    let (mut state, initial_effects) = GameStateWrapper::new(game);
+    for effect in initial_effects {
+        match effect {
+            Effect::Broadcast(message) => {
+                if let Err(e) = interactions.send(message).await {
+                    log::error!("Error broadcasting message: {}", e);
+                }
+            }
+            Effect::Send(player, message) => {
+                if let Err(e) = interactions.send_to(&player, message).await {
+                    log::error!("Error sending message to {}: {}", player, e);
+                }
+            }
+            _ => panic!("Unexpected initial effect {:?}", effect)
+        }
     }
 
-    let mut state = GameStateWrapper::new(game);
     // At some points in the game, players have a certain time window to do something in. Using an
     // Either<Pending, Delay> means we can always use select below, without having to worry about whether or not there's
     // an active timeout.
@@ -53,6 +55,11 @@ pub async fn run_game<I: Interactions>(game: Game, interactions: &mut I) -> Resu
                 Effect::Broadcast(message) => {
                     if let Err(e) = interactions.send(message).await {
                         log::error!("Error broadcasting message: {}", e);
+                    }
+                }
+                Effect::Send(player, message) => {
+                    if let Err(e) = interactions.send_to(&player, message).await {
+                        log::error!("Error sending message to {}: {}", player, e);
                     }
                 }
                 Effect::Reply(message) => {
