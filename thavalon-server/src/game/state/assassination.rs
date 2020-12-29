@@ -56,7 +56,7 @@ impl GameState<Assassination> {
                     } else {
                         return self.player_error(format!("{} is not in the game", name));
                     }
-                }    
+                }
             }
 
             let effects = vec![Effect::Broadcast(Message::AssassinationResult {
