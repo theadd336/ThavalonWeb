@@ -71,6 +71,31 @@ export interface GameAction {
 }
 
 /**
+ * An enum of all GameMessage types
+ */
+export enum GameMessageType {
+    Error = "error",
+    ProposalOrder = "proposalOrder",
+    RoleInformation = "roleInformation",
+    NextProposal = "nextProposal",
+    ProposalMade = "proposalMade",
+    CommenceVoting = "commenceVoting",
+    MissionGoing = "missionGoing",
+    MissionResults = "missionResults",
+    AgravaineDeclaration = "agravaineDeclaration",
+    BeginAssassination = "beginAssassination",
+    AssassinationResult = "assassinationResult",
+    GameOver = "gameOver"
+}
+
+/**
+ * An interface for the game message from the server
+ */
+export interface GameMessage {
+    messageType: GameMessageType,
+    data?: object | string
+}
+/**
  * The role info provided by the server in the snapshot.
  */
 export interface RoleInfo {

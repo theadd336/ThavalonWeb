@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
+<<<<<<< HEAD
 import { Vote, GameMessageType, GameMessage, Snapshot, GameActionType } from "./constants";
 import { ProgressBar, Spinner } from "react-bootstrap";
 
 import "../../styles/gameStyles/playerBoard.scss";
 import { GamePhase, mapMessageToGamePhase, sendGameAction } from "./gameUtils";
+=======
+import { Vote, GameMessageType, GameMessage, Snapshot } from "./constants";
+import { Spinner } from "react-bootstrap";
+
+import "../../styles/gameStyles/playerBoard.scss";
+>>>>>>> 83b70138ec2a9d665e84944813bf58ea67eda9db
 
 
 /**
@@ -54,10 +61,13 @@ export function PlayerBoard(): JSX.Element {
     const [selectedPlayers, setSelectedPlayers] = useState(new Set<string>());
     // State for maintaining players who are tabbed out. These players have a tab indicator.
     const [tabbedOutPlayers, setTabbedOutPlayers] = useState(new Set<string>());
+<<<<<<< HEAD
     // State for maintaining the current game phase
     const [gamePhase, setGamePhase] = useState(GamePhase.Proposal);
     // State for maintaining the current mission number
     const [missionNumber, setMissionNumber] = useState(1);
+=======
+>>>>>>> 83b70138ec2a9d665e84944813bf58ea67eda9db
 
     /**
      * Generic message handler for all messages from the server
@@ -85,7 +95,10 @@ export function PlayerBoard(): JSX.Element {
      * @param message The GameMessage from the server
      */
     function handleGameMessage(message: GameMessage): void {
+<<<<<<< HEAD
         setGamePhase(mapMessageToGamePhase(message.messageType));
+=======
+>>>>>>> 83b70138ec2a9d665e84944813bf58ea67eda9db
         switch (message.messageType) {
             case GameMessageType.ProposalOrder:
                 setPlayerList(message.data as string[]);
@@ -133,6 +146,7 @@ export function PlayerBoard(): JSX.Element {
      * @param reactSetter The React setter for the state to update
      */
     function updateSet<T>(setToUpdate: Set<T>, valueToToggle: T, reactSetter: React.Dispatch<React.SetStateAction<Set<T>>>): void {
+        // Use tempSet since react stateful variables must never be modified directly
         const tempSet = new Set<T>(setToUpdate.values());
         if (!tempSet.delete(valueToToggle)) {
             tempSet.add(valueToToggle);
@@ -155,14 +169,19 @@ export function PlayerBoard(): JSX.Element {
     return (
         <div className="player-board">
             {playerCards}
-            {gamePhase === GamePhase.Vote &&
-                <VoteButtonGroup
-                    submitVote={(vote: Vote) => {
-                        sendGameAction(GameActionType.Vote, { upvote: Boolean(vote) });
-                    }}
-                    isFirstMission={missionNumber === 1}
-                    playerCount={playerList.length} />}
-        </div>
+<<<<<<< HEAD
+    {
+        gamePhase === GamePhase.Vote &&
+        <VoteButtonGroup
+            submitVote={(vote: Vote) => {
+                sendGameAction(GameActionType.Vote, { upvote: Boolean(vote) });
+            }}
+            isFirstMission={missionNumber === 1}
+            playerCount={playerList.length} />
+    }
+=======
+>>>>>>> 83b70138ec2a9d665e84944813bf58ea67eda9db
+        </div >
     );
 }
 
@@ -187,6 +206,7 @@ function PlayerCard(props: PlayerCardProps): JSX.Element {
             </div>
         </button>
     );
+<<<<<<< HEAD
 }
 
 interface VoteButtonGroupProps {
@@ -265,4 +285,6 @@ function VoteButtons(props: VoteButtonProps): JSX.Element {
             </button>
         </>
     );
+=======
+>>>>>>> 83b70138ec2a9d665e84944813bf58ea67eda9db
 }
