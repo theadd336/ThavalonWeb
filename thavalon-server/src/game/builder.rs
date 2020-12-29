@@ -43,8 +43,8 @@ impl GameBuilder {
     /// The returned [`task::JoinHandle`] will complete once the game has ended. The [`Snapshots`] may be
     /// used to track per-player snapshots of the game state.
     pub fn start(self) -> (Snapshots, task::JoinHandle<()>) {
+        let mut interactions = SnapshotInteractions::new(self.interactions, self.players.iter().cloned());
         let game = Game::roll(self.players);
-        let mut interactions = SnapshotInteractions::new(self.interactions);
         let snapshots = interactions.snapshots();
         let task_handle = task::spawn(async move {
             if let Err(e) = engine::run_game(game, &mut interactions).await {
