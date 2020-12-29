@@ -56,10 +56,6 @@ export function GameContainer(props: GameContainerProps): JSX.Element {
     // useEffect return === componentWillUnmount in class React. Use componentWillUnmount
     // to remove our event handler.
     useEffect(() => {
-        // The game container maintains the connection. If one exists, destroy it.
-        if (GameSocket.getInstance()) {
-            GameSocket.destroyInstance();
-        }
         const connection = GameSocket.createInstance(props.location.state.socketUrl);
         connection.onLobbyEvent.subscribe(receiveLobbyMessage);
         connection.sendMessage({ messageType: OutboundMessageType.GetLobbyState });
@@ -67,7 +63,7 @@ export function GameContainer(props: GameContainerProps): JSX.Element {
             const connection = GameSocket.getInstance();
             connection?.onLobbyEvent.unsubscribe(receiveLobbyMessage);
             GameSocket.destroyInstance();
-        }
+        } 
     }, []);
 
     return (

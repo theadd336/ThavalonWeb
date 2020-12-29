@@ -221,6 +221,12 @@ impl GameStateWrapper {
             (GameStateWrapper::Proposing(inner), Action::Propose { players }) => {
                 inner.handle_proposal(player, players)
             }
+            (GameStateWrapper::Proposing(inner), Action::SelectPlayer { player: selected }) => {
+                inner.handle_player_selected(player, selected)
+            }
+            (GameStateWrapper::Proposing(inner), Action::UnselectPlayer { player: unselected }) => {
+                inner.handle_player_unselected(player, unselected)
+            }
             (GameStateWrapper::Voting(inner), Action::Vote { upvote }) => {
                 inner.handle_vote(player, upvote)
             }
