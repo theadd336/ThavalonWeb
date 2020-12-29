@@ -204,12 +204,9 @@ impl GameStateWrapper {
         let first_proposer = &game.proposal_order()[0];
         let phase = Proposing::new(first_proposer.clone());
 
-        let mut effects = vec![Effect::Broadcast(Message::NextProposal {
-            proposer: first_proposer.clone(),
-            mission: 1,
-            proposals_made: 0,
-            max_proposals: game.spec.max_proposals,
-        })];
+        let mut effects = vec![Effect::Broadcast(Message::ProposalOrder(
+            game.proposal_order.clone(),
+        ))];
 
         for player in game.players.iter() {
             effects.push(Effect::Send(
@@ -219,6 +216,15 @@ impl GameStateWrapper {
                 },
             ));
         }
+
+        // Send NextProposal last to move client to the proposal phase after
+        // receiving role information.
+        effects.push(Effect::Broadcast(Message::NextProposal {
+            proposer: first_proposer.clone(),
+            mission: 1,
+            proposals_made: 0,
+            max_proposals: game.spec.max_proposals,
+        }));
 
         let mut role_state = RoleState::new(&game);
         role_state.on_round_start();

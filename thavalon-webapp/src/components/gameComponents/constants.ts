@@ -78,6 +78,6 @@ export interface Snapshot {
 export interface NextProposalMessage {
     proposer: string,
     mission: number,
-    proposalsMade: number,
-    maxProposals: number,
+    proposals_made: number,
+    max_proposals: number,
 }

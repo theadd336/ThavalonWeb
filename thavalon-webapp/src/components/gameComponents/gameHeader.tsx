@@ -48,7 +48,23 @@ export function GameHeader(): JSX.Element {
                 const snapshot = message.data as Snapshot;
                 setMe(snapshot.me);
                 const lastLogIndex = snapshot.log.length - 1;
-                mapMessageToState(snapshot.log[lastLogIndex]);
+                const lastMessage = snapshot.log[lastLogIndex];
+                mapMessageToState(lastMessage);
+                // The last message will always give us the state, but to figure out
+                // the number of proposals remaining, we need a NextProposal message.
+                // Loop backwards over the messages until we find one.
+                if (lastMessage.messageType !== GameMessageType.NextProposal) {
+                    // We only hit this if the last messageType isn't a NextProposal,
+                    // so start the loop from the second to last element.
+                    for (let i = lastLogIndex - 1; i >= 0; i--) {
+                        const logMessage = snapshot.log[i];
+                        if (logMessage.messageType === GameMessageType.NextProposal) {
+                            const proposalMessage = logMessage.data as NextProposalMessage;
+                            setTurnsUntilForce(proposalMessage.max_proposals - proposalMessage.proposals_made);
+                            break;
+                        }
+                    }
+                }
                 break;
             // If it's a normal game message, just pass in the data to determine the phase.
             case InboundMessageType.GameMessage:
@@ -73,7 +89,7 @@ export function GameHeader(): JSX.Element {
                 // If it's the next proposal, we need to see if it's us proposing or not.
                 // Also, update the force counter here.
                 const proposalMessage = message.data as NextProposalMessage;
-                setTurnsUntilForce(proposalMessage.maxProposals - proposalMessage.proposalsMade);
+                setTurnsUntilForce(proposalMessage.max_proposals - proposalMessage.proposals_made);
                 if (proposalMessage.proposer === me) {
                     setGamePhaseHeader(GamePhaseHeader.ProposalSelf);
                 } else {
