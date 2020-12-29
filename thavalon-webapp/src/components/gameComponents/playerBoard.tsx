@@ -127,6 +127,7 @@ export function PlayerBoard(): JSX.Element {
      * @param reactSetter The React setter for the state to update
      */
     function updateSet<T>(setToUpdate: Set<T>, valueToToggle: T, reactSetter: React.Dispatch<React.SetStateAction<Set<T>>>): void {
+        // Use tempSet since react stateful variables must never be modified directly
         const tempSet = new Set<T>(setToUpdate.values());
         if (!tempSet.delete(valueToToggle)) {
             tempSet.add(valueToToggle);
