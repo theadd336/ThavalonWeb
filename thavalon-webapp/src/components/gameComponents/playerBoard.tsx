@@ -169,16 +169,16 @@ export function PlayerBoard(): JSX.Element {
     return (
         <div className="player-board">
             {playerCards}
-    {
-        gamePhase === GamePhase.Vote &&
-        <VoteButtonGroup
-            submitVote={(vote: Vote) => {
-                sendGameAction(GameActionType.Vote, { upvote: Boolean(vote) });
-            }}
-            isFirstMission={missionNumber === 1}
-            playerCount={playerList.length} />
-    }
-        </div >
+            {
+                gamePhase === GamePhase.Vote &&
+                <VoteButtonGroup
+                    submitVote={(vote: Vote) => {
+                        sendGameAction(GameActionType.Vote, { upvote: Boolean(vote) });
+                    }}
+                    isFirstMission={missionNumber === 1}
+                    playerCount={playerList.length} />
+            }
+        </div>
     );
 }
 
@@ -204,6 +204,8 @@ function PlayerCard(props: PlayerCardProps): JSX.Element {
         </button>
     );
 }
+
+//#region Voting
 
 interface VoteButtonGroupProps {
     submitVote: (vote: Vote) => void,
@@ -282,3 +284,9 @@ function VoteButtons(props: VoteButtonProps): JSX.Element {
         </>
     );
 }
+
+//#endregion
+
+//#region Proposals
+
+//#endregion
