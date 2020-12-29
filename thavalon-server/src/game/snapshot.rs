@@ -17,6 +17,7 @@ use super::MissionNumber;
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameSnapshot {
+    me: String,
     pub role_info: Option<RoleDetails>,
     missions: Vec<Mission>,
     log: Vec<Message>,
@@ -80,8 +81,9 @@ pub enum VotingResults {
 }
 
 impl GameSnapshot {
-    pub fn new() -> GameSnapshot {
+    pub fn new(player: String) -> GameSnapshot {
         GameSnapshot {
+            me: player,
             role_info: None,
             missions: Vec::new(),
             log: Vec::new(),
@@ -229,6 +231,9 @@ impl GameSnapshot {
 pub enum SnapshotError {
     #[error("Unexpected message: {0:?}")]
     UnexpectedMessage(Message),
+
+    #[error("No such player: {0}")]
+    NoSuchPlayer(String),
 }
 
 impl From<SnapshotError> for GameError {
@@ -251,10 +256,18 @@ pub struct Snapshots {
 
 impl<I: Interactions> SnapshotInteractions<I> {
     /// Create a new `SnapshotInteractions` that delegates to `inner`.
-    pub fn new(inner: I) -> SnapshotInteractions<I> {
+    pub fn new<P: IntoIterator<Item = String>>(inner: I, players: P) -> SnapshotInteractions<I> {
+        let snapshots = players
+            .into_iter()
+            .map(|player| {
+                let snapshot = Arc::new(Mutex::new(GameSnapshot::new(player.clone())));
+                (player, snapshot)
+            })
+            .collect();
+
         SnapshotInteractions {
             inner,
-            snapshots: Arc::new(Mutex::new(HashMap::new())),
+            snapshots: Arc::new(Mutex::new(snapshots)),
         }
     }
 
@@ -265,17 +278,9 @@ impl<I: Interactions> SnapshotInteractions<I> {
         }
     }
 
-    fn snapshot(&mut self, player: &str) -> Arc<Mutex<GameSnapshot>> {
-        let mut snapshots = self.snapshots.lock().unwrap();
-
-        match snapshots.get(player) {
-            Some(s) => s.clone(),
-            None => {
-                let snapshot = Arc::new(Mutex::new(GameSnapshot::new()));
-                snapshots.insert(player.to_string(), snapshot.clone());
-                snapshot
-            }
-        }
+    fn snapshot(&mut self, player: &str) -> Option<Arc<Mutex<GameSnapshot>>> {
+        let snapshots = self.snapshots.lock().unwrap();
+        snapshots.get(player).cloned()
     }
 }
 
@@ -283,7 +288,9 @@ impl<I: Interactions> SnapshotInteractions<I> {
 impl<I: Interactions + Send> Interactions for SnapshotInteractions<I> {
     async fn send_to(&mut self, player: &str, message: Message) -> Result<(), GameError> {
         {
-            let snapshot = self.snapshot(player);
+            let snapshot = self
+                .snapshot(player)
+                .ok_or_else(|| SnapshotError::NoSuchPlayer(player.to_string()))?;
             let mut snapshot = snapshot.lock().unwrap();
             snapshot.on_message(message.clone())?;
         }
@@ -308,8 +315,7 @@ impl<I: Interactions + Send> Interactions for SnapshotInteractions<I> {
 
 impl Snapshots {
     /// Gets a handle to the snapshot for a given player. This will return `None` if the player does not
-    /// exist or the game has not yet started. As the game progresses, the [`GameSnapshot`] inside the
-    /// [`Mutex`] will update.
+    /// exist. As the game progresses, the [`GameSnapshot`] inside the [`Mutex`] will update.
     pub fn get(&self, player: &str) -> Option<Arc<Mutex<GameSnapshot>>> {
         let snapshots = self.inner.lock().unwrap();
         snapshots.get(player).cloned()

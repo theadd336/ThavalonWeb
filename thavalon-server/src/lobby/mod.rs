@@ -30,6 +30,8 @@ pub enum LobbyError {
     UnknownError,
     #[error("Client ID is not registered for the game.")]
     InvalidClientID,
+    #[error("The display name is already in use.")]
+    DuplicateDisplayName,
 }
 
 /// Enum of available commands to send to the lobby.
@@ -62,6 +64,10 @@ pub enum LobbyCommand {
     GetSnapshots {
         client_id: String,
     },
+    PlayerFocusChange {
+        client_id: String,
+        is_tabbed_out: bool,
+    },
 }
 
 /// Enum of possible responses from the lobby.
@@ -84,6 +90,7 @@ enum IncomingMessage {
     GameCommand(Action),
     GetPlayerList,
     GetSnapshot,
+    PlayerFocusChange(bool),
 }
 
 /// An outgoing message to the client.
@@ -95,6 +102,10 @@ pub enum OutgoingMessage {
     LobbyState(LobbyState),
     GameMessage(Message),
     Snapshot(GameSnapshot),
+    PlayerFocusChange {
+        displayName: String,
+        isTabbedOut: bool,
+    },
 }
 
 #[derive(Serialize, Eq, PartialEq, Clone)]

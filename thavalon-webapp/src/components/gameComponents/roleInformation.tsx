@@ -29,17 +29,15 @@ export function RoleInformation(): JSX.Element {
         // On mount, get the connection instance and set up event handlers.
         // Then, get the player list.
         const connection = GameSocket.getInstance();
-        connection?.onGameEvent.subscribe(handleGameMessage);
-        console.log("SET UP MESSAGE!");
-        connection?.sendMessage({ messageType: OutboundMessageType.GetSnapshot });
+        connection.onGameEvent.subscribe(handleGameMessage);
+        connection.sendMessage({ messageType: OutboundMessageType.GetSnapshot });
 
         // On unmount, unsubscribe our event handlers.
         return () => {
-            const connection = GameSocket.getInstance();
-            connection?.onGameEvent.unsubscribe(handleGameMessage);
+            connection.onGameEvent.unsubscribe(handleGameMessage);
         }
     }, []);
-    
+
     if (roleInfo === undefined) {
         return <></>
     }
@@ -48,34 +46,34 @@ export function RoleInformation(): JSX.Element {
         <h1 className="game-section-header">Player Info</h1>
         You are <span className={roleInfo.team.toLowerCase()}>{roleInfo.role}: {roleInfo.team.toUpperCase()}</span>
         <ul>
-            {roleInfo.description && 
+            {roleInfo.description &&
                 <li><span className="role-description">{roleInfo.description}</span></li>
             }
 
-            {roleInfo.abilities && 
+            {roleInfo.abilities &&
                 <li><span className="abilities">{roleInfo.abilities}</span></li>
             }
 
-            {roleInfo.seenPlayers.length > 0 && 
+            {roleInfo.seenPlayers.length > 0 &&
                 <li><span className="seen-players">You see {roleInfo.seenPlayers.join(", ")}</span></li>
             }
 
-            {roleInfo.team == "Evil" && roleInfo.teamMembers.length > 0 && 
+            {roleInfo.team === "Evil" && roleInfo.teamMembers.length > 0 &&
                 <li><span className="team-members">You see {roleInfo.teamMembers.join(", ")} as evil</span></li>
             }
 
-            {roleInfo.otherInfo && 
+            {roleInfo.otherInfo &&
                 <li><span className="other-info">{roleInfo.otherInfo}</span></li>
             }
 
-            {roleInfo.assassinatable && 
+            {roleInfo.assassinatable &&
                 <li><span className="assassinatable">You are assassinatable!</span></li>
             }
 
-            {roleInfo.isAssassin && 
+            {roleInfo.isAssassin &&
                 <li><span className="assassin">You are the assassin! </span>
-                {roleInfo.priorityTarget !== "None" && <span className="priority-target">{roleInfo.priorityTarget} is the priority target!</span>}
-                {roleInfo.priorityTarget === "None" && <span className="priority-target">There is no priority target.</span>}</li>
+                    {roleInfo.priorityTarget !== "None" && <span className="priority-target">{roleInfo.priorityTarget} is the priority target!</span>}
+                    {roleInfo.priorityTarget === "None" && <span className="priority-target">There is no priority target.</span>}</li>
             }
         </ul>
     </div>

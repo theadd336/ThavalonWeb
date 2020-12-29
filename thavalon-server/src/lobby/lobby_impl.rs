@@ -114,6 +114,7 @@ impl Lobby {
             let return_err = match e {
                 DBGameError::UpdateError => Err(LobbyError::DatabaseError),
                 DBGameError::InvalidStateError => Err(LobbyError::InvalidStateError),
+                DBGameError::DuplicateDisplayName => Err(LobbyError::DuplicateDisplayName),
                 _ => {
                     log::error!("An unknown error occurred in game {}.", self.friend_code);
                     Err(LobbyError::UnknownError)
@@ -309,6 +310,23 @@ impl Lobby {
         LobbyResponse::None
     }
 
+    /// Handles a player focus change event by telling all clients that a player's
+    /// visibility has changed.
+    async fn player_focus_changed(
+        &mut self,
+        client_id: String,
+        is_tabbed_out: bool,
+    ) -> LobbyResponse {
+        let (_, display_name) = &self.client_ids_to_player_info[&client_id];
+        let display_name = display_name.clone();
+        let message = OutgoingMessage::PlayerFocusChange {
+            displayName: display_name,
+            isTabbedOut: is_tabbed_out,
+        };
+        self.broadcast_message(&message).await;
+        LobbyResponse::None
+    }
+
     /// Broadcasts a message to all clients in the lobby.
     async fn broadcast_message(&mut self, message: &OutgoingMessage) {
         let message = serde_json::to_string(&message).unwrap();
@@ -346,6 +364,10 @@ impl Lobby {
                 }
                 LobbyCommand::GetPlayerList { client_id } => self.send_player_list(client_id).await,
                 LobbyCommand::GetSnapshots { client_id } => self.get_snapshots(client_id).await,
+                LobbyCommand::PlayerFocusChange {
+                    client_id,
+                    is_tabbed_out,
+                } => self.player_focus_changed(client_id, is_tabbed_out).await,
             };
 
             if let Some(channel) = result_channel {
