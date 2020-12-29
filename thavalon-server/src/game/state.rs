@@ -99,6 +99,7 @@ pub enum Effect {
     Broadcast(Message),
     StartTimeout(Duration),
     ClearTimeout,
+    MessagePlayer(Message, String),
 }
 
 pub struct Proposal {

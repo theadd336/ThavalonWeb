@@ -35,7 +35,8 @@ pub struct RoleDetails {
     /// The team the player is on.
     team: Team,
     /// The player's role.
-    role: Role,
+    /// TODO: marking this as pub is a hack. What should we be doing instead?
+    pub role: Role,
     /// A high-level description of the role.
     description: String,
     /// Other players that this player sees.

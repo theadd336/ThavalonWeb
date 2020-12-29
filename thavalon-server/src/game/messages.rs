@@ -125,6 +125,13 @@ pub enum Message {
         winning_team: Team,
         roles: HashMap<String, RoleDetails>,
     },
+
+    /// Information sent to lovers specific to their role after each mission.
+    LoversInfo {
+        lone_lover: bool,
+        lover_on_mission: bool,
+        lover_identity: String,
+    },
 }
 
 /// How players voted on a proposal

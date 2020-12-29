@@ -169,6 +169,11 @@ impl Game {
     pub fn size(&self) -> usize {
         self.proposal_order.len()
     }
+
+    /// Look up the display name associated with a given role, if it exists.
+    pub fn display_name_from_role(&self, role: Role) -> Option<&String> {
+        return self.info.keys().find(|&x| self.info.get(x).unwrap().role == role);
+    }
 }
 
 impl Players {

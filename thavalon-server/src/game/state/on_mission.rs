@@ -73,6 +73,7 @@ impl GameState<OnMission> {
                         questing_beasts: self.phase.questing_beasts,
                         passed,
                     })];
+                    self.add_lover_effects(&mut effects);
 
                     // TODO: how does Agravaine work on mission 4?
                     if self.game.spec.has_role(Role::Agravaine) && passed {
@@ -117,6 +118,51 @@ impl GameState<OnMission> {
 
     fn includes_player(&self, player: &str) -> bool {
         self.proposal().players.contains(player)
+    }
+
+    // Append messages for lovers to an exisiting list of effects. This will not modify effects if there are no lovers in game,
+    // so this is safe to call in any game.
+    fn add_lover_effects(&self, effects: &mut Vec<Effect>) {
+        let tristan_display_name = self.game.display_name_from_role(Role::Tristan);
+        let tristan_on_mission = match tristan_display_name {
+            Some(name) => Some(self.proposals.get(self.phase.proposal_index).unwrap().players.contains(name)),
+            None => None,
+        };
+        let iseult_display_name = self.game.display_name_from_role(Role::Iseult);
+        let iseult_on_mission = match iseult_display_name {
+            Some(name) => Some(self.proposals.get(self.phase.proposal_index).unwrap().players.contains(name)),
+            None => None,
+        };
+        // First, add messages going to Tristan. If there is no Tristan, do nothing.
+        if tristan_display_name.is_some() {
+            effects.push(self.build_lover_effect(&tristan_display_name.unwrap().as_ref(), tristan_on_mission.unwrap(), iseult_display_name, iseult_on_mission));
+        }
+        // Next do the same for Iseult.
+        if iseult_display_name.is_some() {
+            effects.push(self.build_lover_effect(&iseult_display_name.unwrap().as_ref(), iseult_on_mission.unwrap(), tristan_display_name, tristan_on_mission));
+        }
+    }
+
+    // Builds a message for a player, given information about their lover who may not exist.
+    fn build_lover_effect(&self, player_display_name: &str, player_on_mission: bool, opt_lover_display_name: Option<&String>, opt_lover_on_mission: Option<bool>) -> Effect {
+        return match opt_lover_on_mission {
+            // There is no lover, player is a lone lover. sadge :(
+            None => Effect::MessagePlayer(Message::LoversInfo {lone_lover: true, lover_on_mission: false, lover_identity: String::new()}, player_display_name.to_string()),
+            // There is a lover, who may or may not be on the mission.
+            Some(lover_on_mission) => 
+                if lover_on_mission {
+                    if player_on_mission {
+                        // Both lovers are on the mission, they learn each other's identities.
+                        Effect::MessagePlayer(Message::LoversInfo {lone_lover: false, lover_on_mission: true, lover_identity: opt_lover_display_name.unwrap().clone()}, player_display_name.to_string())
+                    } else {
+                        // Lover is on mission, player is not. Identity is not revealed.
+                        Effect::MessagePlayer(Message::LoversInfo {lone_lover: false, lover_on_mission: true, lover_identity: String::new()}, player_display_name.to_string())
+                    }
+                } else {
+                    // Lover is not on mission but does exist, so player learns this.
+                    Effect::MessagePlayer(Message::LoversInfo {lone_lover: false, lover_on_mission: false, lover_identity: String::new()}, player_display_name.to_string())
+                },
+        };
     }
 }
 
