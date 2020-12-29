@@ -169,7 +169,6 @@ export function PlayerBoard(): JSX.Element {
     return (
         <div className="player-board">
             {playerCards}
-<<<<<<< HEAD
     {
         gamePhase === GamePhase.Vote &&
         <VoteButtonGroup
@@ -179,8 +178,6 @@ export function PlayerBoard(): JSX.Element {
             isFirstMission={missionNumber === 1}
             playerCount={playerList.length} />
     }
-=======
->>>>>>> 83b70138ec2a9d665e84944813bf58ea67eda9db
         </div >
     );
 }
@@ -206,7 +203,6 @@ function PlayerCard(props: PlayerCardProps): JSX.Element {
             </div>
         </button>
     );
-<<<<<<< HEAD
 }
 
 interface VoteButtonGroupProps {
@@ -285,6 +281,4 @@ function VoteButtons(props: VoteButtonProps): JSX.Element {
             </button>
         </>
     );
-=======
->>>>>>> 83b70138ec2a9d665e84944813bf58ea67eda9db
 }
