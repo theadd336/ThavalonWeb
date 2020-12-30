@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
-import { Vote, GameMessageType, GameMessage, Snapshot, NextProposalMessage, MissionGoingMessage, VotingResultsMessage } from "./constants";
+import { Vote, GameMessageType, GameMessage, Snapshot, NextProposalMessage, MissionGoingMessage, VotingResultsMessage, MissionResultsMessage } from "./constants";
 import { ProposalManager } from "./interactions/proposalManager";
 
 import "../../styles/gameStyles/playerBoard.scss";
 import { GamePhase, mapMessageToGamePhase } from "./gameUtils";
 import { VoteManager } from "./interactions/voteManager";
-import { MissionManager } from "./interactions/missionManager";
+import { MissionManager, MissionResultModal } from "./interactions/missionManager";
 
 
 /**
@@ -52,6 +52,10 @@ export function PlayerBoard(): JSX.Element {
     const [majorMessage, setMajorMessage] = useState<any>({});
     // State for maintaining the map of players to votes
     const [votes, setVotes] = useState<Map<string, Vote>>(new Map<string, Vote>());
+    // State to show the mission modal or not.
+    const [showMissionResults, setShowMissionResults] = useState(false);
+    // State to maintain the mission results.
+    const [missionResults, setMissionResults] = useState<MissionResultsMessage>();
 
     /**
      * Generic message handler for all messages from the server
@@ -133,6 +137,9 @@ export function PlayerBoard(): JSX.Element {
             case GameMessageType.MissionGoing:
                 setMajorMessage(message.data);
                 break;
+            case GameMessageType.MissionResults:
+                setShowMissionResults(true);
+                setMissionResults(message.data as MissionResultsMessage);
         }
     }
 
@@ -196,6 +203,10 @@ export function PlayerBoard(): JSX.Element {
                     secondarySelectedPlayers={secondarySelectedPlayers}
                     tabbedOutPlayers={tabbedOutPlayers}
                     votes={votes} />
+            }
+            {
+                showMissionResults &&
+                <MissionResultModal setOpen={setShowMissionResults} message={missionResults} />
             }
         </div>
     );

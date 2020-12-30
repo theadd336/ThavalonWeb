@@ -49,18 +49,10 @@ export function MissionManager(props: MissionManagerProps): JSX.Element {
             return;
         }
         const gameMessage = message.data as GameMessage;
-        if (gameMessage.messageType === GameMessageType.MissionResults) {
-            setMissionResults(gameMessage.data as MissionResultsMessage);
-            setShowMissionResults(true);
-        }
     }
 
     // State maintaining if the player has played a card or not
     const [hasPlayedCard, setHasPlayedCard] = useState(false);
-    // State to show the mission modal or not.
-    const [showMissionResults, setShowMissionResults] = useState(false);
-    // State to maintain the mission results.
-    const [missionResults, setMissionResults] = useState<MissionResultsMessage>();
 
     /**
      * Submits a mission card or QB to the server and updates if the player
@@ -96,10 +88,8 @@ export function MissionManager(props: MissionManagerProps): JSX.Element {
                 {!hasPlayedCard && playersOnMission.has(props.me) &&
                     <MissionCardButtons submitMissionCard={submitMissionCard} />}
                 {(hasPlayedCard || !playersOnMission.has(props.me)) &&
-                    <></>
-                }
-                {showMissionResults &&
-                    <MissionResultModal message={missionResults} setOpen={setShowMissionResults} />
+                    // TODO: Support mission card progress bar here.
+                    <>Please wait for the mission cards to be played </>
                 }
             </div>
         </>
@@ -133,7 +123,7 @@ function MissionCardButtons(props: MissionCardProps): JSX.Element {
  * Component showing the results of a mission with Agravaine support
  * @param props Required properties for the mission result modal
  */
-function MissionResultModal(props: MissionResultModalProps): JSX.Element {
+export function MissionResultModal(props: MissionResultModalProps): JSX.Element {
     if (props.message === undefined) {
         return <></>;
     }
