@@ -10,10 +10,10 @@ export enum Team {
  * An enum of cards to play
  */
 export enum MissionCard {
-    Pass = "Pass",
+    Success = "Success",
     Fail = "Fail",
     Reverse = "Reverse",
-    QuestingBeast = "QuestingBeast",
+    QuestingBeast = "Questing Beast <3"
 }
 
 /**
@@ -59,6 +59,7 @@ export enum GameActionType {
     SelectPlayer = "SelectPlayer",
     UnselectPlayer = "UnselectPlayer",
     Vote = "Vote",
+    Play = "Play",
     Obscure = "Obscure",
     QuestingBeast = "QuestingBeast",
     Declare = "Declare",
@@ -105,4 +106,45 @@ export interface NextProposalMessage {
     proposals_made: number,
     max_proposals: number,
     mission_size: number
+}
+
+export interface ProposalUpdatedMessage {
+    players: string[],
+}
+
+export enum SelectedPlayerType {
+    Primary,
+    Secondary
+}
+
+export interface InteractionProps {
+    primarySelectedPlayers: Set<string>,
+    secondarySelectedPlayers: Set<string>,
+    playerList: string[],
+    tabbedOutPlayers: Set<string>,
+}
+
+export interface MissionGoingMessage {
+    mission: number,
+    players: string[],
+}
+
+export interface VotingResultsMessage {
+    sent: boolean
+    counts: VoteCounts
+}
+
+export interface VoteCounts {
+    voteType: "Public" | "Private",
+    upvotes: number | string[],
+    downvotes: number | string[],
+}
+
+export interface MissionResultsMessage {
+    mission: number,
+    successes: number,
+    fails: number,
+    reverses: number,
+    questing_beasts: number,
+    passed: boolean
 }

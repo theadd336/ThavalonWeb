@@ -132,6 +132,7 @@ pub enum Message {
 
 /// How players voted on a proposal
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[serde(tag = "voteType")]
 pub enum VoteCounts {
     /// Public mission votes, where it is known who up- or downvoted.
     Public {

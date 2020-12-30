@@ -1,5 +1,6 @@
 import { GameMessageType, GameActionType } from "./constants";
 import { GameSocket, OutboundMessage, OutboundMessageType } from "../../utils/GameSocket";
+import { SelectedPlayerType } from "./constants";
 
 /**
  * Enum representing the four main phases of the game.
@@ -35,6 +36,7 @@ export function mapMessageToGamePhase(messageType: GameMessageType): GamePhase {
             gamePhase = GamePhase.Proposal;
             break;
         case GameMessageType.MissionGoing:
+        case GameMessageType.MissionResults:
             gamePhase = GamePhase.Mission;
             break;
     }
@@ -43,9 +45,31 @@ export function mapMessageToGamePhase(messageType: GameMessageType): GamePhase {
 
 export function sendGameAction(actionType: GameActionType, data?: object | string | boolean | number): void {
     const connection = GameSocket.getInstance();
-    const message: OutboundMessage = {
-        messageType: OutboundMessageType.GameCommand,
-        data: { [actionType]: data }
+    let message: OutboundMessage;
+    if (data === undefined) {
+        message = {
+            messageType: OutboundMessageType.GameCommand,
+            data: actionType
+        };
+    } else {
+        message = {
+            messageType: OutboundMessageType.GameCommand,
+            data: { [actionType]: data }
+        }
     }
     connection.sendMessage(message);
+}
+
+export function createSelectedPlayerTypesList(
+    name: string,
+    primarySelectedPlayers: Set<string>,
+    secondarySelectedPlayers: Set<string>): SelectedPlayerType[] {
+    const selectedTypes = new Array<SelectedPlayerType>();
+    if (primarySelectedPlayers.has(name)) {
+        selectedTypes.push(SelectedPlayerType.Primary);
+    }
+    if (secondarySelectedPlayers.has(name)) {
+        selectedTypes.push(SelectedPlayerType.Secondary);
+    }
+    return selectedTypes;
 }
