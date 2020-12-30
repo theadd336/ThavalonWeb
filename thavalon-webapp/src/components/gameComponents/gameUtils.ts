@@ -43,6 +43,11 @@ export function mapMessageToGamePhase(messageType: GameMessageType): GamePhase {
     return gamePhase;
 }
 
+/**
+ * Sends an Action to the server with any specified data
+ * @param actionType The type of action to send to the server
+ * @param data The data the action requires, if any.
+ */
 export function sendGameAction(actionType: GameActionType, data?: object | string | boolean | number): void {
     const connection = GameSocket.getInstance();
     let message: OutboundMessage;
@@ -60,6 +65,12 @@ export function sendGameAction(actionType: GameActionType, data?: object | strin
     connection.sendMessage(message);
 }
 
+/**
+ * Creates an array of selected player types given a player name and selected player sets.
+ * @param name The player name to select
+ * @param primarySelectedPlayers The primary selected players set
+ * @param secondarySelectedPlayers The secondary selected players set
+ */
 export function createSelectedPlayerTypesList(
     name: string,
     primarySelectedPlayers: Set<string>,

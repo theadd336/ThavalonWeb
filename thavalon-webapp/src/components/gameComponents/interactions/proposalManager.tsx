@@ -26,6 +26,7 @@ export function ProposalManager(props: ProposalManagerProps): JSX.Element {
     // State tracking if we're on the second proposal or not.
     const [onSecondM1Proposal, setOnSecondM1Proposal] = useState(false);
 
+    // Refresh on props change to deal with stale closures...I guess.
     useEffect(() => {
         const connection = GameSocket.getInstance();
         connection.onGameEvent.subscribe(handleMessage);

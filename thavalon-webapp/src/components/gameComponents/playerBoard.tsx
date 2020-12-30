@@ -50,6 +50,7 @@ export function PlayerBoard(): JSX.Element {
     const [me, setMe] = useState("");
     // State for maintaining the last major message
     const [majorMessage, setMajorMessage] = useState<any>({});
+    // State for maintaining the map of players to votes
     const [votes, setVotes] = useState<Map<string, Vote>>(new Map<string, Vote>());
 
     /**
@@ -61,6 +62,8 @@ export function PlayerBoard(): JSX.Element {
             case InboundMessageType.Snapshot:
                 const snapshot = message.data as Snapshot
                 setMe(snapshot.me);
+                // Get proposal order, then get the most recent major message.
+                // Finally, feed the last message in
                 handleGameMessage(snapshot.log[0]);
                 for (let i = snapshot.log.length - 1; i >= 0; i--) {
                     const logMessage = snapshot.log[i];
@@ -107,6 +110,7 @@ export function PlayerBoard(): JSX.Element {
                 setMajorMessage(data);
                 break;
             case GameMessageType.VotingResults:
+                // If results are public, set them here. Otherwise, trigger toast for Maeve.
                 const votingResults = message.data as VotingResultsMessage;
                 if (votingResults.counts.voteType === "Public") {
                     const { upvotes, downvotes } = votingResults.counts;

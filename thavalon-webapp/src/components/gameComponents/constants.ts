@@ -100,6 +100,9 @@ export interface Snapshot {
     log: GameMessage[],
 }
 
+/**
+ * The next proposal message sent from the server.
+ */
 export interface NextProposalMessage {
     proposer: string,
     mission: number,
@@ -108,15 +111,24 @@ export interface NextProposalMessage {
     mission_size: number
 }
 
+/**
+ * The proposal updated message from the server
+ */
 export interface ProposalUpdatedMessage {
     players: string[],
 }
 
+/**
+ * The type of selected player
+ */
 export enum SelectedPlayerType {
     Primary,
     Secondary
 }
 
+/**
+ * The base props for all the interaction components
+ */
 export interface InteractionProps {
     primarySelectedPlayers: Set<string>,
     secondarySelectedPlayers: Set<string>,
@@ -124,22 +136,34 @@ export interface InteractionProps {
     tabbedOutPlayers: Set<string>,
 }
 
+/**
+ * The message of a mission going
+ */
 export interface MissionGoingMessage {
     mission: number,
     players: string[],
 }
 
+/**
+ * The message representing the vote results
+ */
 export interface VotingResultsMessage {
     sent: boolean
     counts: VoteCounts
 }
 
+/**
+ * The VoteCounts object from the VotingResultsMessage
+ */
 export interface VoteCounts {
     voteType: "Public" | "Private",
     upvotes: number | string[],
     downvotes: number | string[],
 }
 
+/**
+ * Message representing mission results from the server.
+ */
 export interface MissionResultsMessage {
     mission: number,
     successes: number,

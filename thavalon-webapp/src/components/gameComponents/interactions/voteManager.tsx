@@ -5,17 +5,30 @@ import { InteractionProps, GameMessage, GameMessageType, Vote, GameActionType, V
 import { createSelectedPlayerTypesList, sendGameAction } from "../gameUtils";
 import { PlayerCard } from "../playerCard";
 
+/**
+ * Props object for the VoteManager.
+ */
 interface VoteManagerProps extends InteractionProps {
     isMissionOne: boolean,
 }
 
+/**
+ * Props object for the voting buttons
+ */
 interface VoteButtonProps {
     isFirstMission: boolean,
     submitVote: (vote: Vote) => void,
 }
 
+/**
+ * Component handling all voting related interactions.
+ * Since votes need to be shared, VotingResults are handled by the playerBoard.
+ * @param props The required properties for the VoteManager
+ */
 export function VoteManager(props: VoteManagerProps): JSX.Element {
+    // State for checking if the player has voted or not.
     const [hasVoted, setHasVoted] = useState(false);
+    // State for counting the number of votes received.
     const [votesReceived, setVotesReceived] = useState(0);
     useEffect(() => {
         const connection = GameSocket.getInstance();
@@ -23,6 +36,10 @@ export function VoteManager(props: VoteManagerProps): JSX.Element {
         return () => connection.onGameEvent.unsubscribe(handleMessage);
     });
 
+    /**
+     * Handles any incoming message from the server
+     * @param message A message from the server
+     */
     function handleMessage(message: InboundMessage): void {
         if (message.messageType !== InboundMessageType.GameMessage) {
             return;
@@ -33,11 +50,17 @@ export function VoteManager(props: VoteManagerProps): JSX.Element {
         }
     }
 
+    /**
+     * Submits a vote to the server and updates the component to show
+     * the in-progress bar.
+     * @param vote The vote to submit
+     */
     function submitVote(vote: Vote): void {
         sendGameAction(GameActionType.Vote, { upvote: Boolean(vote) });
         setHasVoted(true);
     }
 
+    // Create the player cards here.
     const playerCards = props.playerList.map((playerName) => {
         const selectedTypes = createSelectedPlayerTypesList(playerName, props.primarySelectedPlayers, props.secondarySelectedPlayers);
         return <PlayerCard
@@ -64,6 +87,10 @@ export function VoteManager(props: VoteManagerProps): JSX.Element {
     );
 }
 
+/**
+ * Component that manages the voting buttons.
+ * @param props Required properties for the voting buttons
+ */
 function VoteButtons(props: VoteButtonProps): JSX.Element {
     return (
         <>
