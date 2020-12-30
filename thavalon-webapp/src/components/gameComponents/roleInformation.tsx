@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
-import "../../styles/gameStyles/roleInformation.scss";
 import { RoleInfo, Snapshot } from "./constants";
+import "../../styles/gameStyles/roleInformation.scss";
 
 /**
  * The role info of the player in the game.
@@ -12,9 +12,9 @@ export function RoleInformation(): JSX.Element {
     /**
      * Handles any lobby messages that come from the server. If the message type
      * is a PlayerList change, the playerList is updated accordingly.
-     * @param message An incoming message from the server
+     * @param message An incoming message from the server.
      */
-    function handleGameMessage(message: InboundMessage): void {
+    function handleMessage(message: InboundMessage): void {
         switch (message.messageType) {
             case InboundMessageType.Snapshot: {
                 const snapshot = message.data as Snapshot;
@@ -29,13 +29,13 @@ export function RoleInformation(): JSX.Element {
         // On mount, get the connection instance and set up event handlers.
         // Then, get the player list.
         const connection = GameSocket.getInstance();
-        connection.onGameEvent.subscribe(handleGameMessage);
+        connection.onGameEvent.subscribe(handleMessage);
         connection.sendMessage({ messageType: OutboundMessageType.GetSnapshot });
 
         // On unmount, unsubscribe our event handlers.
         return () => {
             const connection = GameSocket.getInstance();
-            connection.onGameEvent.unsubscribe(handleGameMessage);
+            connection.onGameEvent.unsubscribe(handleMessage);
         }
     }, []);
 

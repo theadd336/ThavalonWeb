@@ -49,6 +49,7 @@ export interface GameMessage {
     messageType: GameMessageType,
     data?: object | string
 }
+
 /**
  * The role info provided by the server in the snapshot.
  */
@@ -74,3 +75,16 @@ export interface Snapshot {
     log: GameMessage[],
 }
 
+export interface MissionGoing {
+    mission: number,
+    players: Set<String>,
+}
+
+export interface MissionResultsType {
+    mission: number,
+    successes: number,
+    fails: number,
+    reverses: number,
+    questing_beasts: number,
+    passed: boolean,
+}

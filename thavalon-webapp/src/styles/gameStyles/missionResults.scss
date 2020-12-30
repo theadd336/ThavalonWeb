@@ -1,0 +1,37 @@
+@import "./gameGlobals.scss"; 
+
+$mission-card-padding-vertical: 5px;
+$mission-card-padding-horizontal: 10px;
+$mission-selected-border-thickness: 3px;
+
+.mission-card {
+    border: 1px solid;
+    border-radius: 10px;
+    padding: $mission-card-padding-vertical $mission-card-padding-horizontal;
+    cursor: pointer; 
+    width: 100%;
+    display: block; 
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.mission-passed {
+    padding: $mission-card-padding-vertical - $mission-selected-border-thickness $mission-card-padding-horizontal;
+    border: 1px + $mission-selected-border-thickness solid $good-role-color;
+}
+
+.mission-failed {
+    padding: $mission-card-padding-vertical - $mission-selected-border-thickness $mission-card-padding-horizontal;
+    border: 1px + $mission-selected-border-thickness solid $evil-role-color;
+}
+
+.mission-tooltip {
+    text-align: left;
+    background-color: $game-background-color;
+    color: black;
+}
+
+#missionTooltip1, #missionTooltip2, #missionTooltip3, #missionTooltip4, #missionTooltip5 {
+    background-color: $game-background-color;
+}
