@@ -141,7 +141,7 @@ export function MissionResultModal(props: MissionResultModalProps): JSX.Element 
                     <li key={"successes"}>Successes: {successes}</li>
                     <li key={"fails"}>Fails: {fails}</li>
                     <li key={"reverses"}>Reverses: {reverses}</li>
-                    <li key={"questing_beasts"}>Questing Beasts &lt;3: {questing_beasts}</li>
+                    <li key={"questing_beasts"}>Questing Beasts were here &lt;3: {questing_beasts}</li>
                 </ul>
                 <span className="waiting-for-agravaine">Waiting for Agravaine to declare...</span>
                 <button onClick={() => props.setOpen(false)}>Close</button>
