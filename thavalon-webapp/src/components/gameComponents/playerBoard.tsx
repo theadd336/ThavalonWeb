@@ -2,12 +2,11 @@ import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
 import { Vote, GameMessageType, GameMessage, Snapshot, NextProposalMessage, MissionGoingMessage, VotingResultsMessage, MissionResultsMessage } from "./constants";
 import { ProposalManager } from "./interactions/proposalManager";
-
-import "../../styles/gameStyles/playerBoard.scss";
 import { GamePhase, mapMessageToGamePhase } from "./gameUtils";
 import { VoteManager } from "./interactions/voteManager";
 import { MissionManager, MissionResultModal } from "./interactions/missionManager";
 
+import "../../styles/gameStyles/playerBoard.scss";
 
 /**
  * Message for the tabbed out indicator message.
@@ -49,7 +48,7 @@ export function PlayerBoard(): JSX.Element {
     // State for tracking who this player is
     const [me, setMe] = useState("");
     // State for maintaining the last major message
-    const [majorMessage, setMajorMessage] = useState<any>({});
+    const [majorMessage, setMajorMessage] = useState<NextProposalMessage | MissionGoingMessage>();
     // State for maintaining the map of players to votes
     const [votes, setVotes] = useState<Map<string, Vote>>(new Map<string, Vote>());
     // State to show the mission modal or not.
@@ -135,7 +134,7 @@ export function PlayerBoard(): JSX.Element {
                 }
                 break;
             case GameMessageType.MissionGoing:
-                setMajorMessage(message.data);
+                setMajorMessage(message.data as MissionGoingMessage);
                 break;
             case GameMessageType.MissionResults:
                 setShowMissionResults(true);

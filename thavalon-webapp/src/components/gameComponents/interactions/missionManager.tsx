@@ -45,10 +45,10 @@ export function MissionManager(props: MissionManagerProps): JSX.Element {
      * @param message A message from the server
      */
     function handleMessage(message: InboundMessage): void {
+        // TODO: Support cardPlayed message types here.
         if (message.messageType !== InboundMessageType.GameMessage) {
             return;
         }
-        const gameMessage = message.data as GameMessage;
     }
 
     // State maintaining if the player has played a card or not
