@@ -45,7 +45,6 @@ export function MissionManager(props: MissionManagerProps): JSX.Element {
      * @param message A message from the server
      */
     function handleMessage(message: InboundMessage): void {
-        // TODO: Support cardPlayed message types here.
         if (message.messageType !== InboundMessageType.GameMessage) {
             return;
         }
@@ -88,7 +87,6 @@ export function MissionManager(props: MissionManagerProps): JSX.Element {
                 {!hasPlayedCard && playersOnMission.has(props.me) &&
                     <MissionCardButtons submitMissionCard={submitMissionCard} />}
                 {(hasPlayedCard || !playersOnMission.has(props.me)) &&
-                    // TODO: Support mission card progress bar here.
                     <>Please wait for the mission cards to be played </>
                 }
             </div>
