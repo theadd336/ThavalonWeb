@@ -38,6 +38,7 @@ export function PlayerBoard(): JSX.Element {
     const [playerList, setPlayerList] = useState<string[]>([])
     // State maintaining selected players. These players are highlighted in green.
     const [primarySelectedPlayers, setPrimarySelectedPlayers] = useState(new Set<string>());
+    // State maintaining the secondary selected players. These players are highlighted in red.
     const [secondarySelectedPlayers, setSecondarySelectedPlayers] = useState(new Set<string>());
     // State for maintaining players who are tabbed out. These players have a tab indicator.
     const [tabbedOutPlayers, setTabbedOutPlayers] = useState(new Set<string>());
@@ -76,7 +77,7 @@ export function PlayerBoard(): JSX.Element {
                 // Get proposal order, then get the most recent major message.
                 // Finally, feed the last message in
                 handleGameMessage(snapshot.log[0]);
-                for (let i = snapshot.log.length - 1; i >= 0; i--) {
+                for (let i = snapshot.log.length - 2; i >= 1; i--) {
                     const logMessage = snapshot.log[i];
                     switch (logMessage.messageType) {
                         case GameMessageType.NextProposal:

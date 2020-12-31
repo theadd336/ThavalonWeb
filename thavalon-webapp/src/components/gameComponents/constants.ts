@@ -13,7 +13,7 @@ export enum MissionCard {
     Success = "Success",
     Fail = "Fail",
     Reverse = "Reverse",
-    QuestingBeast = "Questing Beast <3"
+    QuestingBeast = "Questing Beast was here <3"
 }
 
 /**

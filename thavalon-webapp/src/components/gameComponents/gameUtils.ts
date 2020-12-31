@@ -28,7 +28,6 @@ export function mapMessageToGamePhase(messageType: GameMessageType): GamePhase {
         case GameMessageType.CommenceVoting:
             gamePhase = GamePhase.Vote;
             break;
-        // Technically not needed, but it's nice to explicitly map message types.
         case GameMessageType.ProposalMade:
         case GameMessageType.ProposalOrder:
         case GameMessageType.ProposalUpdated:
@@ -50,17 +49,12 @@ export function mapMessageToGamePhase(messageType: GameMessageType): GamePhase {
  */
 export function sendGameAction(actionType: GameActionType, data?: object | string | boolean | number): void {
     const connection = GameSocket.getInstance();
-    let message: OutboundMessage;
+    const message: OutboundMessage = {
+        messageType: OutboundMessageType.GameCommand,
+        data: { [actionType]: data }
+    };
     if (data === undefined) {
-        message = {
-            messageType: OutboundMessageType.GameCommand,
-            data: actionType
-        };
-    } else {
-        message = {
-            messageType: OutboundMessageType.GameCommand,
-            data: { [actionType]: data }
-        }
+        message.data = actionType;
     }
     connection.sendMessage(message);
 }
@@ -74,7 +68,8 @@ export function sendGameAction(actionType: GameActionType, data?: object | strin
 export function createSelectedPlayerTypesList(
     name: string,
     primarySelectedPlayers: Set<string>,
-    secondarySelectedPlayers: Set<string>): SelectedPlayerType[] {
+    secondarySelectedPlayers: Set<string>):
+    SelectedPlayerType[] {
     const selectedTypes = new Array<SelectedPlayerType>();
     if (primarySelectedPlayers.has(name)) {
         selectedTypes.push(SelectedPlayerType.Primary);
