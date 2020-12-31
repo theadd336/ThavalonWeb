@@ -47,8 +47,16 @@ export function PlayerBoard(): JSX.Element {
     const [missionNumber, setMissionNumber] = useState(1);
     // State for tracking who this player is
     const [me, setMe] = useState("");
-    // State for maintaining the last major message
-    const [majorMessage, setMajorMessage] = useState<NextProposalMessage | MissionGoingMessage>();
+    // State for maintaining the last major message, initialized to a default NextProposalMessage
+    const [majorMessage, setMajorMessage] = useState<NextProposalMessage | MissionGoingMessage>(
+        {
+            proposer: "",
+            mission: 1,
+            mission_size: 2,
+            max_proposals: 1,
+            proposals_made: 0
+        }
+    );
     // State for maintaining the map of players to votes
     const [votes, setVotes] = useState<Map<string, Vote>>(new Map<string, Vote>());
     // State to show the mission modal or not.
