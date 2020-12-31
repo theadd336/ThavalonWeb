@@ -211,7 +211,7 @@ impl GameStateWrapper {
                 mission: 1,
                 proposals_made: 0,
                 max_proposals: game.spec.max_proposals,
-            })
+            }),
         ];
 
         for player in game.players.iter() {
@@ -222,6 +222,15 @@ impl GameStateWrapper {
                 },
             ));
         }
+
+        // Send NextProposal last to move client to the proposal phase after
+        // receiving role information.
+        effects.push(Effect::Broadcast(Message::NextProposal {
+            proposer: first_proposer.clone(),
+            mission: 1,
+            proposals_made: 0,
+            max_proposals: game.spec.max_proposals,
+        }));
 
         let mut role_state = RoleState::new(&game);
         role_state.on_round_start();
