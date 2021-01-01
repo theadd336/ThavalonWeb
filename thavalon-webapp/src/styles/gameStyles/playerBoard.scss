@@ -21,9 +21,23 @@ $player-selected-border-thickness: 3px;
     margin-top: 5px;
 }
 
-.player-selected {
+.player-selected-primary {
     padding: $player-card-padding-vertical - $player-selected-border-thickness $player-card-padding-horizontal;
     border: 1px + $player-selected-border-thickness solid $player-selected-color;
+}
+
+.player-selected-secondary {
+    padding: $player-card-padding-vertical - $player-selected-border-thickness $player-card-padding-horizontal;
+    border: 1px + $player-selected-border-thickness solid red;
+}
+
+.player-selected-all {
+    padding: $player-card-padding-vertical - $player-selected-border-thickness $player-card-padding-horizontal;
+    border: 1px + $player-selected-border-thickness solid;
+    border-top-color: $player-selected-color;
+    border-right-color: $player-selected-color;
+    border-bottom-color: red;
+    border-left-color: red;
 }
 
 .tabbed-out-indicator {

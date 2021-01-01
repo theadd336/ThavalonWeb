@@ -11,7 +11,8 @@ export enum OutboundMessageType {
     GetPlayerList = "GetPlayerList",
     StartGame = "StartGame",
     GetSnapshot = "GetSnapshot",
-    PlayerFocusChange = "PlayerFocusChange"
+    PlayerFocusChange = "PlayerFocusChange",
+    GameCommand = "GameCommand"
 }
 
 export interface OutboundMessage {

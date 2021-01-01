@@ -62,6 +62,8 @@ pub enum Message {
         proposals_made: usize,
         /// The maximum number of unsent proposals before force activates
         max_proposals: usize,
+        /// The number of players to include on the proposal
+        mission_size: usize,
     },
 
     /// The current proposal was updated
@@ -79,6 +81,9 @@ pub enum Message {
 
     /// Announces that players should submit votes for the latest proposal.
     CommenceVoting,
+
+    /// Announces that a player has submitted a valid vote.
+    VoteReceived,
 
     /// Announces the results of a vote
     VotingResults { sent: bool, counts: VoteCounts },
@@ -127,6 +132,7 @@ pub enum Message {
 
 /// How players voted on a proposal
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[serde(tag = "voteType")]
 pub enum VoteCounts {
     /// Public mission votes, where it is known who up- or downvoted.
     Public {

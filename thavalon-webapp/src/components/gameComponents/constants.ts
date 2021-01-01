@@ -10,18 +10,19 @@ export enum Team {
  * An enum of cards to play
  */
 export enum MissionCard {
-    Pass = "Pass",
+    Success = "Success",
     Fail = "Fail",
     Reverse = "Reverse",
-    QuestingBeast = "QuestingBeast",
+    QuestingBeast = "Questing Beast was here <3"
 }
 
 /**
- * An enum of votes that a player can use
+ * An enum of votes that a player can use. Note that this is technically an object
+ * literal, since enums don't support booleans, but the server expects them.
  */
 export enum Vote {
-    Upvote = "Upvote",
-    Downvote = "Downvote",
+    Downvote,
+    Upvote
 }
 
 /**
@@ -32,14 +33,38 @@ export enum GameMessageType {
     ProposalOrder = "proposalOrder",
     RoleInformation = "roleInformation",
     NextProposal = "nextProposal",
+    ProposalUpdated = "proposalUpdated",
     ProposalMade = "proposalMade",
     CommenceVoting = "commenceVoting",
+    VoteRecieved = "voteReceived",
+    VotingResults = "votingResults",
     MissionGoing = "missionGoing",
     MissionResults = "missionResults",
     AgravaineDeclaration = "agravaineDeclaration",
     BeginAssassination = "beginAssassination",
     AssassinationResult = "assassinationResult",
     GameOver = "gameOver"
+}
+
+/**
+ * An interface for the game message from the server
+ */
+export interface GameMessage {
+    messageType: GameMessageType,
+    data?: object | string
+}
+
+export enum GameActionType {
+    Propose = "Propose",
+    SelectPlayer = "SelectPlayer",
+    UnselectPlayer = "UnselectPlayer",
+    Vote = "Vote",
+    Play = "Play",
+    Obscure = "Obscure",
+    QuestingBeast = "QuestingBeast",
+    Declare = "Declare",
+    Assassinate = "Assassinate",
+    MoveToAssassination = "MoveToAssassination"
 }
 
 /**
@@ -75,9 +100,75 @@ export interface Snapshot {
     log: GameMessage[],
 }
 
+/**
+ * The next proposal message sent from the server.
+ */
 export interface NextProposalMessage {
     proposer: string,
     mission: number,
     proposals_made: number,
     max_proposals: number,
+    mission_size: number
+}
+
+/**
+ * The proposal updated message from the server
+ */
+export interface ProposalUpdatedMessage {
+    players: string[],
+}
+
+/**
+ * The type of selected player
+ */
+export enum SelectedPlayerType {
+    Primary,
+    Secondary
+}
+
+/**
+ * The base props for all the interaction components
+ */
+export interface InteractionProps {
+    primarySelectedPlayers: Set<string>,
+    secondarySelectedPlayers: Set<string>,
+    playerList: string[],
+    tabbedOutPlayers: Set<string>,
+}
+
+/**
+ * The message of a mission going
+ */
+export interface MissionGoingMessage {
+    mission: number,
+    players: string[],
+}
+
+/**
+ * The message representing the vote results
+ */
+export interface VotingResultsMessage {
+    sent: boolean
+    counts: VoteCounts
+}
+
+/**
+ * The VoteCounts object from the VotingResultsMessage
+ */
+export interface VoteCounts {
+    voteType: "Public" | "Private",
+    upvotes: number | string[],
+    downvotes: number | string[],
+}
+
+/**
+ * Message representing mission results from the server.
+ */
+export interface MissionResultsMessage {
+    mission: number,
+    successes: number,
+    fails: number,
+    reverses: number,
+    questing_beasts: number,
+    passed: boolean
 }
