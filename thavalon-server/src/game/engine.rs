@@ -24,7 +24,7 @@ pub async fn run_game<I: Interactions>(game: Game, interactions: &mut I) -> Resu
                     log::error!("Error sending message to {}: {}", player, e);
                 }
             }
-            _ => panic!("Unexpected initial effect {:?}", effect)
+            _ => panic!("Unexpected initial effect {:?}", effect),
         }
     }
 

@@ -34,7 +34,6 @@ export function RoleInformation(): JSX.Element {
 
         // On unmount, unsubscribe our event handlers.
         return () => {
-            const connection = GameSocket.getInstance();
             connection.onGameEvent.unsubscribe(handleGameMessage);
         }
     }, []);

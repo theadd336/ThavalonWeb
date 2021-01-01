@@ -23,6 +23,8 @@ impl GameState<Voting> {
         );
         self.phase.votes.insert(player.to_string(), is_upvote);
 
+        let mut effects = vec![Effect::Broadcast(Message::VoteReceived)];
+
         if self.phase.votes.len() == self.game.size() {
             let mission = self.mission();
 
@@ -47,10 +49,10 @@ impl GameState<Voting> {
                 messages::VoteCounts::Public { upvotes, downvotes }
             };
 
-            let mut effects = vec![Effect::Broadcast(Message::VotingResults {
+            effects.push(Effect::Broadcast(Message::VotingResults {
                 sent,
                 counts: vote_counts,
-            })];
+            }));
 
             if mission == 1 {
                 let proposal_index = if sent { 0 } else { 1 };
@@ -82,7 +84,7 @@ impl GameState<Voting> {
             }
         } else {
             // If we don't have all the votes yet, there's no state change
-            (GameStateWrapper::Voting(self), vec![])
+            (GameStateWrapper::Voting(self), effects)
         }
     }
 

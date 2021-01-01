@@ -4,19 +4,40 @@ $player-card-padding-vertical: 10px;
 $player-card-padding-horizontal: 24px;
 $player-selected-border-thickness: 3px;
 
+.player-board {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
 .player-card {
     border: 1px solid;
     border-radius: 10px;
     padding: $player-card-padding-vertical $player-card-padding-horizontal;
     cursor: pointer; 
-    width: 67%; 
-    display: block; 
+    width: 90%; 
+    display: block;
     margin-top: 5px;
 }
 
-.player-selected {
+.player-selected-primary {
     padding: $player-card-padding-vertical - $player-selected-border-thickness $player-card-padding-horizontal;
     border: 1px + $player-selected-border-thickness solid $player-selected-color;
+}
+
+.player-selected-secondary {
+    padding: $player-card-padding-vertical - $player-selected-border-thickness $player-card-padding-horizontal;
+    border: 1px + $player-selected-border-thickness solid red;
+}
+
+.player-selected-all {
+    padding: $player-card-padding-vertical - $player-selected-border-thickness $player-card-padding-horizontal;
+    border: 1px + $player-selected-border-thickness solid;
+    border-top-color: $player-selected-color;
+    border-right-color: $player-selected-color;
+    border-bottom-color: red;
+    border-left-color: red;
 }
 
 .tabbed-out-indicator {

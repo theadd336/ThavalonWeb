@@ -17,6 +17,7 @@ use super::MissionNumber;
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameSnapshot {
+    me: String,
     pub role_info: Option<RoleDetails>,
     missions: Vec<Mission>,
     log: Vec<Message>,
@@ -80,8 +81,9 @@ pub enum VotingResults {
 }
 
 impl GameSnapshot {
-    pub fn new() -> GameSnapshot {
+    pub fn new(player: String) -> GameSnapshot {
         GameSnapshot {
+            me: player,
             role_info: None,
             missions: Vec::new(),
             log: Vec::new(),
@@ -154,8 +156,10 @@ impl GameSnapshot {
             }
 
             Message::VotingResults { sent, counts } => {
+                let is_mission_1 = self.current_mission() == 1;
                 let mut mission = self.current_mut();
-                if mission.proposals.len() != mission.voting_results.len() + 1 {
+                let expected_proposals = if is_mission_1 { 2 } else { mission.voting_results.len() + 1 };
+                if mission.proposals.len() != expected_proposals {
                     return Err(SnapshotError::UnexpectedMessage(Message::VotingResults {
                         sent,
                         counts,
@@ -170,9 +174,11 @@ impl GameSnapshot {
                     }
                 };
                 mission.voting_results.push(results);
-                if sent {
-                    mission.sent_proposal = Some(mission.voting_results.len() - 1);
-                }
+                mission.sent_proposal = if is_mission_1 {
+                    if sent { Some(0) } else { Some(1) }
+                } else {
+                    Some(mission.voting_results.len() - 1)
+                };
                 Ok(())
             }
 
@@ -254,14 +260,14 @@ pub struct Snapshots {
 
 impl<I: Interactions> SnapshotInteractions<I> {
     /// Create a new `SnapshotInteractions` that delegates to `inner`.
-    pub fn new<P: IntoIterator<Item=String>>(inner: I, players: P) -> SnapshotInteractions<I> {
-        let snapshots = players.into_iter()
+    pub fn new<P: IntoIterator<Item = String>>(inner: I, players: P) -> SnapshotInteractions<I> {
+        let snapshots = players
+            .into_iter()
             .map(|player| {
-                let snapshot = Arc::new(Mutex::new(GameSnapshot::new()));
+                let snapshot = Arc::new(Mutex::new(GameSnapshot::new(player.clone())));
                 (player, snapshot)
             })
             .collect();
-
 
         SnapshotInteractions {
             inner,
@@ -286,7 +292,8 @@ impl<I: Interactions> SnapshotInteractions<I> {
 impl<I: Interactions + Send> Interactions for SnapshotInteractions<I> {
     async fn send_to(&mut self, player: &str, message: Message) -> Result<(), GameError> {
         {
-            let snapshot = self.snapshot(player)
+            let snapshot = self
+                .snapshot(player)
                 .ok_or_else(|| SnapshotError::NoSuchPlayer(player.to_string()))?;
             let mut snapshot = snapshot.lock().unwrap();
             snapshot.on_message(message.clone())?;
