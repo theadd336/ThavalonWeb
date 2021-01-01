@@ -1,25 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
-import { Vote, GameMessageType, GameMessage, Snapshot } from "./constants";
-import { Spinner } from "react-bootstrap";
+import { Vote, GameMessageType, GameMessage, Snapshot, NextProposalMessage, MissionGoingMessage, VotingResultsMessage, MissionResultsMessage } from "./constants";
+import { ProposalManager } from "./interactions/proposalManager";
+import { GamePhase, mapMessageToGamePhase } from "./gameUtils";
+import { VoteManager } from "./interactions/voteManager";
+import { MissionManager, MissionResultModal } from "./interactions/missionManager";
 
 import "../../styles/gameStyles/playerBoard.scss";
-
-
-/**
- * Props object for the PlayerCard component. Some of these aren't used yet,
- * pending future development.
- */
-interface PlayerCardProps {
-    name: string
-    toggleSelected: (name: string) => void,
-    me?: boolean,
-    tabbedOut?: boolean,
-    isProposing?: boolean,
-    isSelected?: boolean,
-    vote?: Vote,
-    declaredAs?: string
-}
 
 /**
  * Message for the tabbed out indicator message.
@@ -50,9 +37,33 @@ export function PlayerBoard(): JSX.Element {
     // State for maintaining the player list.
     const [playerList, setPlayerList] = useState<string[]>([])
     // State maintaining selected players. These players are highlighted in green.
-    const [selectedPlayers, setSelectedPlayers] = useState(new Set<string>());
+    const [primarySelectedPlayers, setPrimarySelectedPlayers] = useState(new Set<string>());
+    // State maintaining the secondary selected players. These players are highlighted in red.
+    const [secondarySelectedPlayers, setSecondarySelectedPlayers] = useState(new Set<string>());
     // State for maintaining players who are tabbed out. These players have a tab indicator.
     const [tabbedOutPlayers, setTabbedOutPlayers] = useState(new Set<string>());
+    // State for maintaining the current game phase
+    const [gamePhase, setGamePhase] = useState(GamePhase.Proposal);
+    // State for maintaining the current mission number
+    const [missionNumber, setMissionNumber] = useState(1);
+    // State for tracking who this player is
+    const [me, setMe] = useState("");
+    // State for maintaining the last major message, initialized to a default NextProposalMessage
+    const [majorMessage, setMajorMessage] = useState<NextProposalMessage | MissionGoingMessage>(
+        {
+            proposer: "",
+            mission: 1,
+            mission_size: 2,
+            max_proposals: 1,
+            proposals_made: 0
+        }
+    );
+    // State for maintaining the map of players to votes
+    const [votes, setVotes] = useState<Map<string, Vote>>(new Map<string, Vote>());
+    // State to show the mission modal or not.
+    const [showMissionResults, setShowMissionResults] = useState(false);
+    // State to maintain the mission results.
+    const [missionResults, setMissionResults] = useState<MissionResultsMessage>();
 
     /**
      * Generic message handler for all messages from the server
@@ -62,7 +73,23 @@ export function PlayerBoard(): JSX.Element {
         switch (message.messageType) {
             case InboundMessageType.Snapshot:
                 const snapshot = message.data as Snapshot
+                setMe(snapshot.me);
+                // Get proposal order, then get the most recent major message.
+                // Finally, feed the last message in
                 handleGameMessage(snapshot.log[0]);
+                for (let i = snapshot.log.length - 2; i >= 1; i--) {
+                    const logMessage = snapshot.log[i];
+                    switch (logMessage.messageType) {
+                        case GameMessageType.NextProposal:
+                        case GameMessageType.CommenceVoting:
+                        case GameMessageType.MissionGoing:
+                        case GameMessageType.BeginAssassination:
+                            handleGameMessage(logMessage);
+                            i = -1;
+                            break;
+                    }
+                }
+                handleGameMessage(snapshot.log[snapshot.log.length - 1]);
                 break;
             case InboundMessageType.PlayerFocusChange:
                 const { displayName, isTabbedOut } = message.data as PlayerFocusChangeMessage;
@@ -80,19 +107,48 @@ export function PlayerBoard(): JSX.Element {
      * @param message The GameMessage from the server
      */
     function handleGameMessage(message: GameMessage): void {
+        setGamePhase(mapMessageToGamePhase(message.messageType));
         switch (message.messageType) {
             case GameMessageType.ProposalOrder:
                 setPlayerList(message.data as string[]);
                 break;
+            case GameMessageType.NextProposal:
+                const data = message.data as NextProposalMessage;
+                if (data.mission > 1) {
+                    setPrimarySelectedPlayers(new Set());
+                    setSecondarySelectedPlayers(new Set());
+                }
+                setMissionNumber(data.mission);
+                setMajorMessage(data);
+                break;
+            case GameMessageType.VotingResults:
+                // If results are public, set them here. Otherwise, trigger toast for Maeve.
+                const votingResults = message.data as VotingResultsMessage;
+                if (votingResults.counts.voteType === "Public") {
+                    const { upvotes, downvotes } = votingResults.counts;
+                    if (typeof upvotes === "number" || typeof downvotes === "number") {
+                        throw new TypeError("Votes for public votes must be string arrays, not numbers.");
+                    }
+                    const voteMap = new Map<string, Vote>();
+                    for (const player of upvotes) {
+                        voteMap.set(player, Vote.Upvote);
+                    }
+                    for (const player of downvotes) {
+                        voteMap.set(player, Vote.Downvote);
+                    }
+                    console.log(voteMap);
+                    setVotes(voteMap);
+                } else {
+                    // TODO: Trigger Maive Toast here.
+                }
+                break;
+            case GameMessageType.MissionGoing:
+                setMajorMessage(message.data as MissionGoingMessage);
+                break;
+            case GameMessageType.MissionResults:
+                setShowMissionResults(true);
+                setMissionResults(message.data as MissionResultsMessage);
         }
-    }
-
-    /**
-     * Updates the selected player list with a new name.
-     * @param name The player name to select.
-     */
-    function updateSelectedPlayers(name: string): void {
-        updateSet(selectedPlayers, name, setSelectedPlayers);
     }
 
     /**
@@ -120,59 +176,46 @@ export function PlayerBoard(): JSX.Element {
         setTabbedOutPlayers(tempSet);
     }
 
-    /**
-     * Helper function to update a set.
-     * @param setToUpdate The set to update
-     * @param valueToToggle The value in the set to toggle
-     * @param reactSetter The React setter for the state to update
-     */
-    function updateSet<T>(setToUpdate: Set<T>, valueToToggle: T, reactSetter: React.Dispatch<React.SetStateAction<Set<T>>>): void {
-        // Use tempSet since react stateful variables must never be modified directly
-        const tempSet = new Set<T>(setToUpdate.values());
-        if (!tempSet.delete(valueToToggle)) {
-            tempSet.add(valueToToggle);
-        }
-        reactSetter(tempSet);
-    }
-
-    // Create the player cards with the state we have.
-    const playerCards = playerList.map((playerName) => {
-        return (
-            <PlayerCard
-                key={playerName}
-                name={playerName}
-                tabbedOut={tabbedOutPlayers.has(playerName)}
-                isSelected={selectedPlayers.has(playerName)}
-                toggleSelected={updateSelectedPlayers} />
-        );
-    });
-
     return (
         <div className="player-board">
-            {playerCards}
+            {
+                gamePhase === GamePhase.Proposal &&
+                <ProposalManager
+                    message={majorMessage as NextProposalMessage}
+                    me={me}
+                    playerList={playerList}
+                    tabbedOutPlayers={tabbedOutPlayers}
+                    primarySelectedPlayers={primarySelectedPlayers}
+                    setPrimarySelectedPlayers={setPrimarySelectedPlayers}
+                    secondarySelectedPlayers={secondarySelectedPlayers}
+                    setSecondarySelectedPlayers={setSecondarySelectedPlayers}
+                    votes={votes}
+                />
+            }
+            {
+                gamePhase === GamePhase.Vote &&
+                <VoteManager
+                    isMissionOne={missionNumber === 1}
+                    playerList={playerList}
+                    primarySelectedPlayers={primarySelectedPlayers}
+                    secondarySelectedPlayers={secondarySelectedPlayers}
+                    tabbedOutPlayers={tabbedOutPlayers} />
+            }
+            {
+                gamePhase === GamePhase.Mission &&
+                <MissionManager
+                    me={me}
+                    playerList={playerList}
+                    message={majorMessage as MissionGoingMessage}
+                    primarySelectedPlayers={primarySelectedPlayers}
+                    secondarySelectedPlayers={secondarySelectedPlayers}
+                    tabbedOutPlayers={tabbedOutPlayers}
+                    votes={votes} />
+            }
+            {
+                showMissionResults &&
+                <MissionResultModal setOpen={setShowMissionResults} message={missionResults} />
+            }
         </div>
-    );
-}
-
-/**
- * React component representing an interactive player button. This button doesn't
- * directly communicate with the server but handles all styling of relevant icons.
- * @param props The props for the player card
- */
-function PlayerCard(props: PlayerCardProps): JSX.Element {
-    return (
-        <button
-            className={`player-card ${ props.isSelected ? "player-selected" : "" }`}
-            onClick={() => props.toggleSelected(props.name)}>
-            <div>
-                {props.tabbedOut &&
-                    <Spinner
-                        className="tabbed-out-indicator"
-                        size="sm"
-                        variant="dark"
-                        animation="border" />}
-                {props.name}
-            </div>
-        </button>
     );
 }

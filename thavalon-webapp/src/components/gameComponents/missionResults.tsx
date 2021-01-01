@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType } from "../../utils/GameSocket";
-import { GameMessage, GameMessageType, MissionGoing, MissionResultsType } from "./constants";
+import { GameMessage, GameMessageType, MissionGoingMessage, MissionResultsMessage } from "./constants";
 import "../../styles/gameStyles/missionResults.scss";
-import { JsxEmit } from "typescript";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 
 enum MissionStatus {
@@ -107,7 +106,7 @@ export function MissionResults(): JSX.Element {
         console.log(message);
         switch (message.messageType) {
             case GameMessageType.MissionGoing: {
-                const missionGoingData = (message.data as MissionGoing);
+                const missionGoingData = (message.data as MissionGoingMessage);
                 const newArr = new Array(...missionProps);
                 newArr[missionGoingData.mission - 1] = {
                     missionPlayers: Array.from(missionGoingData.players),
@@ -118,7 +117,7 @@ export function MissionResults(): JSX.Element {
                 break;
             }
             case GameMessageType.MissionResults: {
-                let missionResultsData = (message.data as MissionResultsType);
+                let missionResultsData = (message.data as MissionResultsMessage);
                 let newArr = new Array(...missionProps);
                 newArr[missionResultsData.mission - 1] = {
                     missionPlayers: missionProps[missionResultsData.mission - 1].missionPlayers,

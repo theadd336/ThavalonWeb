@@ -156,6 +156,7 @@ impl<P: Phase> GameState<P> {
             mission: self.mission(),
             proposals_made: self.spent_proposals(),
             max_proposals: self.game.spec.max_proposals,
+            mission_size: self.game.spec.mission_size(self.mission()),
         }));
         let next_state = self.with_phase(Proposing::new(proposer));
         (GameStateWrapper::Proposing(next_state), effects)
@@ -204,15 +205,9 @@ impl GameStateWrapper {
         let first_proposer = &game.proposal_order()[0];
         let phase = Proposing::new(first_proposer.clone());
 
-        let mut effects = vec![
-            Effect::Broadcast(Message::ProposalOrder(game.proposal_order.clone())),
-            Effect::Broadcast(Message::NextProposal {
-                proposer: first_proposer.clone(),
-                mission: 1,
-                proposals_made: 0,
-                max_proposals: game.spec.max_proposals,
-            }),
-        ];
+        let mut effects = vec![Effect::Broadcast(Message::ProposalOrder(
+            game.proposal_order.clone(),
+        ))];
 
         for player in game.players.iter() {
             effects.push(Effect::Send(
@@ -230,6 +225,7 @@ impl GameStateWrapper {
             mission: 1,
             proposals_made: 0,
             max_proposals: game.spec.max_proposals,
+            mission_size: game.spec.mission_size(1),
         }));
 
         let mut role_state = RoleState::new(&game);
