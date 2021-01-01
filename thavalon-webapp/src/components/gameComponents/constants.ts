@@ -70,6 +70,7 @@ export interface RoleInfo {
  * The snapshot message sent by the server.
  */
 export interface Snapshot {
+    me: string,
     roleInfo: RoleInfo,
     missions: any[],
     log: GameMessage[],
@@ -87,4 +88,10 @@ export interface MissionResultsType {
     reverses: number,
     questing_beasts: number,
     passed: boolean,
+}
+export interface NextProposalMessage {
+    proposer: string,
+    mission: number,
+    proposals_made: number,
+    max_proposals: number,
 }

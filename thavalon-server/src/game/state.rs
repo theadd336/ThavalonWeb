@@ -94,9 +94,11 @@ mod prelude {
 }
 
 /// A side-effect of a state transition. In most cases, this will result in sending a message to some or all players.
+#[derive(Debug)]
 pub enum Effect {
     Reply(Message),
     Broadcast(Message),
+    Send(String, Message),
     StartTimeout(Duration),
     ClearTimeout,
 }
@@ -198,20 +200,49 @@ macro_rules! in_phases {
 
 impl GameStateWrapper {
     /// Creates the [`GameState`] wrapper for a new game.
-    pub fn new(game: Game) -> GameStateWrapper {
+    pub fn new(game: Game) -> ActionResult {
         let first_proposer = &game.proposal_order()[0];
         let phase = Proposing::new(first_proposer.clone());
+
+        let mut effects = vec![
+            Effect::Broadcast(Message::ProposalOrder(game.proposal_order.clone())),
+            Effect::Broadcast(Message::NextProposal {
+                proposer: first_proposer.clone(),
+                mission: 1,
+                proposals_made: 0,
+                max_proposals: game.spec.max_proposals,
+            }),
+        ];
+
+        for player in game.players.iter() {
+            effects.push(Effect::Send(
+                player.name.clone(),
+                Message::RoleInformation {
+                    details: game.info[&player.name].clone(),
+                },
+            ));
+        }
+
+        // Send NextProposal last to move client to the proposal phase after
+        // receiving role information.
+        effects.push(Effect::Broadcast(Message::NextProposal {
+            proposer: first_proposer.clone(),
+            mission: 1,
+            proposals_made: 0,
+            max_proposals: game.spec.max_proposals,
+        }));
 
         let mut role_state = RoleState::new(&game);
         role_state.on_round_start();
 
-        GameStateWrapper::Proposing(GameState {
+        let state = GameStateWrapper::Proposing(GameState {
             phase,
             role_state,
             game,
             proposals: vec![],
             mission_results: vec![],
-        })
+        });
+        (state, effects)
     }
 
     /// Advance to the next game state given a player action
@@ -230,9 +261,7 @@ impl GameStateWrapper {
             (GameStateWrapper::Voting(inner), Action::Vote { upvote }) => {
                 inner.handle_vote(player, upvote)
             }
-            (GameStateWrapper::Voting(inner), Action::Obscure) => {
-                inner.handle_obscure(player)
-            }
+            (GameStateWrapper::Voting(inner), Action::Obscure) => inner.handle_obscure(player),
             (GameStateWrapper::OnMission(inner), Action::Play { card }) => {
                 inner.handle_card(player, card)
             }

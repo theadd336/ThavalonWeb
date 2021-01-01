@@ -14,7 +14,7 @@ use warp::filters::ws::WebSocket;
 /// Type representing a oneshot sender back to the caller.
 pub type ResponseChannel = oneshot::Sender<LobbyResponse>;
 
-/// Type repreesenting a channel to the lobby to issue commands.
+/// Type representing a channel to the lobby to issue commands.
 pub type LobbyChannel = Sender<(LobbyCommand, Option<ResponseChannel>)>;
 
 /// Enum of possible lobby-related errors.
@@ -30,6 +30,8 @@ pub enum LobbyError {
     UnknownError,
     #[error("Client ID is not registered for the game.")]
     InvalidClientID,
+    #[error("The player tried to reconnect with a new name.")]
+    NameChangeOnReconnectError,
     #[error("The display name is already in use.")]
     DuplicateDisplayName,
 }

@@ -31,11 +31,17 @@ $good-role-color: #003A06;
 
 // Left column is one-third of the screen.
 .col-left {
-    width: 33%;
+    width: 25%;
 }
 
+.col-center {
+    width: 50%;
+    padding-left: $game-root-padding;
+    padding-right: $game-root-padding;
+    border-left: $border-thickness $border-style $border-color;
+}
 .col-right {
-    width: 67%;
+    width: 25%;
     padding-left: $game-root-padding;
     border-left: $border-thickness $border-style $border-color;
 }
@@ -44,6 +50,14 @@ $good-role-color: #003A06;
 .game-section-header {
     font-size: 40px;
     line-height: 46px;
+    color: $game-section-header-color;
+    text-align: center;
+}
+
+// Title of any subheader in a game
+.game-section-subheader {
+    font-size: 20px;
+    line-height: 26px;
     color: $game-section-header-color;
     text-align: center;
 }
