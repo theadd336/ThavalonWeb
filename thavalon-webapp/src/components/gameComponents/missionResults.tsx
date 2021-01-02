@@ -22,8 +22,6 @@ interface MissionCardProps {
 }
 
 export function MissionResults(): JSX.Element {
-
-
     const [missionProps, setMissionProps] = useState<MissionCardProps[]>([
         {
             missionPlayers: ["Mission 1"],
@@ -136,17 +134,14 @@ export function MissionResults(): JSX.Element {
             }
             case InboundMessageType.Snapshot: {
                 handleSnapshotMessage(message.data as Snapshot);
+                break;
             }
         }
     }
 
     return <div id="missionContainer">
         <h1 className="game-section-header">Mission Results</h1>
-        <MissionCard {...missionProps[0]} />
-        <MissionCard {...missionProps[1]} />
-        <MissionCard {...missionProps[2]} />
-        <MissionCard {...missionProps[3]} />
-        <MissionCard {...missionProps[4]} />
+        {missionProps.map(mission => <MissionCard {...mission} />)}
     </div>;
 }
 
@@ -163,7 +158,7 @@ function MissionCard(props: MissionCardProps): JSX.Element {
             Passes: {props.passes}<br />
             Fails: {props.fails}<br />
             Reverses: {props.reverses}<br />
-            Questing Beast was here &lt;3: {props.questing_beasts}
+            Questing Beasts: {props.questing_beasts}
         </div>}
     </Tooltip>
 
