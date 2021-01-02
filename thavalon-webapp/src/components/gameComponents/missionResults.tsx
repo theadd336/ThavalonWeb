@@ -71,7 +71,6 @@ export function MissionResults(): JSX.Element {
      * @param message An incoming GameMessage from the server.
      */
     function handleGameMessage(message: GameMessage) {
-        console.log(message);
         switch (message.messageType) {
             case GameMessageType.MissionGoing: {
                 const missionGoingData = (message.data as MissionGoingMessage);
@@ -99,7 +98,6 @@ export function MissionResults(): JSX.Element {
                 setMissionProps(newArr);
                 break;
             }
-            // TODO: Handle snapshot message to reset mission results on reconnection
         }
     }
 
@@ -122,9 +120,7 @@ export function MissionResults(): JSX.Element {
             newArr[i].reverses = results.reverses;
             newArr[i].questing_beasts = results.questing_beasts;
         }
-
         setMissionProps(newArr);
-        console.log(snapshot.missions);
     }
     
     /**
