@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType } from "../../utils/GameSocket";
 import { GameMessage, GameMessageType, MissionGoingMessage, MissionResultsMessage, Snapshot } from "./constants";
-import "../../styles/gameStyles/missionResults.scss";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
+import "../../styles/gameStyles/missionResults.scss";
 
 enum MissionStatus {
     Pending = "pending",
     Going = "going",
     Passed = "passed",
-    Failed = "failed"
+    Failed = "failed",
 }
 
 interface MissionCardProps {
@@ -21,34 +21,17 @@ interface MissionCardProps {
     reverses?: number,
 }
 
+/**
+ * MissionResults panel on game page, for showing mission results.
+ */
 export function MissionResults(): JSX.Element {
-    const [missionProps, setMissionProps] = useState<MissionCardProps[]>([
+    const [missionProps, setMissionProps] = useState<MissionCardProps[]>([1, 2, 3, 4, 5].map((x) => (
         {
-            missionPlayers: ["Mission 1"],
+            missionPlayers: ["Mission " + x],
             missionStatus: MissionStatus.Pending,
-            missionNumber: 1,
-        },
-        {
-            missionPlayers: ["Mission 2"],
-            missionStatus: MissionStatus.Pending,
-            missionNumber: 2,
-        },
-        {
-            missionPlayers: ["Mission 3"],
-            missionStatus: MissionStatus.Pending,
-            missionNumber: 3,
-        },
-        {
-            missionPlayers: ["Mission 4"],
-            missionStatus: MissionStatus.Pending,
-            missionNumber: 4,
-        },
-        {
-            missionPlayers: ["Mission 5"],
-            missionStatus: MissionStatus.Pending,
-            missionNumber: 5,
+            missionNumber: x,
         }
-    ])
+    )));
 
     // useEffect handles componentDidMount and componentWillUnmount steps.
     useEffect(() => {
@@ -82,8 +65,8 @@ export function MissionResults(): JSX.Element {
                 break;
             }
             case GameMessageType.MissionResults: {
-                let missionResultsData = (message.data as MissionResultsMessage);
-                let newArr = new Array(...missionProps);
+                const missionResultsData = (message.data as MissionResultsMessage);
+                const newArr = new Array(...missionProps);
                 newArr[missionResultsData.mission - 1] = {
                     missionPlayers: missionProps[missionResultsData.mission - 1].missionPlayers,
                     missionStatus: missionResultsData.passed ? MissionStatus.Passed : MissionStatus.Failed,
@@ -100,7 +83,7 @@ export function MissionResults(): JSX.Element {
     }
 
     function handleSnapshotMessage(snapshot: Snapshot) {
-        let newArr = new Array(...missionProps);
+        const newArr = new Array(...missionProps);
         for (let i = 0; i < snapshot.missions.length; i++) {
             const mission = snapshot.missions[i];
             const sentProposal = mission.sentProposal;
