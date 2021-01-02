@@ -103,7 +103,7 @@ function VoteButtons(props: VoteButtonProps): JSX.Element {
                 {props.isFirstMission ? "Send Green" : "Accept"}
             </button>
             <button
-                className="vote-button-red"
+                className={props.isFirstMission ? "vote-button-blue" : "vote-button-red"}
                 onClick={() => props.submitVote(Vote.Downvote)}>
                 {props.isFirstMission ? "Send Blue" : "Decline"}
             </button>

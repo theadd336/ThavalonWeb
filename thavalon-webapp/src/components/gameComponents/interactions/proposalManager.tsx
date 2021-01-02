@@ -140,6 +140,7 @@ export function ProposalManager(props: ProposalManagerProps): JSX.Element {
                         label={`Selected: ${ selectedPlayers.size } / ${ mission_size }`} />}
                 {isProposing &&
                     <button
+                        disabled={selectedPlayers.size !== mission_size}
                         className={onSecondM1Proposal ? "proposal-button-secondary" : "proposal-button-primary"}
                         onClick={() => submitProposal()}>
                         Submit Proposal ({`${ selectedPlayers.size } / ${ mission_size }`})

@@ -46,3 +46,28 @@
         background: rgba(blue, $button-hover-opacity);
     }
 }
+
+.mission-modal-close-button {
+    background-color: $button-red;
+    &:hover {
+        background: rgba($button-red, $button-hover-opacity);
+    }
+    position: relative;
+    float: right;
+    display: inline;
+    border: 1px solid;
+    border-radius: 10px;
+    padding: 3px 6px;
+    cursor: pointer; 
+    margin-top: 2px;
+    margin-bottom: 2px;
+    color: white;
+}
+
+.mission-header-passed {
+    color: green;
+}
+
+.mission-header-failed {
+    color: $button-red
+}

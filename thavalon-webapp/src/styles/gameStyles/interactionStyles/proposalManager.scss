@@ -5,20 +5,31 @@
     font-size: 0.8rem;
     width: 50%;
     color: white;
+    &:disabled {
+        cursor: default;
+    }
 }
 
 .proposal-button-primary {
+    $background-faded: rgba($player-selected-color-primary, $button-hover-opacity);
     @extend %proposal-button;
     background-color: $player-selected-color-primary;
     &:hover {
-        background-color: rgba($player-selected-color-primary, $button-hover-opacity);
+        background-color: $background-faded;
+    }
+    &:disabled {
+        background-color: $background-faded;
     }
 }
 
 .proposal-button-secondary {
+    $background-faded: rgba($player-selected-color-secondary, $button-hover-opacity);
     @extend %proposal-button;
     background-color: $player-selected-color-secondary;
     &:hover {
-        background-color: rgba($player-selected-color-secondary, $button-hover-opacity);
+        background-color: $background-faded;
+    }
+    &:disabled {
+        background-color: $background-faded;
     }
 }

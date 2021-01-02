@@ -23,3 +23,11 @@
         background: rgba($button-red, $button-hover-opacity);
     }
 }
+
+.vote-button-blue {
+    @extend %vote-button;
+    background-color: blue;
+    &:hover {
+        background: rgba(blue, $button-hover-opacity);
+    }
+}

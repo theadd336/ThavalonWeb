@@ -6,6 +6,7 @@ import { createSelectedPlayerTypesList, sendGameAction } from "../gameUtils";
 import { PlayerCard } from "../playerCard";
 
 import "../../../styles/gameStyles/interactionStyles/missionManager.scss";
+import { ListGroup } from "react-bootstrap";
 /**
  * The required properties for the MissionManager
  */
@@ -149,16 +150,22 @@ export function MissionResultModal(props: MissionResultModalProps): JSX.Element 
             overlayClassName="Overlay"
         >
             <div className="modalContainer">
-                <h2 className="modalHeader">Misison {mission} {props.message.passed ? "Passed!" : "Failed!"}</h2>
+                <h2 className="modalHeader">
+                    Mission {mission} <span className={props.message.passed ? "mission-header-passed" : "mission-header-failed"}>
+                        {props.message.passed ? "Passed!" : "Failed!"}
+                    </span>
+                </h2>
                 <hr />
-                <ul>
-                    <li key={"successes"}>Successes: {successes}</li>
-                    <li key={"fails"}>Fails: {fails}</li>
-                    <li key={"reverses"}>Reverses: {reverses}</li>
-                    <li key={"questing_beasts"}>Questing Beasts were here &lt;3: {questing_beasts}</li>
-                </ul>
-                <span className="waiting-for-agravaine">Waiting for Agravaine to declare...</span>
-                <button onClick={() => props.setOpen(false)}>Close</button>
+                <ListGroup variant="flush">
+                    <ListGroup.Item key={"successes"}>Successes: {successes}</ListGroup.Item>
+                    <ListGroup.Item key={"fails"}>Fails: {fails}</ListGroup.Item>
+                    <ListGroup.Item key={"reverses"}>Reverses: {reverses}</ListGroup.Item>
+                    <ListGroup.Item key={"questing_beasts"}>Questing Beasts were here &lt;3: {questing_beasts}</ListGroup.Item>
+                </ListGroup>
+                <div>
+                    <span className="waiting-for-agravaine">Agravaine has 30 seconds to declare.</span>
+                    <button className="mission-modal-close-button" onClick={() => props.setOpen(false)}>Close</button>
+                </div>
             </div>
         </ReactModal>
     );
