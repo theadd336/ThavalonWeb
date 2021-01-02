@@ -6,6 +6,7 @@ import { PlayerBoard } from "./playerBoard";
 import { GameHeader } from "./gameHeader";
 
 import "../../styles/gameStyles/gameGlobals.scss";
+import { Notifications } from "./notifications";
 
 export function GameRoot(): JSX.Element {
     // ComponentDidMount runs after all children render, so we can send the 
@@ -44,7 +45,7 @@ export function GameRoot(): JSX.Element {
                 <PlayerBoard />
             </div>
             <div className="col-right">
-                <h1>Right Col</h1>
+                <Notifications />
             </div>
         </div>
     );
