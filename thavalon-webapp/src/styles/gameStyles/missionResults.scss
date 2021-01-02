@@ -26,12 +26,14 @@ $mission-selected-border-thickness: 3px;
     border: 1px + $mission-selected-border-thickness solid $evil-role-color;
 }
 
-.mission-tooltip {
+#missionTooltip1, #missionTooltip2, #missionTooltip3, #missionTooltip4, #missionTooltip5 {
     text-align: left;
-    background-color: $game-background-color;
-    color: black;
 }
 
-#missionTooltip1, #missionTooltip2, #missionTooltip3, #missionTooltip4, #missionTooltip5 {
-    background-color: $game-background-color;
+.mission-tooltip > .tooltip-inner {
+    background-color: black;
+    color: white;
+    text-align: left;
 }
+
+// TODO: Figure out how to change the arrow color, i haven't yet o for now background is stuck as black

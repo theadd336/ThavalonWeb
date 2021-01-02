@@ -59,50 +59,18 @@ export function MissionResults(): JSX.Element {
         const connection = GameSocket.getInstance();
         connection.onGameEvent.subscribe(handleMessage);
 
-        // create test missionGoing message
-        const inboundMissionGoingMessage: InboundMessage = {
-            messageType: InboundMessageType.GameMessage,
-            data: {
-                messageType: GameMessageType.MissionGoing,
-                data: {
-                    mission: 1,
-                    players: new Set<String>(["Jared", "Paul", "Ben"]),                
-                }
-            }
-        }
-
-        connection.sendTestGameMessage(inboundMissionGoingMessage);
-
-        const inboundMissionResultsMessage: InboundMessage = {
-            messageType: InboundMessageType.GameMessage,
-            data: {
-                messageType: GameMessageType.MissionResults,
-                data: {
-                    mission: 1,
-                    successes: 2,
-                    fails: 3,
-                    reverses: 2,
-                    questing_beasts: 69,
-                    passed: false,
-                }
-            }
-        }
-
-        setTimeout(() => connection.sendTestGameMessage(inboundMissionResultsMessage), 2000);
-
         // On unmount, unsubscribe our event handlers.
         return () => {
-            const connection = GameSocket.getInstance();
             connection.onGameEvent.unsubscribe(handleMessage);
         }
-    }, []);
+    }, [missionProps]);
 
     /**
      * Handles any game messages that come from the server. Currently supports
      * MissionGoing and MissionResults game messages.
      * @param message An incoming GameMessage from the server.
      */
-    const handleGameMessage = (message: GameMessage) => {
+    function handleGameMessage(message: GameMessage) {
         console.log(message);
         switch (message.messageType) {
             case GameMessageType.MissionGoing: {
@@ -131,6 +99,7 @@ export function MissionResults(): JSX.Element {
                 setMissionProps(newArr);
                 break;
             }
+            // TODO: Handle snapshot message to reset mission results on reconnection
         }
     }
     
@@ -167,25 +136,22 @@ export function MissionResults(): JSX.Element {
  * @param props The props for the mission card.
  */
 function MissionCard(props: MissionCardProps): JSX.Element {
-    function MissionTooltip(_: any): JSX.Element {
-        return (
-            <Tooltip id={`missionTooltip${props.missionNumber}`}>
-                {props.missionStatus === MissionStatus.Pending && <div className="mission-tooltip">Mission {props.missionNumber} Pending</div>}
-                {props.missionStatus === MissionStatus.Going && <div className="mission-tooltip">Mission {props.missionNumber} is going now</div>}
-                {(props.missionStatus === MissionStatus.Passed || props.missionStatus === MissionStatus.Failed) && <div className="mission-tooltip">
-                    Passes: {props.passes}<br />
-                    Fails: {props.fails}<br />
-                    Reverses: {props.reverses}<br />
-                    Questing Beasts &lt;3: {props.questing_beasts}
-                </div>}
-            </Tooltip>
-        );
-    }    
-    return (
+    const missionTooltip = <Tooltip className="mission-tooltip" id={`missionTooltip${props.missionNumber}`}>
+        {props.missionStatus === MissionStatus.Pending && <div className="mission-tooltip">Mission {props.missionNumber} Pending</div>}
+        {props.missionStatus === MissionStatus.Going && <div className="mission-tooltip">Mission {props.missionNumber} is going now</div>}
+        {(props.missionStatus === MissionStatus.Passed || props.missionStatus === MissionStatus.Failed) && <div className="mission-tooltip">
+            Passes: {props.passes}<br />
+            Fails: {props.fails}<br />
+            Reverses: {props.reverses}<br />
+            Questing Beast was here &lt;3: {props.questing_beasts}
+        </div>}
+    </Tooltip>
+
+return (
         <OverlayTrigger
             placement="top"
             delay={{show: 250, hide: 400}}
-            overlay={MissionTooltip}
+            overlay={missionTooltip}
         >
             <div className={`mission-card mission-${props.missionStatus}`} >
                 {props.missionPlayers.join(" ")}
