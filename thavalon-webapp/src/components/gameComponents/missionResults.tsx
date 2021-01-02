@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType } from "../../utils/GameSocket";
-import { GameMessage, GameMessageType, MissionGoingMessage, MissionResultsMessage } from "./constants";
+import { GameMessage, GameMessageType, MissionGoingMessage, MissionResultsMessage, Snapshot } from "./constants";
 import "../../styles/gameStyles/missionResults.scss";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 
@@ -102,6 +102,30 @@ export function MissionResults(): JSX.Element {
             // TODO: Handle snapshot message to reset mission results on reconnection
         }
     }
+
+    function handleSnapshotMessage(snapshot: Snapshot) {
+        let newArr = new Array(...missionProps);
+        for (let i = 0; i < snapshot.missions.length; i++) {
+            const mission = snapshot.missions[i];
+            const sentProposal = mission.sentProposal;
+            if (sentProposal === null) {
+                continue;
+            }
+            newArr[i].missionPlayers = mission.proposals[sentProposal].players;
+            const results = mission.results;
+            if (results === null) {
+                continue;
+            }
+            newArr[i].missionStatus = results.passed ? MissionStatus.Passed : MissionStatus.Failed;
+            newArr[i].passes = results.successes;
+            newArr[i].fails = results.fails;
+            newArr[i].reverses = results.reverses;
+            newArr[i].questing_beasts = results.questing_beasts;
+        }
+
+        setMissionProps(newArr);
+        console.log(snapshot.missions);
+    }
     
     /**
      * Handles any lobby messages that come from the server. If the message type
@@ -114,11 +138,11 @@ export function MissionResults(): JSX.Element {
                 handleGameMessage(message.data as GameMessage);
                 break;
             }
+            case InboundMessageType.Snapshot: {
+                handleSnapshotMessage(message.data as Snapshot);
+            }
         }
     }
-
-    console.log("RENDERING! Missiong props 0 is: ");
-    console.log(missionProps[0]);
 
     return <div id="missionContainer">
         <h1 className="game-section-header">Mission Results</h1>
