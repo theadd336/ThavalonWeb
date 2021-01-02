@@ -133,7 +133,7 @@ pub enum Message {
     LoversInfo {
         lone_lover: bool,
         lover_on_mission: bool,
-        lover_identity: String,
+        lover_identity: Option<String>,
     },
 }
 

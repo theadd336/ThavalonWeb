@@ -35,8 +35,7 @@ pub struct RoleDetails {
     /// The team the player is on.
     team: Team,
     /// The player's role.
-    /// TODO: marking this as pub is a hack. What should we be doing instead?
-    pub role: Role,
+    role: Role,
     /// A high-level description of the role.
     description: String,
     /// Other players that this player sees.
@@ -53,6 +52,10 @@ pub struct RoleDetails {
     is_assassin: bool,
     /// If the player is the Assassin, this is the Priority Target that they may assassinate.
     priority_target: Option<PriorityTarget>,
+}
+
+impl RoleDetails {
+    pub fn get_role(&self) -> Role { self.role }
 }
 
 /// A priority assassination target. If the Good team passes 3 missions, then the Assassin must correctly identify
