@@ -138,11 +138,15 @@ impl GameState<OnMission> {
     }
 
     // Builds a message for a player, given information about their lover who may not exist.
-    fn build_lover_effect(&self, player_display_name: &str, player_on_mission: bool, opt_lover_display_name: Option<&String>, opt_lover_on_mission: Option<bool>) -> Effect {
-        Effect::MessagePlayer(Message::LoversInfo { 
-            lone_lover: opt_lover_on_mission.is_none(), 
-            lover_on_mission: opt_lover_on_mission.map_or(false, |x| x),
-            lover_identity: opt_lover_on_mission.map_or(None, |x| if x && player_on_mission {Some(opt_lover_display_name.unwrap().clone())} else {None}) 
+    fn build_lover_effect(&self, player_display_name: &str, player_on_mission: bool, opt_lover_display_name: Option<&String>, opt_lover_on_mission: Option<bool>) -> Effect {        
+        let inner_message = opt_lover_on_mission.map_or("does not exist. You're alone :(".to_owned(), 
+                            |x| if x { if player_on_mission {format!("was on the mission with you, it's {}", opt_lover_display_name.unwrap())} 
+                                        else {"was on this mission.".to_owned()}}
+                                else {"was not on this mission.".to_owned()});
+        let toast_message = ["Your lover ", &inner_message].concat();
+        Effect::MessagePlayer(Message::Toast { 
+            severity: ToastSeverity::INFO,
+            message: toast_message,
         }, player_display_name.to_string())
     }
 }
