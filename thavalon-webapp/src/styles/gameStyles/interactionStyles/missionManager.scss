@@ -1,13 +1,17 @@
 @import "../gameGlobals.scss"; 
 
-.mission-manager {
+.mission-card-button-row {
+    width: 90%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
 }
 
 %mission-button {
     @extend %game-button;
     font-size: 0.8rem;
-    width: 20%;
     color: white;
+    padding: 2px 5px;
 }
 
 .mission-button-success {
@@ -37,6 +41,7 @@
 .mission-button-qb {
     @extend %mission-button;
     background-color: blue;
+    display: none;
     &:hover {
         background: rgba(blue, $button-hover-opacity);
     }

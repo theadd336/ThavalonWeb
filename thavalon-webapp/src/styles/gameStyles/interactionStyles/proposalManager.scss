@@ -1,12 +1,5 @@
 @import "../gameGlobals.scss"; 
 
-.proposal-manager {
-    margin-top: 1rem;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-}
-
 %proposal-button {
     @extend %game-button;
     font-size: 0.8rem;

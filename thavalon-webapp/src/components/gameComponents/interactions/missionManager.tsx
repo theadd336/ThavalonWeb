@@ -125,7 +125,7 @@ function MissionCardButtons(props: MissionCardProps): JSX.Element {
         );
     }
     return (
-        <div className="mission-card-buttons">
+        <div className="mission-card-button-row">
             {buttons}
         </div>
     )
