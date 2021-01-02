@@ -5,6 +5,7 @@ import { GameActionType, InteractionProps, MissionCard, Vote, MissionGoingMessag
 import { createSelectedPlayerTypesList, sendGameAction } from "../gameUtils";
 import { PlayerCard } from "../playerCard";
 
+import "../../../styles/gameStyles/interactionStyles/missionManager.scss";
 /**
  * The required properties for the MissionManager
  */
@@ -83,7 +84,7 @@ export function MissionManager(props: MissionManagerProps): JSX.Element {
     return (
         <>
             {playerCards}
-            <div className="mission-manager">
+            <div className="interaction-manager">
                 {!hasPlayedCard && playersOnMission.has(props.me) &&
                     <MissionCardButtons submitMissionCard={submitMissionCard} />}
                 {(hasPlayedCard || !playersOnMission.has(props.me)) &&
@@ -102,8 +103,21 @@ export function MissionManager(props: MissionManagerProps): JSX.Element {
 function MissionCardButtons(props: MissionCardProps): JSX.Element {
     const buttons = new Array<JSX.Element>();
     for (const card of Object.values(MissionCard)) {
+        let className = "mission-button-success";
+        switch (card) {
+            case MissionCard.Fail:
+                className = "mission-button-fail";
+                break;
+            case MissionCard.Reverse:
+                className = "mission-button-reverse";
+                break;
+            case MissionCard.QuestingBeast:
+                className = "mission-button-qb";
+                break;
+        }
         buttons.push(
             <button
+                className={className}
                 key={card}
                 onClick={() => props.submitMissionCard(card)}>
                 {card}

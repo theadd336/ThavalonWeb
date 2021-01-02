@@ -4,7 +4,10 @@ $border-style: solid;
 $game-background-color: #E5E5E5;
 $game-root-padding: 5px;
 $game-section-header-color: #003A06;
-$player-selected-color: #003A06;
+$player-selected-color-primary: #003A06;
+$player-selected-color-secondary: blue;
+$button-hover-opacity: 0.3;
+$button-red: #9D0000;
 
 // colors related to good/evil roles and passed/failed missions
 $evil-role-color: #9D0000;
@@ -60,4 +63,24 @@ $good-role-color: #003A06;
     line-height: 26px;
     color: $game-section-header-color;
     text-align: center;
+}
+
+// Base class for any game button
+%game-button {
+    border: 1px solid;
+    border-radius: 10px;
+    padding: 10px 24px;
+    cursor: pointer; 
+    width: 90%; 
+    display: block;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+// Base container for any interaction manager
+.interaction-manager {
+    margin-top: 1rem;
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }

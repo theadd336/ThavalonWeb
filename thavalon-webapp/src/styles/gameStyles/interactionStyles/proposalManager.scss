@@ -1,0 +1,31 @@
+@import "../gameGlobals.scss"; 
+
+.proposal-manager {
+    margin-top: 1rem;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+%proposal-button {
+    @extend %game-button;
+    font-size: 0.8rem;
+    width: 50%;
+    color: white;
+}
+
+.proposal-button-primary {
+    @extend %proposal-button;
+    background-color: $player-selected-color-primary;
+    &:hover {
+        background-color: rgba($player-selected-color-primary, $button-hover-opacity);
+    }
+}
+
+.proposal-button-secondary {
+    @extend %proposal-button;
+    background-color: $player-selected-color-secondary;
+    &:hover {
+        background-color: rgba($player-selected-color-secondary, $button-hover-opacity);
+    }
+}

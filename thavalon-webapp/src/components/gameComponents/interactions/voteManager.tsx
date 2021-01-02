@@ -5,6 +5,8 @@ import { InteractionProps, GameMessage, GameMessageType, Vote, GameActionType, V
 import { createSelectedPlayerTypesList, sendGameAction } from "../gameUtils";
 import { PlayerCard } from "../playerCard";
 
+import "../../../styles/gameStyles/interactionStyles/voteManager.scss";
+
 /**
  * Props object for the VoteManager.
  */
@@ -75,9 +77,10 @@ export function VoteManager(props: VoteManagerProps): JSX.Element {
     return (
         <>
             {playerCards}
-            <div className="vote-manager">
+            <div className="interaction-manager">
                 {hasVoted ?
-                    <ProgressBar now={votesReceived * 100 / numPlayers} label={`${ votesReceived } / ${ numPlayers }`} />
+                    <ProgressBar style={{ minWidth: "200px" }}
+                        now={votesReceived * 100 / numPlayers} label={`${ votesReceived } / ${ numPlayers }`} />
                     :
                     <VoteButtons
                         isFirstMission={props.isMissionOne}
@@ -95,14 +98,14 @@ function VoteButtons(props: VoteButtonProps): JSX.Element {
     return (
         <>
             <button
-                className="vote-button green"
+                className="vote-button-green"
                 onClick={() => props.submitVote(Vote.Upvote)}>
                 {props.isFirstMission ? "Send Green" : "Accept"}
             </button>
             <button
-                className="vote-button red"
+                className="vote-button-red"
                 onClick={() => props.submitVote(Vote.Downvote)}>
-                {props.isFirstMission ? "Send Red" : "Decline"}
+                {props.isFirstMission ? "Send Blue" : "Decline"}
             </button>
         </>
     );
