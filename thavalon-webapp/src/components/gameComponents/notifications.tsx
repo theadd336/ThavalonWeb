@@ -15,6 +15,9 @@ interface Toast {
     message: string,
 }
 
+/**
+ * Notifications panel of game page, for showing notices from server.
+ */
 export function Notifications(): JSX.Element {
     // the toasts currently being shown.
     const [toasts, setToasts] = useState<Toast[]>(new Array<Toast>());
