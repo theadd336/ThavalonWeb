@@ -3,8 +3,8 @@
 %vote-button {
     @extend %game-button;
     font-size: 0.8rem;
-    width: 25%;
     color: white;
+    padding: 5px 5px;
 }
 
 .vote-button-green {
@@ -29,5 +29,14 @@
     background-color: blue;
     &:hover {
         background: rgba(blue, $button-hover-opacity);
+    }
+}
+
+.obscure-button {
+    @extend %vote-button;
+    background: orange;
+    margin-left: 10px;
+    &:hover {
+        background: rgba(orange, $button-hover-opacity);
     }
 }

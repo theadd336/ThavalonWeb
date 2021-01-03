@@ -67,19 +67,19 @@ pub enum PriorityTarget {
 impl Role {
     /// All Good roles
     pub const ALL_GOOD: &'static [Role] = &[
-        Role::Merlin,
+        // Role::Merlin,
         Role::Lancelot,
-        Role::Percival,
-        Role::Tristan,
-        Role::Iseult,
+        // Role::Percival,
+        // Role::Tristan,
+        // Role::Iseult,
     ];
 
     /// All Evil roles
     pub const ALL_EVIL: &'static [Role] = &[
-        Role::Mordred,
-        Role::Morgana,
-        Role::Maelegant,
-        Role::Maeve,
+        // Role::Mordred,
+        // Role::Morgana,
+        // Role::Maelegant,
+        // Role::Maeve,
         Role::Agravaine,
     ];
 

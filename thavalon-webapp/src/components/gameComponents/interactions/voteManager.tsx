@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ProgressBar } from "react-bootstrap";
 import { GameSocket, InboundMessage, InboundMessageType } from "../../../utils/GameSocket";
-import { InteractionProps, GameMessage, GameMessageType, Vote, GameActionType, VotingResultsMessage } from "../constants";
+import { InteractionProps, GameMessage, GameMessageType, Vote, GameActionType, VotingResultsMessage, Role } from "../constants";
 import { createSelectedPlayerTypesList, sendGameAction } from "../gameUtils";
 import { PlayerCard } from "../playerCard";
 
@@ -20,6 +20,8 @@ interface VoteManagerProps extends InteractionProps {
 interface VoteButtonProps {
     isFirstMission: boolean,
     submitVote: (vote: Vote) => void,
+    submitObscure: () => void,
+    showObscure: boolean,
 }
 
 /**
@@ -32,6 +34,11 @@ export function VoteManager(props: VoteManagerProps): JSX.Element {
     const [hasVoted, setHasVoted] = useState(false);
     // State for counting the number of votes received.
     const [votesReceived, setVotesReceived] = useState(0);
+    // State for maintaining if maeve can obscure. Note: the way
+    // this is handled isn't great. We should have the server tell us that Maeve
+    // can obscure here instead of deriving this state, since Maeve can only obscure twice.
+    const [showObscure, setShowObscure] = useState(props.role === Role.Maeve && !props.isMissionOne);
+
     useEffect(() => {
         const connection = GameSocket.getInstance();
         connection.onGameEvent.subscribe(handleMessage);
@@ -62,6 +69,14 @@ export function VoteManager(props: VoteManagerProps): JSX.Element {
         setHasVoted(true);
     }
 
+    /**
+     * Submits an obscure to the server and removes the Obscure button.
+     */
+    function submitObscure(): void {
+        sendGameAction(GameActionType.Obscure);
+        setShowObscure(false);
+    }
+
     // Create the player cards here.
     const playerCards = props.playerList.map((playerName) => {
         const selectedTypes = createSelectedPlayerTypesList(playerName, props.primarySelectedPlayers, props.secondarySelectedPlayers);
@@ -83,6 +98,8 @@ export function VoteManager(props: VoteManagerProps): JSX.Element {
                         now={votesReceived * 100 / numPlayers} label={`${ votesReceived } / ${ numPlayers }`} />
                     :
                     <VoteButtons
+                        submitObscure={submitObscure}
+                        showObscure={showObscure}
                         isFirstMission={props.isMissionOne}
                         submitVote={submitVote} />}
             </div>
@@ -107,6 +124,13 @@ function VoteButtons(props: VoteButtonProps): JSX.Element {
                 onClick={() => props.submitVote(Vote.Downvote)}>
                 {props.isFirstMission ? "Send Blue" : "Decline"}
             </button>
+            {props.showObscure &&
+                <button
+                    className="obscure-button"
+                    onClick={() => props.submitObscure()}>
+                    Obscure
+                </button>
+            }
         </>
     );
 }

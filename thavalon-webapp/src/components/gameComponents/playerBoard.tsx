@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
-import { Vote, GameMessageType, GameMessage, Snapshot, NextProposalMessage, MissionGoingMessage, VotingResultsMessage, MissionResultsMessage } from "./constants";
+import { Vote, GameMessageType, GameMessage, Snapshot, NextProposalMessage, MissionGoingMessage, VotingResultsMessage, MissionResultsMessage, Role, AgravaineDeclarationMessage } from "./constants";
 import { ProposalManager } from "./interactions/proposalManager";
 import { GamePhase, mapMessageToGamePhase } from "./gameUtils";
 import { VoteManager } from "./interactions/voteManager";
@@ -32,7 +32,7 @@ export function PlayerBoard(): JSX.Element {
             connection.onGameEvent.unsubscribe(handleMessage);
             document.onvisibilitychange = null;
         }
-    }, [])
+    }, [handleMessage])
 
     // State for maintaining the player list.
     const [playerList, setPlayerList] = useState<string[]>([])
@@ -64,6 +64,10 @@ export function PlayerBoard(): JSX.Element {
     const [showMissionResults, setShowMissionResults] = useState(false);
     // State to maintain the mission results.
     const [missionResults, setMissionResults] = useState<MissionResultsMessage>();
+    // State for maintaining the role of a player
+    const [role, setRole] = useState<Role>(Role.Merlin);
+    // State for tracking the Agravaine player. This should merge into a map eventually for all declarations.
+    const [agravaine, setAgravaine] = useState<string>();
 
     /**
      * Generic message handler for all messages from the server
@@ -74,6 +78,7 @@ export function PlayerBoard(): JSX.Element {
             case InboundMessageType.Snapshot:
                 const snapshot = message.data as Snapshot
                 setMe(snapshot.me);
+                setRole(snapshot.roleInfo.role as Role);
                 // Get proposal order, then get the most recent major message.
                 // Finally, feed the last message in
                 handleGameMessage(snapshot.log[0]);
@@ -140,6 +145,7 @@ export function PlayerBoard(): JSX.Element {
                     setVotes(voteMap);
                 } else {
                     // TODO: Trigger Maive Toast here.
+                    setVotes(new Map());
                 }
                 break;
             case GameMessageType.MissionGoing:
@@ -148,6 +154,17 @@ export function PlayerBoard(): JSX.Element {
             case GameMessageType.MissionResults:
                 setShowMissionResults(true);
                 setMissionResults(message.data as MissionResultsMessage);
+                break;
+            case GameMessageType.AgravaineDeclaration:
+                if (missionResults !== undefined) {
+                    const agravaineMessage = message.data as AgravaineDeclarationMessage;
+                    const newMissionResult = { ...missionResults };
+                    newMissionResult.passed = false;
+                    setShowMissionResults(true);
+                    setMissionResults(newMissionResult);
+                    setAgravaine(agravaineMessage.player);
+                }
+                break;
         }
     }
 
@@ -183,6 +200,7 @@ export function PlayerBoard(): JSX.Element {
                 <ProposalManager
                     message={majorMessage as NextProposalMessage}
                     me={me}
+                    role={role}
                     playerList={playerList}
                     tabbedOutPlayers={tabbedOutPlayers}
                     primarySelectedPlayers={primarySelectedPlayers}
@@ -195,6 +213,7 @@ export function PlayerBoard(): JSX.Element {
             {
                 gamePhase === GamePhase.Vote &&
                 <VoteManager
+                    role={role}
                     isMissionOne={missionNumber === 1}
                     playerList={playerList}
                     primarySelectedPlayers={primarySelectedPlayers}
@@ -204,6 +223,7 @@ export function PlayerBoard(): JSX.Element {
             {
                 gamePhase === GamePhase.Mission &&
                 <MissionManager
+                    role={role}
                     me={me}
                     playerList={playerList}
                     message={majorMessage as MissionGoingMessage}
@@ -214,7 +234,10 @@ export function PlayerBoard(): JSX.Element {
             }
             {
                 showMissionResults &&
-                <MissionResultModal setOpen={setShowMissionResults} message={missionResults} />
+                <MissionResultModal
+                    setOpen={setShowMissionResults}
+                    message={missionResults}
+                    agravaine={agravaine} />
             }
         </div>
     );

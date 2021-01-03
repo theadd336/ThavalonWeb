@@ -47,6 +47,15 @@
     }
 }
 
+.agravaine-declare-button {
+    @extend %game-button;
+    background-color: $button-red;
+    color: white;
+    &:hover {
+        background: rgba($button-red, $button-hover-opacity);
+    }
+}
+
 .mission-modal-close-button {
     background-color: $button-red;
     &:hover {
@@ -70,4 +79,8 @@
 
 .mission-header-failed {
     color: $button-red
+}
+
+.agravaine-declaration {
+    color: $button-red;
 }
