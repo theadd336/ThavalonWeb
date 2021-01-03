@@ -1,11 +1,6 @@
 import { ISimpleEvent, SimpleEventDispatcher } from "strongly-typed-events";
 import { GameMessage } from "../components/gameComponents/constants";
 
-interface PingResponse {
-    result: boolean,
-    errorMessage: string, // only populated if result is false
-}
-
 export enum OutboundMessageType {
     Ping = "Ping",
     GetLobbyState = "GetLobbyState",
@@ -121,8 +116,12 @@ export class GameSocket {
         console.log("Received on error message.");
     }
 
-    public sendTestGameMessage(data: InboundMessage) {
-        this._onGameEvent.dispatch(data);
+    public sendGameMessage(gameMessage: GameMessage) {
+        const message: InboundMessage = {
+            messageType: InboundMessageType.GameMessage,
+            data: gameMessage
+        }
+        this._onGameEvent.dispatch(message);
     }
 
     /**
