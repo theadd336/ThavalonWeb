@@ -5,7 +5,6 @@ import { ProposalManager } from "./interactions/proposalManager";
 import { GamePhase, mapMessageToGamePhase } from "./gameUtils";
 import { VoteManager } from "./interactions/voteManager";
 import { MissionManager, MissionResultModal } from "./interactions/missionManager";
-
 import "../../styles/gameStyles/playerBoard.scss";
 
 /**

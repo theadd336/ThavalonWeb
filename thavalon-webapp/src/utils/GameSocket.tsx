@@ -1,4 +1,5 @@
 import { ISimpleEvent, SimpleEventDispatcher } from "strongly-typed-events";
+import { GameMessage } from "../components/gameComponents/constants";
 
 interface PingResponse {
     result: boolean,
@@ -118,6 +119,14 @@ export class GameSocket {
      */
     private socketOnError(event: Event) {
         console.log("Received on error message.");
+    }
+
+    public sendGameMessage(gameMessage: GameMessage) {
+        const message: InboundMessage = {
+            messageType: InboundMessageType.GameMessage,
+            data: gameMessage
+        }
+        this._onGameEvent.dispatch(message);
     }
 
     /**

@@ -43,7 +43,8 @@ export enum GameMessageType {
     AgravaineDeclaration = "agravaineDeclaration",
     BeginAssassination = "beginAssassination",
     AssassinationResult = "assassinationResult",
-    GameOver = "gameOver"
+    GameOver = "gameOver",
+    Toast = "toast",
 }
 
 /**
