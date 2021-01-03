@@ -79,7 +79,7 @@ export function Notifications(): JSX.Element {
                 {toasts.length === 0 && <span className="no-notifications">No notifications yet.</span>}
                 {toasts.map((toast, idx) => 
                     <Toast className="toast-notification" onClose={() => deleteToast(idx)}>
-                        <Toast.Header className={`toast-${toast.severity} toast-header`}>
+                        <Toast.Header className={`toast-${toast.severity.toLowerCase()} toast-header`}>
                             <strong className="mr-auto">{toast.severity.toUpperCase()}</strong>
                         </Toast.Header>
                         <Toast.Body>
