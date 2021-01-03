@@ -129,17 +129,17 @@ impl GameState<OnMission> {
         let iseult_on_mission = iseult_display_name.map_or(None, |x| Some(self.proposals.get(self.phase.proposal_index).unwrap().players.contains(x)));
         // First, add messages going to Tristan. If there is no Tristan, do nothing.
         if tristan_display_name.is_some() {
-            effects.push(self.build_lover_effect(&tristan_display_name.unwrap(), tristan_on_mission.unwrap(), iseult_display_name, iseult_on_mission));
+            effects.push(self.build_lover_effect(tristan_display_name.unwrap(), tristan_on_mission.unwrap(), iseult_display_name, iseult_on_mission));
         }
         // Next do the same for Iseult.
         if iseult_display_name.is_some() {
-            effects.push(self.build_lover_effect(&iseult_display_name.unwrap(), iseult_on_mission.unwrap(), tristan_display_name, tristan_on_mission));
+            effects.push(self.build_lover_effect(iseult_display_name.unwrap(), iseult_on_mission.unwrap(), tristan_display_name, tristan_on_mission));
         }
     }
 
     // Builds a message for a player, given information about their lover who may not exist.
     fn build_lover_effect(&self, player_display_name: &str, player_on_mission: bool, opt_lover_display_name: Option<&String>, opt_lover_on_mission: Option<bool>) -> Effect {        
-        let inner_message = opt_lover_on_mission.map_or("does not exist. You're alone :(".to_owned(), 
+        let inner_message = opt_lover_on_mission.map_or("does not exist. You're alone :'(".to_owned(), 
                             |x| if x { if player_on_mission {format!("was on the mission with you, it's {}", opt_lover_display_name.unwrap())} 
                                         else {"was on this mission.".to_owned()}}
                                 else {"was not on this mission.".to_owned()});
