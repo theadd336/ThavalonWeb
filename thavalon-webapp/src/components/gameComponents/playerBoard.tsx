@@ -144,7 +144,6 @@ export function PlayerBoard(): JSX.Element {
                     console.log(voteMap);
                     setVotes(voteMap);
                 } else {
-                    // TODO: Trigger Maive Toast here.
                     setVotes(new Map());
                 }
                 break;

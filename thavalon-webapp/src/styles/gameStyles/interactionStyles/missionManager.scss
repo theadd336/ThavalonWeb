@@ -32,18 +32,18 @@
 
 .mission-button-reverse {
     @extend %mission-button;
-    background-color: orange;
+    background-color: $button-orange;
     &:hover {
-        background: rgba(orange, $button-hover-opacity);
+        background: rgba($button-orange, $button-hover-opacity);
     }
 }
 
 .mission-button-qb {
     @extend %mission-button;
-    background-color: blue;
+    background-color: $button-blue;
     display: none;
     &:hover {
-        background: rgba(blue, $button-hover-opacity);
+        background: rgba($button-blue, $button-hover-opacity);
     }
 }
 
@@ -74,7 +74,7 @@
 }
 
 .mission-header-passed {
-    color: green;
+    color: $button-green;
 }
 
 .mission-header-failed {

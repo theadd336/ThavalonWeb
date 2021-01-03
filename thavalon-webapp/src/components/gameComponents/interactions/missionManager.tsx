@@ -4,9 +4,10 @@ import { GameSocket, InboundMessage, InboundMessageType } from "../../../utils/G
 import { GameActionType, InteractionProps, MissionCard, Vote, MissionGoingMessage, GameMessage, GameMessageType, MissionResultsMessage, Role, AGRAVAINE_DECLARATION_TIME } from "../constants";
 import { createSelectedPlayerTypesList, sendGameAction } from "../gameUtils";
 import { PlayerCard } from "../playerCard";
+import { ListGroup } from "react-bootstrap";
 
 import "../../../styles/gameStyles/interactionStyles/missionManager.scss";
-import { ListGroup } from "react-bootstrap";
+
 /**
  * The required properties for the MissionManager
  */
@@ -38,7 +39,7 @@ interface MissionResultModalProps {
 interface AfterMissionMessageProps {
     role: Role,
     onMission: boolean,
-    submitAgravaineDeclaration: () => void
+    submitAgravaineDeclaration: () => void,
 }
 
 /**
@@ -216,8 +217,8 @@ function AfterMissionMessage(props: AfterMissionMessageProps): JSX.Element {
 
     return (
         <div className="after-mission-message">
-            {props.role !== Role.Agravaine && <>Agravaine has {timeToDeclare} seconds to declare.</>}
-            {props.role === Role.Agravaine && !props.onMission && <>You cannot declare since you weren't on the mission. Do better.</>}
+            {props.role !== Role.Agravaine && `Agravaine has ${ timeToDeclare } seconds to declare.`}
+            {props.role === Role.Agravaine && !props.onMission && "You cannot declare since you weren't on the mission. Do better."}
             {props.role === Role.Agravaine && props.onMission &&
                 <button
                     className="agravaine-declare-button"

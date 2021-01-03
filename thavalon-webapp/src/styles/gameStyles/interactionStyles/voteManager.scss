@@ -26,17 +26,17 @@
 
 .vote-button-blue {
     @extend %vote-button;
-    background-color: blue;
+    background-color: $button-blue;
     &:hover {
-        background: rgba(blue, $button-hover-opacity);
+        background: rgba($button-blue, $button-hover-opacity);
     }
 }
 
 .obscure-button {
     @extend %vote-button;
-    background: orange;
+    background: $button-orange;
     margin-left: 10px;
     &:hover {
-        background: rgba(orange, $button-hover-opacity);
+        background: rgba($button-orange, $button-hover-opacity);
     }
 }

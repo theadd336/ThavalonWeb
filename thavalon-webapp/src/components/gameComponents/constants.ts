@@ -64,7 +64,7 @@ export enum GameActionType {
     QuestingBeast = "QuestingBeast",
     Declare = "Declare",
     Assassinate = "Assassinate",
-    MoveToAssassination = "MoveToAssassination"
+    MoveToAssassination = "MoveToAssassination",
 }
 
 /**
@@ -190,7 +190,7 @@ export enum Role {
     Agravaine = "Agravaine"
 }
 
-/** Length of time Agravaine has to declare */
+/** Length of time Agravaine has to declare in seconds */
 export const AGRAVAINE_DECLARATION_TIME = 30;
 
 /**
