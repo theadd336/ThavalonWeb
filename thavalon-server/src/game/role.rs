@@ -173,6 +173,7 @@ impl Role {
                         seen_players.push(players.by_role(Role::Iseult).unwrap().name.clone());
                         seen_players.push(players.by_role(Role::Tristan).unwrap().name.clone());
                     },
+                    PriorityTarget::None => (),
                     other => panic!("Unsupported priority target {:?}", other)
                 }
             }
