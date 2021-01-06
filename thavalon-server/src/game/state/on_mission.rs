@@ -252,7 +252,7 @@ mod test {
 
     #[test]
     fn test_is_failure() {
-        let spec = GameSpec::for_players(5);
+        let spec = GameSpec::for_players(5).unwrap();
 
         assert!(!is_failure(
             spec,
