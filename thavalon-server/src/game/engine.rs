@@ -76,9 +76,6 @@ pub async fn run_game<I: Interactions>(game: Game, interactions: &mut I) -> Resu
                     timeout = time::delay_for(duration).right_future();
                 }
                 Effect::ClearTimeout => timeout = future::pending().left_future(),
-                Effect::MessagePlayer(message, receiving_player) => {
-                    interactions.send_to(&receiving_player, message).await;
-                }
             }
         }
         state = next_state;

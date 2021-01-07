@@ -124,16 +124,16 @@ impl GameState<OnMission> {
     // so this is safe to call in any game.
     fn add_lover_effects(&self, effects: &mut Vec<Effect>) {
         let tristan_display_name = self.game.display_name_from_role(Role::Tristan);
-        let tristan_on_mission = tristan_display_name.map_or(None, |x| Some(self.proposals.get(self.phase.proposal_index).unwrap().players.contains(x)));
+        let tristan_on_mission = tristan_display_name.map_or(None, |x| Some(self.proposal().players.contains(x)));
         let iseult_display_name = self.game.display_name_from_role(Role::Iseult);
-        let iseult_on_mission = iseult_display_name.map_or(None, |x| Some(self.proposals.get(self.phase.proposal_index).unwrap().players.contains(x)));
+        let iseult_on_mission = iseult_display_name.map_or(None, |x| Some(self.proposal().players.contains(x)));
         // First, add messages going to Tristan. If there is no Tristan, do nothing.
-        if tristan_display_name.is_some() {
-            effects.push(self.build_lover_effect(tristan_display_name.unwrap(), tristan_on_mission.unwrap(), iseult_display_name, iseult_on_mission));
+        if let Some(tristan_display_name) = tristan_display_name {
+            effects.push(self.build_lover_effect(tristan_display_name, tristan_on_mission.unwrap(), iseult_display_name, iseult_on_mission));
         }
         // Next do the same for Iseult.
-        if iseult_display_name.is_some() {
-            effects.push(self.build_lover_effect(iseult_display_name.unwrap(), iseult_on_mission.unwrap(), tristan_display_name, tristan_on_mission));
+        if let Some(iseult_display_name) = iseult_display_name {
+            effects.push(self.build_lover_effect(iseult_display_name, iseult_on_mission.unwrap(), tristan_display_name, tristan_on_mission));
         }
     }
 
@@ -144,10 +144,12 @@ impl GameState<OnMission> {
                                         else {"was on this mission.".to_owned()}}
                                 else {"was not on this mission.".to_owned()});
         let toast_message = ["Your lover ", &inner_message].concat();
-        Effect::MessagePlayer(Message::Toast { 
-            severity: ToastSeverity::INFO,
-            message: toast_message,
-        }, player_display_name.to_string())
+        Effect::Send(
+            player_display_name.to_string(),
+            Message::Toast { 
+                severity: ToastSeverity::INFO,
+                message: toast_message,
+            })
     }
 }
 

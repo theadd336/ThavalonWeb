@@ -101,7 +101,6 @@ pub enum Effect {
     Send(String, Message),
     StartTimeout(Duration),
     ClearTimeout,
-    MessagePlayer(Message, String),
 }
 
 pub struct Proposal {

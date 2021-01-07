@@ -179,7 +179,7 @@ impl Game {
 
     /// Look up the display name associated with a given role, if it exists.
     pub fn display_name_from_role(&self, role: Role) -> Option<&String> {
-        self.info.keys().find(|&x| self.info.get(x).unwrap().get_role() == role)
+        self.info.iter().find_map(|(player, info)| if info.get_role() == role { Some(player) } else { None })
     }
 }
 
