@@ -13,6 +13,7 @@ use std::fmt;
 
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 pub mod builder;
 mod engine;
@@ -82,9 +83,15 @@ pub struct Game {
     spec: &'static GameSpec,
 }
 
+#[derive(Debug, Clone, Error)]
+pub enum CreateGameError {
+    #[error("{0}-player games not supported")]
+    UnsupportedSize(usize)
+}
+
 impl Game {
-    pub fn roll(mut names: Vec<String>) -> Game {
-        let spec = GameSpec::for_players(names.len());
+    pub fn roll(mut names: Vec<String>) -> Result<Game, CreateGameError> {
+        let spec = GameSpec::for_players(names.len())?;
         let mut rng = thread_rng();
 
         let good_roles = spec
@@ -137,14 +144,14 @@ impl Game {
         let mut proposal_order = info.keys().cloned().collect::<Vec<_>>();
         proposal_order.shuffle(&mut rng);
 
-        Game {
+        Ok(Game {
             players,
             info,
             proposal_order,
             assassin,
             priority_target,
             spec,
-        }
+        })
     }
 
     pub fn proposal_order(&self) -> &[String] {
@@ -236,13 +243,14 @@ impl fmt::Display for Card {
 }
 
 impl GameSpec {
-    pub fn for_players(players: usize) -> &'static GameSpec {
+    pub fn for_players(players: usize) -> Result<&'static GameSpec, CreateGameError> {
         match players {
-            2 => &TWO_PLAYER,
-            3 => &THREE_PLAYER,
-            4 => &FOUR_PLAYER,
-            5 => &FIVE_PLAYER,
-            _ => panic!("{}-player games not supported", players),
+            2 => Ok(&TWO_PLAYER),
+            3 => Ok(&THREE_PLAYER),
+            4 => Ok(&FOUR_PLAYER),
+            5 => Ok(&FIVE_PLAYER),
+            7 => Ok(&SEVEN_PLAYER),
+            _ => Err(CreateGameError::UnsupportedSize(players)),
         }
     }
 
@@ -298,6 +306,29 @@ static FIVE_PLAYER: GameSpec = GameSpec {
     max_proposals: 5,
     max_maeve_obscures: 2,
     double_fail_mission_four: false,
+};
+
+static SEVEN_PLAYER: GameSpec = GameSpec {
+    players: 7,
+    mission_sizes: [2, 3, 3, 4, 4],
+    good_roles: &[
+        Role::Merlin,
+        Role::Lancelot,
+        Role::Percival,
+        Role::Tristan,
+        Role::Iseult,
+    ],
+    evil_roles: &[
+        Role::Mordred,
+        Role::Morgana,
+        Role::Maelegant,
+        Role::Maeve,
+        Role::Agravaine,
+    ],
+    good_players: 4,
+    max_proposals: 7,
+    max_maeve_obscures: 3,
+    double_fail_mission_four: true,
 };
 
 /// Two-player games, for testing

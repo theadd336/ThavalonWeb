@@ -286,14 +286,23 @@ impl Lobby {
             panic!();
         }
 
-        // Tell the players the game is about to start to move to the game page.
-        self.broadcast_message(&OutgoingMessage::LobbyState(LobbyState::Game))
-            .await;
-        self.status = LobbyState::Game;
         let builder = self.builder.take().unwrap();
-        let (snapshots, _) = builder.start();
-        self.snapshots = Some(snapshots);
-        LobbyResponse::None
+        match builder.start() {
+            Ok((snapshots, _)) => {
+                self.snapshots = Some(snapshots);
+                // Tell the players the game is about to start to move to the game page.
+                self.broadcast_message(&OutgoingMessage::LobbyState(LobbyState::Game))
+                    .await;
+                self.status = LobbyState::Game;
+                LobbyResponse::None
+            }
+            Err(err) => {
+                // Starting the game can fail, for example if there are too many players in the lobby
+                // Since that isn't necessarily a fatal error, don't close the lobby
+                log::error!("Error creating game {}: {}", self.friend_code, err);
+                LobbyResponse::Standard(Err(LobbyError::InvalidStateError))
+            }
+        }
     }
 
     /// Sends the current player list to the client.
