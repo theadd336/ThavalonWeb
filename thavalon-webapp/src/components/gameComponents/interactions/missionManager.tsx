@@ -223,7 +223,7 @@ function AfterMissionMessage(props: AfterMissionMessageProps): JSX.Element {
                 <button
                     className="agravaine-declare-button"
                     onClick={() => props.submitAgravaineDeclaration()}>
-                    Declare as Agravaine ({timeToDeclare}s)
+                    Declare as Agravaine ({timeToDeclare}s left)
             </button>}
         </div>
     );
