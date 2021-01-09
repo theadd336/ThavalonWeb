@@ -87,7 +87,7 @@ mod prelude {
     pub use super::voting::Voting;
 
     pub use super::super::{
-        messages::{self, Action, Message},
+        messages::{self, Action, Message, ToastSeverity},
         role::{PriorityTarget, Role, Team},
         Card, Game, GameSpec,
     };
