@@ -128,6 +128,21 @@ pub enum Message {
         winning_team: Team,
         roles: HashMap<String, RoleDetails>,
     },
+
+    /// Message that a client should surface to the end user.
+    Toast {
+        severity: ToastSeverity,
+        message: String
+    }
+}
+
+/// Severity of a toast notification
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[serde(tag = "toastSeverity")]
+pub enum ToastSeverity {
+    INFO,
+    WARN,
+    URGENT
 }
 
 /// How players voted on a proposal

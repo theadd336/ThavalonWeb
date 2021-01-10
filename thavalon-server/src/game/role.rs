@@ -54,6 +54,10 @@ pub struct RoleDetails {
     priority_target: Option<PriorityTarget>,
 }
 
+impl RoleDetails {
+    pub fn get_role(&self) -> Role { self.role }
+}
+
 /// A priority assassination target. If the Good team passes 3 missions, then the Assassin must correctly identify
 /// the Priority Target in order to win.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -161,11 +165,20 @@ impl Role {
                     "You see Morgana and the priority assassination targets."
                 );
 
-                // TODO: priority targets
-                for player in players.iter() {
-                    if player.role == Role::Morgana {
-                        seen_players.push(player.name.clone());
-                    }
+                if let Some(morgana) = players.by_role(Role::Morgana) {
+                    seen_players.push(morgana.name.clone());
+                }
+
+                match priority_target {
+                    PriorityTarget::Merlin => {
+                        seen_players.push(players.by_role(Role::Merlin).unwrap().name.clone());
+                    },
+                    PriorityTarget::Lovers => {
+                        seen_players.push(players.by_role(Role::Iseult).unwrap().name.clone());
+                        seen_players.push(players.by_role(Role::Tristan).unwrap().name.clone());
+                    },
+                    PriorityTarget::None => (),
+                    other => panic!("Unsupported priority target {:?}", other)
                 }
             }
             Role::Tristan | Role::Iseult => {
@@ -196,6 +209,7 @@ impl Role {
             }
         }
 
+        // Make sure the order of seen players doesn't leak info
         seen_players.shuffle(rng);
 
         let team_members = if self.is_evil() {
