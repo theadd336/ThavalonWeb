@@ -54,6 +54,10 @@ pub struct RoleDetails {
     priority_target: Option<PriorityTarget>,
 }
 
+impl RoleDetails {
+    pub fn get_role(&self) -> Role { self.role }
+}
+
 /// A priority assassination target. If the Good team passes 3 missions, then the Assassin must correctly identify
 /// the Priority Target in order to win.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
