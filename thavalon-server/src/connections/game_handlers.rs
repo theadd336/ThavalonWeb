@@ -110,7 +110,7 @@ pub async fn create_game(
 
     // Spawn a thread to monitor this lobby and remove it from game_collection when it's over or timed out.
     tokio::spawn(async move {
-        monitor_lobby(monitor_lobby_channel, monitor_friend_code, monitor_game_collection).await;
+        monitor_lobby_task(monitor_lobby_channel, monitor_friend_code, monitor_game_collection).await;
     });
 
     let response = NewGameResponse { friend_code };
