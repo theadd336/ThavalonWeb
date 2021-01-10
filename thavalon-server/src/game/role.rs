@@ -235,7 +235,9 @@ impl Role {
             other_info,
             assassinatable: self.is_assassinatable(),
             is_assassin,
-            priority_target: if is_assassin {
+            // In 5-player games, knowing the priority target is too powerful. For example, if the Good team is Lancelot and Lovers, and Lancelot
+            // reverses, it immediately tells the Assassin who the Lovers are.
+            priority_target: if is_assassin && spec.players > 5 {
                 Some(priority_target)
             } else {
                 None
