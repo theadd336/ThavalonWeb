@@ -276,14 +276,14 @@ async fn client_connection(socket: WebSocket, client_id: String, mut lobby_chann
 
 /// Helper function for monitoring a lobby, intended to run as a tokio task. This will remove the lobby from
 /// GameCollection once the lobby ends or exceeds the maximum lobby lifetime.
-async fn monitor_lobby(mut lobby_channel: LobbyChannel, friend_code: String, game_collection: GameCollection) {
-    // Lobby deadline is 6 hours from creation across all phases.
-    let deadline = tokio::time::delay_until(Instant::now() + Duration::from_secs(60 * 60 * 6));
-    let mut deadline_channel = lobby_channel.clone();
+async fn monitor_lobby_task(mut lobby_channel: LobbyChannel, friend_code: String, game_collection: GameCollection) {
+    // Lobby timeout is 6 hours from creation across all phases.
+    let timeout = tokio::time::delay_until(Instant::now() + Duration::from_secs(60 * 60 * 6));
+    let mut timeout_channel = lobby_channel.clone();
     tokio::select! {
-        _ = deadline => {
+        _ = timeout => {
             log::error!("Lobby {} has exceeded timeout, killing this lobby now.", &friend_code);
-            deadline_channel.send((LobbyCommand::EndGame, None)).await;
+            timeout_channel.send((LobbyCommand::EndGame, None)).await;
         }
         _ = monitor_game_for_completion(lobby_channel) => {
             log::info!("Lobby {} completed, removing it from game collection.", &friend_code);
