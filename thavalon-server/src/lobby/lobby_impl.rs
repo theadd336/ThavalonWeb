@@ -8,6 +8,7 @@ use crate::game::{
 };
 use crate::utils;
 
+use futures::future::AbortHandle;
 use tokio::{
     sync::mpsc::{self, Receiver},
     task,
@@ -22,6 +23,7 @@ const MAX_NUM_PLAYERS: usize = 10;
 /// Thavalon game instance, the DatabaseGame which keeps the game state in sync
 /// with the database, and all players connected to the game.
 pub struct Lobby {
+    game_over: bool,
     database_game: DatabaseGame,
     friend_code: String,
     player_ids_to_client_ids: HashMap<String, String>,
@@ -31,6 +33,7 @@ pub struct Lobby {
     status: LobbyState,
     builder: Option<GameBuilder>,
     snapshots: Option<Snapshots>,
+    game_abort_handle: Option<AbortHandle>,
     to_lobby: LobbyChannel,
 }
 
@@ -48,6 +51,7 @@ impl Lobby {
             let database_game = DatabaseGame::new().await.unwrap();
             let friend_code = database_game.get_friend_code().clone();
             let lobby = Lobby {
+                game_over: false,
                 database_game,
                 friend_code,
                 player_ids_to_client_ids: HashMap::with_capacity(MAX_NUM_PLAYERS),
@@ -56,6 +60,7 @@ impl Lobby {
                 status: LobbyState::Lobby,
                 builder: Some(GameBuilder::new()),
                 snapshots: None,
+                game_abort_handle: None,
                 to_lobby,
             };
             lobby.listen(rx).await
@@ -287,7 +292,9 @@ impl Lobby {
         }
 
         let builder = self.builder.take().unwrap();
-        match builder.start() {
+        let (abort_handle, abort_registration) = AbortHandle::new_pair();
+        self.game_abort_handle = Some(abort_handle);
+        match builder.start(self.to_lobby.clone(), abort_registration) {
             Ok((snapshots, _)) => {
                 self.snapshots = Some(snapshots);
                 // Tell the players the game is about to start to move to the game page.
@@ -303,6 +310,16 @@ impl Lobby {
                 LobbyResponse::Standard(Err(LobbyError::InvalidStateError))
             }
         }
+    }
+
+    // End the lobby, including ending the database game and aborting the game thread.
+    async fn end_game(&mut self) -> LobbyResponse {
+        self.game_over = true;
+        self.database_game.end_game().await.expect("Failed to end database game!");
+        // game_abort_handle is None if the game has not been started. In that case, do nothing to end it.
+        let handle = self.game_abort_handle.take();
+        if handle.is_some() { handle.unwrap().abort() }
+        LobbyResponse::None
     }
 
     /// Sends the current player list to the client.
@@ -373,6 +390,9 @@ impl Lobby {
     /// error occurs.
     async fn listen(mut self, mut receiver: Receiver<(LobbyCommand, Option<ResponseChannel>)>) {
         while let Some(msg) = receiver.recv().await {
+            if self.game_over {
+                break;
+            }
             let (msg_contents, result_channel) = msg;
             let results = match msg_contents {
                 LobbyCommand::AddPlayer {
@@ -392,6 +412,7 @@ impl Lobby {
                     self.send_current_state(client_id).await
                 }
                 LobbyCommand::StartGame => self.start_game().await,
+                LobbyCommand::EndGame => self.end_game().await,
                 LobbyCommand::PlayerDisconnect { client_id } => {
                     self.on_player_disconnect(client_id).await
                 }
@@ -401,6 +422,7 @@ impl Lobby {
                     client_id,
                     is_tabbed_out,
                 } => self.player_focus_changed(client_id, is_tabbed_out).await,
+                LobbyCommand::PollLobby => LobbyResponse::None,
             };
 
             if let Some(channel) = result_channel {
