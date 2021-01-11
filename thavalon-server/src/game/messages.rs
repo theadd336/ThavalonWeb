@@ -123,6 +123,16 @@ pub enum Message {
         correct: bool,
     },
 
+    /// Sent to Arthur to indicate that they can declare
+    ArthurCanDeclare,
+
+    /// Sent to Arthur to indicate that they cannot declare
+    ArthurCannotDeclare,
+
+    /// Announces that Arthur has declared
+    // TODO: generic Declaration message with the player and role instead?
+    ArthurDeclaration { player: String },
+
     /// Sent when the game is over to announce who won.
     GameOver {
         winning_team: Team,

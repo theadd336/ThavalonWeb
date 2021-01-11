@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use super::prelude::*;
+use super::RoleState;
 
 /// Phase for when the voted-on players are going on a mission
 pub struct OnMission {
@@ -202,13 +203,7 @@ impl GameState<WaitingForAgravaine> {
             .mission_results
             .last_mut()
             .expect("Waiting for Agravaine but no mission went");
-        let role = self
-            .game
-            .players
-            .by_name(player)
-            .expect("Player was not in the game")
-            .role;
-        if mission.players.contains(player) && role == Role::Agravaine {
+        if mission.players.contains(player) && self.game.players.is(player, Role::Agravaine) {
             log::debug!(
                 "Agravaine declaration by {} caused mission {} to fail",
                 player,
@@ -286,7 +281,7 @@ fn conclude_mission<P: Phase>(
             state.game.next_proposer(mission_proposer).to_string()
         };
 
-        state.role_state.on_round_start();
+        RoleState::on_round_start(&mut state, &mut effects);
         state.into_proposing(next_proposer, effects)
     }
 }

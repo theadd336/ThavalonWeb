@@ -32,11 +32,15 @@ impl GameState<Voting> {
             let mut downvotes = HashSet::new();
 
             for (player, vote) in self.phase.votes.drain() {
-                if vote {
-                    upvotes.insert(player);
-                } else {
-                    downvotes.insert(player);
+                let is_arthur = self.game.players.is(&player, Role::Arthur)
+                    && self.role_state.arthur.has_declared();
+
+                let collection = if vote { &mut upvotes } else { &mut downvotes };
+
+                if is_arthur {
+                    collection.insert(format!("{} (Arthur)", player));
                 }
+                collection.insert(player);
             }
 
             let sent = upvotes.len() > downvotes.len();
@@ -103,6 +107,18 @@ impl GameState<Voting> {
         } else {
             self.player_error("You can't obscure votes")
         }
+    }
+
+    /// Cancels voting, returning to the player who had been proposing. This is used for Arthur declarations while voting, since
+    /// if Arthur were on the proposal it is no longer valid.
+    pub fn cancel_vote(mut self, effects: Vec<Effect>) -> ActionResult {
+        // Remove the last proposal, since it's getting re-proposed
+        let proposal = self
+            .proposals
+            .pop()
+            .expect("In Voting phase with no proposals");
+        log::debug!("Cancelling vote on {}", proposal);
+        self.into_proposing(proposal.proposer, effects)
     }
 }
 
