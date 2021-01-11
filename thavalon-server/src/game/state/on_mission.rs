@@ -124,32 +124,62 @@ impl GameState<OnMission> {
     // so this is safe to call in any game.
     fn add_lover_effects(&self, effects: &mut Vec<Effect>) {
         let tristan_display_name = self.game.display_name_from_role(Role::Tristan);
-        let tristan_on_mission = tristan_display_name.map_or(None, |x| Some(self.proposal().players.contains(x)));
+        let tristan_on_mission =
+            tristan_display_name.map_or(None, |x| Some(self.proposal().players.contains(x)));
         let iseult_display_name = self.game.display_name_from_role(Role::Iseult);
-        let iseult_on_mission = iseult_display_name.map_or(None, |x| Some(self.proposal().players.contains(x)));
+        let iseult_on_mission =
+            iseult_display_name.map_or(None, |x| Some(self.proposal().players.contains(x)));
         // First, add messages going to Tristan. If there is no Tristan, do nothing.
         if let Some(tristan_display_name) = tristan_display_name {
-            effects.push(self.build_lover_effect(tristan_display_name, tristan_on_mission.unwrap(), iseult_display_name, iseult_on_mission));
+            effects.push(self.build_lover_effect(
+                tristan_display_name,
+                tristan_on_mission.unwrap(),
+                iseult_display_name,
+                iseult_on_mission,
+            ));
         }
         // Next do the same for Iseult.
         if let Some(iseult_display_name) = iseult_display_name {
-            effects.push(self.build_lover_effect(iseult_display_name, iseult_on_mission.unwrap(), tristan_display_name, tristan_on_mission));
+            effects.push(self.build_lover_effect(
+                iseult_display_name,
+                iseult_on_mission.unwrap(),
+                tristan_display_name,
+                tristan_on_mission,
+            ));
         }
     }
 
     // Builds a message for a player, given information about their lover who may not exist.
-    fn build_lover_effect(&self, player_display_name: &str, player_on_mission: bool, opt_lover_display_name: Option<&String>, opt_lover_on_mission: Option<bool>) -> Effect {        
-        let inner_message = opt_lover_on_mission.map_or("does not exist. You're alone :'(".to_owned(), 
-                            |x| if x { if player_on_mission {format!("was on the mission with you, it's {}", opt_lover_display_name.unwrap())} 
-                                        else {"was on this mission.".to_owned()}}
-                                else {"was not on this mission.".to_owned()});
+    fn build_lover_effect(
+        &self,
+        player_display_name: &str,
+        player_on_mission: bool,
+        opt_lover_display_name: Option<&String>,
+        opt_lover_on_mission: Option<bool>,
+    ) -> Effect {
+        let inner_message =
+            opt_lover_on_mission.map_or("does not exist. You're alone :'(".to_owned(), |x| {
+                if x {
+                    if player_on_mission {
+                        format!(
+                            "was on the mission with you, it's {}",
+                            opt_lover_display_name.unwrap()
+                        )
+                    } else {
+                        "was on this mission.".to_owned()
+                    }
+                } else {
+                    "was not on this mission.".to_owned()
+                }
+            });
         let toast_message = ["Your lover ", &inner_message].concat();
         Effect::Send(
             player_display_name.to_string(),
-            Message::Toast { 
+            Message::Toast {
                 severity: ToastSeverity::INFO,
                 message: toast_message,
-            })
+            },
+        )
     }
 }
 
@@ -190,6 +220,10 @@ impl GameState<WaitingForAgravaine> {
                 Effect::Broadcast(Message::AgravaineDeclaration {
                     mission: mission_number,
                     player: player.to_string(),
+                }),
+                Effect::Broadcast(Message::Toast {
+                    severity: ToastSeverity::URGENT,
+                    message: format!("{} has declared as Agravaine!", player),
                 }),
                 Effect::ClearTimeout,
             ];

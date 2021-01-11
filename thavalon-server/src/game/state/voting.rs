@@ -40,6 +40,19 @@ impl GameState<Voting> {
             }
 
             let sent = upvotes.len() > downvotes.len();
+
+            // TODO: This probably could be cleaner, but hacking this for pre-alpha.
+            if (self.phase.obscured) {
+                effects.push(Effect::Broadcast(Message::Toast {
+                    severity: ToastSeverity::WARN,
+                    message: format!(
+                        "Maeve has obscured the votes!\nUpvotes: {}\nDownvotes: {}",
+                        upvotes.len(),
+                        downvotes.len()
+                    ),
+                }));
+            }
+
             let vote_counts = if self.phase.obscured {
                 messages::VoteCounts::Obscured {
                     upvotes: upvotes.len() as u32,

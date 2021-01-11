@@ -86,7 +86,7 @@ pub struct Game {
 #[derive(Debug, Clone, Error)]
 pub enum CreateGameError {
     #[error("{0}-player games not supported")]
-    UnsupportedSize(usize)
+    UnsupportedSize(usize),
 }
 
 impl Game {
@@ -179,7 +179,13 @@ impl Game {
 
     /// Look up the display name associated with a given role, if it exists.
     pub fn display_name_from_role(&self, role: Role) -> Option<&String> {
-        self.info.iter().find_map(|(player, info)| if info.get_role() == role { Some(player) } else { None })
+        self.info.iter().find_map(|(player, info)| {
+            if info.get_role() == role {
+                Some(player)
+            } else {
+                None
+            }
+        })
     }
 }
 
@@ -349,7 +355,7 @@ static THREE_PLAYER: GameSpec = GameSpec {
     mission_sizes: [1, 2, 2, 2, 3],
     good_roles: Role::ALL_GOOD,
     evil_roles: Role::ALL_EVIL,
-    good_players: 2,
+    good_players: 1,
     max_proposals: 3,
     max_maeve_obscures: 2,
     double_fail_mission_four: false,

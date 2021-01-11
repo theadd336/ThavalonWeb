@@ -378,6 +378,5 @@ yarn-error.log*
 .npm/
 yarn.lock
 /mongo-volume
-env_vars
 .devcontainer/
-k8s
+k8s/env_vars
