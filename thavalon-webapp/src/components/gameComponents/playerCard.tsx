@@ -8,6 +8,7 @@ import { Spinner } from "react-bootstrap";
  */
 interface PlayerCardProps {
     name: string
+    className?: string
     toggleSelected?: (name: string) => void,
     me?: boolean,
     tabbedOut?: boolean,
@@ -52,10 +53,13 @@ export function PlayerCard(props: PlayerCardProps): JSX.Element {
     } else if (props.vote === Vote.Downvote) {
         voteLetter = "Downvoted";
     }
+
+    const className = props.className === undefined ? "" : props.className;
+    const baseClassName = className !== "" ? className : "player-card-base";
     return (
         <button
             disabled={disabled}
-            className={`player-card ${ selectedClassNames.join(" ") }`}
+            className={`${ baseClassName } ${ selectedClassNames.join(" ") }`}
             onClick={() => {
                 if (props.toggleSelected !== undefined) {
                     props.toggleSelected(props.name);

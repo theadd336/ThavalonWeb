@@ -6,6 +6,8 @@ import { sendGameAction } from "../gameUtils";
 import { PlayerCard } from "../playerCard";
 import { createSelectedPlayerTypesList } from "../gameUtils";
 
+import "../../../styles/gameStyles/interactionStyles/proposalManager.scss";
+
 /**
  * Props object for the ProposalManager
  */
@@ -111,7 +113,11 @@ export function ProposalManager(props: ProposalManagerProps): JSX.Element {
     // Create the player cards
     const playerCards = props.playerList.map((playerName) => {
         const selectedTypes = createSelectedPlayerTypesList(playerName, primarySelectedPlayers, secondarySelectedPlayers);
+        const enabled = isProposing && (selectedPlayers.size < mission_size || selectedPlayers.has(playerName));
+        const className = enabled ? (onSecondM1Proposal ? "player-card-secondary" : "player-card-primary") : "";
+
         return <PlayerCard
+            className={className}
             key={playerName}
             name={playerName}
             isProposing={playerName === proposer}
@@ -119,20 +125,24 @@ export function ProposalManager(props: ProposalManagerProps): JSX.Element {
             selectedTypes={selectedTypes}
             toggleSelected={updateSelectedPlayers}
             vote={props.votes.get(playerName)}
-            enabled={isProposing && (selectedPlayers.size < mission_size || selectedPlayers.has(playerName))} />
+            enabled={enabled} />
     });
 
 
     return (
         <>
             {playerCards}
-            <div className="proposal-manager">
+            <div className="interaction-manager">
                 {!isProposing &&
                     <ProgressBar
+                        style={{ minWidth: "200px" }}
                         now={selectedPlayers.size * 100 / mission_size}
                         label={`Selected: ${ selectedPlayers.size } / ${ mission_size }`} />}
                 {isProposing &&
-                    <button onClick={() => submitProposal()}>
+                    <button
+                        disabled={selectedPlayers.size !== mission_size}
+                        className={onSecondM1Proposal ? "proposal-button-secondary" : "proposal-button-primary"}
+                        onClick={() => submitProposal()}>
                         Submit Proposal ({`${ selectedPlayers.size } / ${ mission_size }`})
                     </button>
                 }

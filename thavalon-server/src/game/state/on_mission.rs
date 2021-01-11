@@ -166,7 +166,8 @@ impl OnMission {
 
 impl GameState<WaitingForAgravaine> {
     pub fn handle_declaration(mut self, player: &str) -> ActionResult {
-        let mission_number = self.mission();
+        // Subtract one since the mission Agravaine failing is the one prior to the current propposal.
+        let mission_number = self.mission() - 1;
         let mission = self
             .mission_results
             .last_mut()

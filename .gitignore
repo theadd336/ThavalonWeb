@@ -380,3 +380,4 @@ yarn.lock
 /mongo-volume
 env_vars
 .devcontainer/
+k8s
