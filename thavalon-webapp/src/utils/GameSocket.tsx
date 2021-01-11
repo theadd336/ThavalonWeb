@@ -1,9 +1,5 @@
 import { ISimpleEvent, SimpleEventDispatcher } from "strongly-typed-events";
-
-interface PingResponse {
-    result: boolean,
-    errorMessage: string, // only populated if result is false
-}
+import { GameMessage } from "../components/gameComponents/constants";
 
 export enum OutboundMessageType {
     Ping = "Ping",
@@ -120,6 +116,14 @@ export class GameSocket {
         console.log("Received on error message.");
     }
 
+    public sendGameMessage(gameMessage: GameMessage) {
+        const message: InboundMessage = {
+            messageType: InboundMessageType.GameMessage,
+            data: gameMessage
+        }
+        this._onGameEvent.dispatch(message);
+    }
+
     /**
      * Send a message on the websocket. This will wait until websocket is
      * open before sending the message.
@@ -127,7 +131,6 @@ export class GameSocket {
      */
     public sendMessage(outboundMessage: OutboundMessage) {
         if (this.websocket.readyState === WebSocket.OPEN) {
-            console.log("Sending message of type: " + outboundMessage.messageType);
             this.websocket.send(JSON.stringify(outboundMessage));
             return;
         }
