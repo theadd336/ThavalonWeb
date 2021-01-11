@@ -427,7 +427,6 @@ impl Lobby {
                     client_id,
                     is_tabbed_out,
                 } => self.player_focus_changed(client_id, is_tabbed_out).await,
-                LobbyCommand::PollLobby => LobbyResponse::None,
             };
 
             if let Some(channel) = result_channel {

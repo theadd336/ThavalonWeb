@@ -72,7 +72,6 @@ pub enum LobbyCommand {
         client_id: String,
         is_tabbed_out: bool,
     },
-    PollLobby,
 }
 
 /// Enum of possible responses from the lobby.
