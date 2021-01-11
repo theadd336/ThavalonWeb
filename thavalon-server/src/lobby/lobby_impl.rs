@@ -24,7 +24,6 @@ const MAX_NUM_PLAYERS: usize = 10;
 /// Thavalon game instance, the DatabaseGame which keeps the game state in sync
 /// with the database, and all players connected to the game.
 pub struct Lobby {
-    game_over: bool,
     game_over_channel: Option<oneshot::Sender<bool>>,
     database_game: DatabaseGame,
     friend_code: String,
@@ -57,7 +56,6 @@ impl Lobby {
             let database_game = DatabaseGame::new().await.unwrap();
             let friend_code = database_game.get_friend_code().clone();
             let lobby = Lobby {
-                game_over: false,
                 game_over_channel: Some(game_over_channel),
                 database_game,
                 friend_code,
@@ -321,7 +319,7 @@ impl Lobby {
 
     // End the lobby, including ending the database game and aborting the game thread.
     async fn end_game(&mut self) -> LobbyResponse {
-        self.game_over = true;
+        self.status = LobbyState::Finished;
         self.database_game.end_game().await.expect("Failed to end database game!");
         // game_abort_handle is None if the game has not been started. In that case, do nothing to end it.
         if let Some(handle) = self.game_abort_handle.take() { handle.abort() }
@@ -397,7 +395,7 @@ impl Lobby {
     /// error occurs.
     async fn listen(mut self, mut receiver: Receiver<(LobbyCommand, Option<ResponseChannel>)>) {
         while let Some(msg) = receiver.recv().await {
-            if self.game_over {
+            if self.status == LobbyState::Finished {
                 break;
             }
             let (msg_contents, result_channel) = msg;
