@@ -84,7 +84,8 @@ pub async fn create_game(
     // TODO: Implement a database check to confirm the player isn't in a game.
 
     // Create a new game and add the player.
-    let mut lobby_channel = Lobby::new().await;
+    let (end_game_tx, end_game_rx) = oneshot::channel();
+    let mut lobby_channel = Lobby::new(end_game_tx).await;
     let (oneshot_tx, oneshot_rx) = oneshot::channel();
 
     // TODO: Error handling here.
@@ -110,7 +111,7 @@ pub async fn create_game(
 
     // Spawn a thread to monitor this lobby and remove it from game_collection when it's over or timed out.
     tokio::spawn(async move {
-        monitor_lobby_task(monitor_lobby_channel, monitor_friend_code, monitor_game_collection).await;
+        monitor_lobby_task(monitor_lobby_channel, end_game_rx, monitor_friend_code, monitor_game_collection).await;
     });
 
     let response = NewGameResponse { friend_code };
@@ -276,35 +277,19 @@ async fn client_connection(socket: WebSocket, client_id: String, mut lobby_chann
 
 /// Helper function for monitoring a lobby, intended to run as a tokio task. This will remove the lobby from
 /// GameCollection once the lobby ends or exceeds the maximum lobby lifetime.
-async fn monitor_lobby_task(mut lobby_channel: LobbyChannel, friend_code: String, game_collection: GameCollection) {
+async fn monitor_lobby_task(mut lobby_channel: LobbyChannel, mut end_game_rx: oneshot::Receiver<bool>, friend_code: String, game_collection: GameCollection) {
     // Lobby timeout is 6 hours from creation across all phases.
     let timeout = tokio::time::delay_until(Instant::now() + Duration::from_secs(60 * 60 * 6));
-    let mut timeout_channel = lobby_channel.clone();
     tokio::select! {
         _ = timeout => {
             log::error!("Lobby {} has exceeded timeout, killing this lobby now.", &friend_code);
-            timeout_channel.send((LobbyCommand::EndGame, None)).await;
+            lobby_channel.send((LobbyCommand::EndGame, None)).await;
         }
-        _ = monitor_game_for_completion(lobby_channel) => {
+        _ = end_game_rx => {
             log::info!("Lobby {} completed, removing it from game collection.", &friend_code);
         }
     }
     game_collection.lock().unwrap().remove(&friend_code);
-}
-
-async fn monitor_game_for_completion(mut lobby_channel: LobbyChannel) {
-    // Poll every second until a game has started and a handler is available.
-    let mut send_result = lobby_channel
-        .send((LobbyCommand::PollLobby, None))
-        .await;
-    while let Ok(result) = send_result {
-        // Poll game once per minute for life. The reciever will close when the lobby ends, so a successfull send
-        // indicates the game is still running.
-        tokio::time::delay_for(Duration::from_secs(60)).await;
-        send_result = lobby_channel
-            .send((LobbyCommand::PollLobby, None))
-            .await;
-    }
 }
 
 // /// Helper function to check if a player's email is verified or not.

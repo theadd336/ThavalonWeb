@@ -11,6 +11,7 @@ use crate::utils;
 use futures::future::AbortHandle;
 use tokio::{
     sync::mpsc::{self, Receiver},
+    sync::oneshot,
     task,
 };
 use warp::filters::ws::WebSocket;
@@ -24,6 +25,7 @@ const MAX_NUM_PLAYERS: usize = 10;
 /// with the database, and all players connected to the game.
 pub struct Lobby {
     game_over: bool,
+    game_over_channel: Option<oneshot::Sender<bool>>,
     database_game: DatabaseGame,
     friend_code: String,
     player_ids_to_client_ids: HashMap<String, String>,
@@ -40,10 +42,14 @@ pub struct Lobby {
 impl Lobby {
     /// Creates a new lobby instance on a separate Tokio thread.
     ///
+    /// # Arguments
+    ///
+    /// * `end_game_channel` A channel this lobby should publish to when it's finished running.
+    ///
     /// # Returns
     ///
-    /// * `LobbyChannel` to communicate with the lobby.
-    pub async fn new() -> LobbyChannel {
+    /// * `LobbyChannel` A channel for sending messages to this lobby.
+    pub async fn new(game_over_channel: oneshot::Sender<bool>) -> LobbyChannel {
         let (tx, rx) = mpsc::channel(10);
 
         let to_lobby = tx.clone();
@@ -52,6 +58,7 @@ impl Lobby {
             let friend_code = database_game.get_friend_code().clone();
             let lobby = Lobby {
                 game_over: false,
+                game_over_channel: Some(game_over_channel),
                 database_game,
                 friend_code,
                 player_ids_to_client_ids: HashMap::with_capacity(MAX_NUM_PLAYERS),
@@ -317,8 +324,8 @@ impl Lobby {
         self.game_over = true;
         self.database_game.end_game().await.expect("Failed to end database game!");
         // game_abort_handle is None if the game has not been started. In that case, do nothing to end it.
-        let handle = self.game_abort_handle.take();
-        if handle.is_some() { handle.unwrap().abort() }
+        if let Some(handle) = self.game_abort_handle.take() { handle.abort() }
+        self.game_over_channel.take().unwrap().send(true).expect("Failed to notify lobby manager!");
         LobbyResponse::None
     }
 
