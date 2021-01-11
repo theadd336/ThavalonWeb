@@ -7,7 +7,7 @@ use super::engine;
 use super::interactions::ChannelInteractions;
 use super::messages::{Action, Message};
 use super::snapshot::{SnapshotInteractions, Snapshots};
-use super::{Game, CreateGameError};
+use super::{CreateGameError, Game};
 
 /// Builder for starting a new THavalon game
 pub struct GameBuilder {
@@ -43,7 +43,8 @@ impl GameBuilder {
     /// The returned [`task::JoinHandle`] will complete once the game has ended. The [`Snapshots`] may be
     /// used to track per-player snapshots of the game state.
     pub fn start(self) -> Result<(Snapshots, task::JoinHandle<()>), CreateGameError> {
-        let mut interactions = SnapshotInteractions::new(self.interactions, self.players.iter().cloned());
+        let mut interactions =
+            SnapshotInteractions::new(self.interactions, self.players.iter().cloned());
         let game = Game::roll(self.players)?;
         let snapshots = interactions.snapshots();
         let task_handle = task::spawn(async move {

@@ -132,8 +132,8 @@ pub enum Message {
     /// Message that a client should surface to the end user.
     Toast {
         severity: ToastSeverity,
-        message: String
-    }
+        message: String,
+    },
 }
 
 /// Severity of a toast notification
@@ -142,7 +142,7 @@ pub enum Message {
 pub enum ToastSeverity {
     INFO,
     WARN,
-    URGENT
+    URGENT,
 }
 
 /// How players voted on a proposal

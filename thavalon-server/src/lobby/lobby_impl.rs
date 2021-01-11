@@ -159,7 +159,11 @@ impl Lobby {
             );
             return LobbyResponse::Standard(Err(LobbyError::InvalidStateError));
         }
-        let client_id = self.player_ids_to_client_ids.get(player_id).unwrap().clone();
+        let client_id = self
+            .player_ids_to_client_ids
+            .get(player_id)
+            .unwrap()
+            .clone();
         let existing_display_name = &self.client_ids_to_player_info.get(&client_id).unwrap().1;
         if existing_display_name != &display_name {
             log::warn!(

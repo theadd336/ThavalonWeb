@@ -55,7 +55,9 @@ pub struct RoleDetails {
 }
 
 impl RoleDetails {
-    pub fn get_role(&self) -> Role { self.role }
+    pub fn get_role(&self) -> Role {
+        self.role
+    }
 }
 
 /// A priority assassination target. If the Good team passes 3 missions, then the Assassin must correctly identify
@@ -172,13 +174,13 @@ impl Role {
                 match priority_target {
                     PriorityTarget::Merlin => {
                         seen_players.push(players.by_role(Role::Merlin).unwrap().name.clone());
-                    },
+                    }
                     PriorityTarget::Lovers => {
                         seen_players.push(players.by_role(Role::Iseult).unwrap().name.clone());
                         seen_players.push(players.by_role(Role::Tristan).unwrap().name.clone());
-                    },
+                    }
                     PriorityTarget::None => (),
-                    other => panic!("Unsupported priority target {:?}", other)
+                    other => panic!("Unsupported priority target {:?}", other),
                 }
             }
             Role::Tristan | Role::Iseult => {
