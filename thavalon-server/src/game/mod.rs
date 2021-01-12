@@ -300,7 +300,6 @@ static FIVE_PLAYER: GameSpec = GameSpec {
         Role::Morgana,
         Role::Maelegant,
         Role::Maeve,
-        Role::Agravaine,
     ],
     good_players: 3,
     max_proposals: 5,
