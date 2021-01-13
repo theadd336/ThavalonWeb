@@ -95,6 +95,7 @@ impl GameState<Voting> {
             } else if self.role_state.maeve.can_obscure() {
                 log::debug!("Maeve obscured the votes!");
                 self.role_state.maeve.mark_obscure();
+                self.phase.obscured = true;
                 (GameStateWrapper::Voting(self), vec![])
             } else {
                 self.player_error("You can't obscure this round")
