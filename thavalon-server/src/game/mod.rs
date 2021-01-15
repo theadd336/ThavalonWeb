@@ -294,6 +294,7 @@ static FIVE_PLAYER: GameSpec = GameSpec {
         Role::Percival,
         Role::Tristan,
         Role::Iseult,
+        Role::Nimue,
     ],
     evil_roles: &[
         Role::Mordred,
@@ -316,6 +317,7 @@ static SEVEN_PLAYER: GameSpec = GameSpec {
         Role::Percival,
         Role::Tristan,
         Role::Iseult,
+        Role::Nimue,
     ],
     evil_roles: &[
         Role::Mordred,
