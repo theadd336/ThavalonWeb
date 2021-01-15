@@ -8,8 +8,10 @@ use crate::game::{
 };
 use crate::utils;
 
+use futures::future::AbortHandle;
 use tokio::{
     sync::mpsc::{self, Receiver},
+    sync::oneshot,
     task,
 };
 use warp::filters::ws::WebSocket;
@@ -22,6 +24,7 @@ const MAX_NUM_PLAYERS: usize = 10;
 /// Thavalon game instance, the DatabaseGame which keeps the game state in sync
 /// with the database, and all players connected to the game.
 pub struct Lobby {
+    game_over_channel: Option<oneshot::Sender<bool>>,
     database_game: DatabaseGame,
     friend_code: String,
     player_ids_to_client_ids: HashMap<String, String>,
@@ -31,16 +34,21 @@ pub struct Lobby {
     status: LobbyState,
     builder: Option<GameBuilder>,
     snapshots: Option<Snapshots>,
+    game_abort_handle: Option<AbortHandle>,
     to_lobby: LobbyChannel,
 }
 
 impl Lobby {
     /// Creates a new lobby instance on a separate Tokio thread.
     ///
+    /// # Arguments
+    ///
+    /// * `end_game_channel` A channel this lobby should publish to when it's finished running.
+    ///
     /// # Returns
     ///
-    /// * `LobbyChannel` to communicate with the lobby.
-    pub async fn new() -> LobbyChannel {
+    /// * `LobbyChannel` A channel for sending messages to this lobby.
+    pub async fn new(game_over_channel: oneshot::Sender<bool>) -> LobbyChannel {
         let (tx, rx) = mpsc::channel(10);
 
         let to_lobby = tx.clone();
@@ -48,6 +56,7 @@ impl Lobby {
             let database_game = DatabaseGame::new().await.unwrap();
             let friend_code = database_game.get_friend_code().clone();
             let lobby = Lobby {
+                game_over_channel: Some(game_over_channel),
                 database_game,
                 friend_code,
                 player_ids_to_client_ids: HashMap::with_capacity(MAX_NUM_PLAYERS),
@@ -56,6 +65,7 @@ impl Lobby {
                 status: LobbyState::Lobby,
                 builder: Some(GameBuilder::new()),
                 snapshots: None,
+                game_abort_handle: None,
                 to_lobby,
             };
             lobby.listen(rx).await
@@ -291,7 +301,9 @@ impl Lobby {
         }
 
         let builder = self.builder.take().unwrap();
-        match builder.start() {
+        let (abort_handle, abort_registration) = AbortHandle::new_pair();
+        self.game_abort_handle = Some(abort_handle);
+        match builder.start(self.to_lobby.clone(), abort_registration) {
             Ok((snapshots, _)) => {
                 self.snapshots = Some(snapshots);
                 // Tell the players the game is about to start to move to the game page.
@@ -307,6 +319,25 @@ impl Lobby {
                 LobbyResponse::Standard(Err(LobbyError::InvalidStateError))
             }
         }
+    }
+
+    // End the lobby, including ending the database game and aborting the game thread.
+    async fn end_game(&mut self) -> LobbyResponse {
+        self.status = LobbyState::Finished;
+        self.database_game
+            .end_game()
+            .await
+            .expect("Failed to end database game!");
+        // game_abort_handle is None if the game has not been started. In that case, do nothing to end it.
+        if let Some(handle) = self.game_abort_handle.take() {
+            handle.abort()
+        }
+        self.game_over_channel
+            .take()
+            .unwrap()
+            .send(true)
+            .expect("Failed to notify lobby manager!");
+        LobbyResponse::None
     }
 
     /// Sends the current player list to the client.
@@ -377,6 +408,9 @@ impl Lobby {
     /// error occurs.
     async fn listen(mut self, mut receiver: Receiver<(LobbyCommand, Option<ResponseChannel>)>) {
         while let Some(msg) = receiver.recv().await {
+            if self.status == LobbyState::Finished {
+                break;
+            }
             let (msg_contents, result_channel) = msg;
             let results = match msg_contents {
                 LobbyCommand::AddPlayer {
@@ -396,6 +430,7 @@ impl Lobby {
                     self.send_current_state(client_id).await
                 }
                 LobbyCommand::StartGame => self.start_game().await,
+                LobbyCommand::EndGame => self.end_game().await,
                 LobbyCommand::PlayerDisconnect { client_id } => {
                     self.on_player_disconnect(client_id).await
                 }

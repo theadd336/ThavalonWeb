@@ -274,8 +274,18 @@ fn conclude_mission<P: Phase>(
         log::debug!("3 missions have failed, the Evil team has won");
         state.into_done(Team::Evil, effects)
     } else {
-        let mission_proposer = &state.proposals[proposal].proposer;
-        let next_proposer = state.game.next_proposer(mission_proposer).to_string();
+        let mission = state.mission();
+        let next_proposer = if mission == 2 {
+            // On mission 2, the third proposer goes first, because the first 2 proposers already proposed for mission 1
+            // the mod is to account for 2-player testing games, for which we wrap back around to player 1
+            // Note: the index of the 3rd proposer is 2
+            let next_proposer_index = 2 % state.game.proposal_order.len();
+            state.game.proposal_order[next_proposer_index].clone()
+        } else {
+            let mission_proposer = &state.proposals[proposal].proposer;
+            state.game.next_proposer(mission_proposer).to_string()
+        };
+
         state.role_state.on_round_start();
         state.into_proposing(next_proposer, effects)
     }

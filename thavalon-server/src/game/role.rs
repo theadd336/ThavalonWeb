@@ -13,6 +13,7 @@ pub enum Role {
     Percival,
     Tristan,
     Iseult,
+    Nimue,
 
     Mordred,
     Morgana,
@@ -78,6 +79,7 @@ impl Role {
         Role::Percival,
         Role::Tristan,
         Role::Iseult,
+        Role::Nimue,
     ];
 
     /// All Evil roles
@@ -92,7 +94,7 @@ impl Role {
     pub fn is_good(self) -> bool {
         use Role::*;
         match self {
-            Merlin | Lancelot | Percival | Tristan | Iseult => true,
+            Merlin | Lancelot | Percival | Tristan | Iseult | Nimue => true,
             Mordred | Morgana | Maelegant | Maeve | Agravaine => false,
         }
     }
@@ -187,6 +189,18 @@ impl Role {
                 let _ = writeln!(
                     &mut description,
                     "You may or may not see your Lover at some point I guess? Once you and your Lover go on a mission together, you will be revealed to each other. Until then, you will be told after each mission if it contained your Lover."
+                );
+            }
+            Role::Nimue => {
+                let _ = writeln!(
+                    &mut description,
+                    "You see all Good roles in the game, but not who has which role."
+                );
+                seen_players.extend(
+                    players
+                        .iter()
+                        .filter(|p| p.role.is_good())
+                        .map(|player| player.role.to_string()),
                 );
             }
             Role::Mordred => {
