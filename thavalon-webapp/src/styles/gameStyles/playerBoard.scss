@@ -11,36 +11,53 @@ $player-selected-border-thickness: 3px;
     align-items: center;
 }
 
-.player-card {
-    border: 1px solid;
-    border-radius: 10px;
-    padding: $player-card-padding-vertical $player-card-padding-horizontal;
-    cursor: pointer; 
-    width: 90%; 
-    display: block;
-    margin-top: 5px;
+%player-card {
+    @extend %game-button;
+    &:disabled {
+        color: black;
+        cursor: default;
+    }
+}
+
+.player-card-base {
+    @extend %player-card;
+}
+
+.player-card-primary {
+    @extend %player-card;
+    &:hover {
+        background: rgba($player-selected-color-primary, $button-hover-opacity);
+    }
+}
+
+.player-card-secondary {
+    @extend %player-card;
+    &:hover {
+        background: rgba($player-selected-color-secondary, $button-hover-opacity);
+    }
 }
 
 .player-selected-primary {
     padding: $player-card-padding-vertical - $player-selected-border-thickness $player-card-padding-horizontal;
-    border: 1px + $player-selected-border-thickness solid $player-selected-color;
+    border: 1px + $player-selected-border-thickness solid $player-selected-color-primary;
 }
 
 .player-selected-secondary {
     padding: $player-card-padding-vertical - $player-selected-border-thickness $player-card-padding-horizontal;
-    border: 1px + $player-selected-border-thickness solid red;
+    border: 1px + $player-selected-border-thickness solid $player-selected-color-secondary;
 }
 
 .player-selected-all {
     padding: $player-card-padding-vertical - $player-selected-border-thickness $player-card-padding-horizontal;
     border: 1px + $player-selected-border-thickness solid;
-    border-top-color: $player-selected-color;
-    border-right-color: $player-selected-color;
-    border-bottom-color: red;
-    border-left-color: red;
+    border-top-color: $player-selected-color-primary;
+    border-right-color: $player-selected-color-primary;
+    border-bottom-color: $player-selected-color-secondary;
+    border-left-color: $player-selected-color-secondary;
 }
 
 .tabbed-out-indicator {
     margin-right: 5px;
     margin-bottom: 2px;
 }
+

@@ -64,7 +64,7 @@ export enum GameActionType {
     QuestingBeast = "QuestingBeast",
     Declare = "Declare",
     Assassinate = "Assassinate",
-    MoveToAssassination = "MoveToAssassination"
+    MoveToAssassination = "MoveToAssassination",
 }
 
 /**
@@ -134,6 +134,7 @@ export interface InteractionProps {
     secondarySelectedPlayers: Set<string>,
     playerList: string[],
     tabbedOutPlayers: Set<string>,
+    role: Role,
 }
 
 /**
@@ -171,4 +172,31 @@ export interface MissionResultsMessage {
     reverses: number,
     questing_beasts: number,
     passed: boolean
+}
+
+/**
+ * Enum of roles in the game.
+ */
+export enum Role {
+    Merlin = "Merlin",
+    Lancelot = "Lancelot",
+    Percival = "Percival",
+    Tristan = "Tristan",
+    Iseult = "Iseult",
+    Mordred = "Mordred",
+    Morgana = "Morgana",
+    Maelegant = "Maelegant",
+    Maeve = "Maeve",
+    Agravaine = "Agravaine"
+}
+
+/** Length of time Agravaine has to declare in seconds */
+export const AGRAVAINE_DECLARATION_TIME = 30;
+
+/**
+ * Interface for an Agravaine declaration message.
+ */
+export interface AgravaineDeclarationMessage {
+    mission: number,
+    player: string,
 }
