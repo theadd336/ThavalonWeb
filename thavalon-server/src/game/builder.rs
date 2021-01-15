@@ -1,5 +1,7 @@
 //! Builder for configuring and launching a new game.
 
+use crate::lobby::{LobbyChannel, LobbyCommand};
+
 use tokio::sync::mpsc;
 use tokio::task;
 
@@ -8,6 +10,8 @@ use super::interactions::ChannelInteractions;
 use super::messages::{Action, Message};
 use super::snapshot::{SnapshotInteractions, Snapshots};
 use super::{Game, CreateGameError};
+
+use futures::future::{Abortable, AbortRegistration};
 
 /// Builder for starting a new THavalon game
 pub struct GameBuilder {
@@ -42,15 +46,16 @@ impl GameBuilder {
     /// Start the game. This consumes `self` because no new players can be added once the game starts.
     /// The returned [`task::JoinHandle`] will complete once the game has ended. The [`Snapshots`] may be
     /// used to track per-player snapshots of the game state.
-    pub fn start(self) -> Result<(Snapshots, task::JoinHandle<()>), CreateGameError> {
+    pub fn start(self, mut lobby_channel: LobbyChannel, abort_registration: AbortRegistration) -> Result<(Snapshots, task::JoinHandle<std::result::Result<(), futures::future::Aborted>>), CreateGameError> {
         let mut interactions = SnapshotInteractions::new(self.interactions, self.players.iter().cloned());
         let game = Game::roll(self.players)?;
         let snapshots = interactions.snapshots();
-        let task_handle = task::spawn(async move {
+        let task_handle = task::spawn(Abortable::new(async move {
             if let Err(e) = engine::run_game(game, &mut interactions).await {
                 log::error!("Fatal game error: {}", e);
             }
-        });
+            lobby_channel.send((LobbyCommand::EndGame, None)).await;
+        }, abort_registration));
         Ok((snapshots, task_handle))
     }
 
