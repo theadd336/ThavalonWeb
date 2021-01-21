@@ -110,9 +110,12 @@ pub async fn create_game(
         .insert(friend_code.clone(), lobby_channel);
 
     // Spawn a thread to monitor this lobby and remove it from game_collection when it's over or timed out.
-    tokio::spawn(
-        monitor_lobby_task(monitor_lobby_channel, end_game_rx, monitor_friend_code, monitor_game_collection)
-    );
+    tokio::spawn(monitor_lobby_task(
+        monitor_lobby_channel,
+        end_game_rx,
+        monitor_friend_code,
+        monitor_game_collection,
+    ));
 
     let response = NewGameResponse { friend_code };
     Ok(reply::json(&response))
@@ -277,7 +280,12 @@ async fn client_connection(socket: WebSocket, client_id: String, mut lobby_chann
 
 /// Helper function for monitoring a lobby, intended to run as a tokio task. This will remove the lobby from
 /// GameCollection once the lobby ends or exceeds the maximum lobby lifetime.
-async fn monitor_lobby_task(mut lobby_channel: LobbyChannel, mut end_game_rx: oneshot::Receiver<bool>, friend_code: String, game_collection: GameCollection) {
+async fn monitor_lobby_task(
+    mut lobby_channel: LobbyChannel,
+    mut end_game_rx: oneshot::Receiver<bool>,
+    friend_code: String,
+    game_collection: GameCollection,
+) {
     // Lobby timeout is 6 hours from creation across all phases.
     let timeout = tokio::time::delay_until(Instant::now() + Duration::from_secs(60 * 60 * 6));
     tokio::select! {

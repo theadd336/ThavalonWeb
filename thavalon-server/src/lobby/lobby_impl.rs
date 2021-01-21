@@ -169,7 +169,11 @@ impl Lobby {
             );
             return LobbyResponse::Standard(Err(LobbyError::InvalidStateError));
         }
-        let client_id = self.player_ids_to_client_ids.get(player_id).unwrap().clone();
+        let client_id = self
+            .player_ids_to_client_ids
+            .get(player_id)
+            .unwrap()
+            .clone();
         let existing_display_name = &self.client_ids_to_player_info.get(&client_id).unwrap().1;
         if existing_display_name != &display_name {
             log::warn!(
@@ -320,10 +324,19 @@ impl Lobby {
     // End the lobby, including ending the database game and aborting the game thread.
     async fn end_game(&mut self) -> LobbyResponse {
         self.status = LobbyState::Finished;
-        self.database_game.end_game().await.expect("Failed to end database game!");
+        self.database_game
+            .end_game()
+            .await
+            .expect("Failed to end database game!");
         // game_abort_handle is None if the game has not been started. In that case, do nothing to end it.
-        if let Some(handle) = self.game_abort_handle.take() { handle.abort() }
-        self.game_over_channel.take().unwrap().send(true).expect("Failed to notify lobby manager!");
+        if let Some(handle) = self.game_abort_handle.take() {
+            handle.abort()
+        }
+        self.game_over_channel
+            .take()
+            .unwrap()
+            .send(true)
+            .expect("Failed to notify lobby manager!");
         LobbyResponse::None
     }
 
