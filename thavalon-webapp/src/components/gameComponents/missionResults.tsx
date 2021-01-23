@@ -135,9 +135,12 @@ export function MissionResults(): JSX.Element {
  */
 function MissionCard(props: MissionCardProps): JSX.Element {
     const missionTooltip = <Tooltip className="mission-tooltip" id={`missionTooltip${props.missionNumber}`}>
-        {props.missionStatus === MissionStatus.Pending && <div className="mission-tooltip">Mission {props.missionNumber} Pending</div>}
+        {props.missionStatus === MissionStatus.Pending && <div className="mission-tooltip">
+            Mission {props.missionNumber} Pending
+        </div>}
         {props.missionStatus === MissionStatus.Going && <div className="mission-tooltip">Mission {props.missionNumber} is going now</div>}
         {(props.missionStatus === MissionStatus.Passed || props.missionStatus === MissionStatus.Failed) && <div className="mission-tooltip">
+            Mission {props.missionStatus}!<br/>
             Passes: {props.passes}<br />
             Fails: {props.fails}<br />
             Reverses: {props.reverses}<br />
