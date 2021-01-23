@@ -21,8 +21,8 @@ impl GameState<Proposing> {
             return self.player_error(NOT_PROPOSER_ERROR);
         }
 
-        if self.game.players.by_name(&added_player).is_none() {
-            return self.player_error(format!("{} is not in the game!", added_player));
+        if let Some(error) = self.validate_player(player) {
+            return self.player_error(error);
         }
 
         self.phase.selected_players.insert(added_player);
@@ -76,8 +76,8 @@ impl GameState<Proposing> {
         }
 
         for player in players.iter() {
-            if self.game.players.by_name(player).is_none() {
-                return self.player_error(format!("{} is not in the game", player));
+            if let Some(error) = self.validate_player(player.as_str()) {
+                return self.player_error(error);
             }
         }
 
@@ -129,6 +129,23 @@ impl GameState<Proposing> {
             effects.push(Effect::Broadcast(Message::CommenceVoting));
             let next_state = self.with_phase(Voting::new());
             (GameStateWrapper::Voting(next_state), effects)
+        }
+    }
+
+    /// Checks if `player` is allowed on this proposal, returning an error message if not.
+    fn validate_player(&self, player_name: &str) -> Option<String> {
+        match self.game.players.by_name(player_name) {
+            Some(player) => {
+                if player.role == Role::Arthur
+                    && self.role_state.arthur.has_declared()
+                    && self.mission() != 5
+                {
+                    Some(format!("Arthur cannot go until mission 5"))
+                } else {
+                    None
+                }
+            }
+            None => Some(format!("{} is not in the game", player_name)),
         }
     }
 }
