@@ -269,13 +269,6 @@ function JoinGameForm(props: FormProps): JSX.Element {
         <div className="join-game-form">
             <form onSubmit={handleSubmit(onJoinGameSubmit)}>
                 <InputElement
-                    formRef={register}
-                    type="text"
-                    label="Display Name"
-                    name="displayName"
-                    required={true}
-                    maxLength={20} />
-                <InputElement
                     autoComplete="off"
                     autoCapitalize
                     formRef={register}
@@ -285,6 +278,13 @@ function JoinGameForm(props: FormProps): JSX.Element {
                     required={true}
                     minLength={4}
                     maxLength={4} />
+                <InputElement
+                    formRef={register}
+                    type="text"
+                    label="Display Name"
+                    name="displayName"
+                    required={true}
+                    maxLength={20} />
                 <Row>
                     <Col>
                         <Button
@@ -325,7 +325,7 @@ function triggerRedirectToGame(friendCode: string, socketUrl: string): JSX.Eleme
             <Redirect to="/" />
         );
     }
-
+    friendCode = friendCode.toUpperCase();
     return (
         <Redirect to={{
             pathname: `/game/${ friendCode }`,

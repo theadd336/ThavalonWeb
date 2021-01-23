@@ -125,6 +125,18 @@ export class GameSocket {
     }
 
     /**
+     * Dispatch a game message, for sending game messages from client side.
+     * @param gameMessage The game message to send.
+     */
+    public sendGameMessage(gameMessage: GameMessage) {
+        const message: InboundMessage = {
+            messageType: InboundMessageType.GameMessage,
+            data: gameMessage
+        }
+        this._onGameEvent.dispatch(message);
+    }
+
+    /**
      * Send a message on the websocket. This will wait until websocket is
      * open before sending the message.
      * @param outboundMessage The outboundMessage to be sent to the server. 

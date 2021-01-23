@@ -5,7 +5,6 @@ import { ProposalManager } from "./interactions/proposalManager";
 import { GamePhase, mapMessageToGamePhase } from "./gameUtils";
 import { VoteManager } from "./interactions/voteManager";
 import { MissionManager, MissionResultModal } from "./interactions/missionManager";
-
 import "../../styles/gameStyles/playerBoard.scss";
 
 /**
@@ -27,10 +26,11 @@ export function PlayerBoard(): JSX.Element {
         const connection = GameSocket.getInstance();
         connection.onGameEvent.subscribe(handleMessage);
         connection.onLobbyEvent.subscribe(handleMessage);
-        document.onvisibilitychange = () => sendPlayerVisibilityChange();
+        // TODO: fix the tabbed out indicator.
+        // document.onvisibilitychange = () => sendPlayerVisibilityChange();
         return () => {
             connection.onGameEvent.unsubscribe(handleMessage);
-            document.onvisibilitychange = null;
+            // document.onvisibilitychange = null;
         }
     }, [handleMessage])
 
@@ -76,29 +76,18 @@ export function PlayerBoard(): JSX.Element {
     function handleMessage(message: InboundMessage): void {
         switch (message.messageType) {
             case InboundMessageType.Snapshot:
-                const snapshot = message.data as Snapshot
+                const connection = GameSocket.getInstance();
+                const snapshot = message.data as Snapshot;
                 setMe(snapshot.me);
                 setRole(snapshot.roleInfo.role as Role);
                 // Get proposal order, then get the most recent major message.
                 // Finally, feed the last message in
-                handleGameMessage(snapshot.log[0]);
-                for (let i = snapshot.log.length - 2; i >= 1; i--) {
-                    const logMessage = snapshot.log[i];
-                    switch (logMessage.messageType) {
-                        case GameMessageType.NextProposal:
-                        case GameMessageType.CommenceVoting:
-                        case GameMessageType.MissionGoing:
-                        case GameMessageType.BeginAssassination:
-                            handleGameMessage(logMessage);
-                            i = -1;
-                            break;
-                    }
-                }
-                handleGameMessage(snapshot.log[snapshot.log.length - 1]);
+                snapshot.log.map((message) => connection.sendGameMessage(message));
                 break;
             case InboundMessageType.PlayerFocusChange:
-                const { displayName, isTabbedOut } = message.data as PlayerFocusChangeMessage;
-                playerFocusChanged(displayName, isTabbedOut);
+                // TODO: Fix the tabbed out indicator
+                // const { displayName, isTabbedOut } = message.data as PlayerFocusChangeMessage;
+                // playerFocusChanged(displayName, isTabbedOut);
                 break;
             case InboundMessageType.GameMessage:
                 handleGameMessage(message.data as GameMessage);
@@ -112,7 +101,9 @@ export function PlayerBoard(): JSX.Element {
      * @param message The GameMessage from the server
      */
     function handleGameMessage(message: GameMessage): void {
-        setGamePhase(mapMessageToGamePhase(message.messageType));
+        if (message.messageType !== GameMessageType.Error && message.messageType !== GameMessageType.Toast) {
+            setGamePhase(mapMessageToGamePhase(message.messageType));
+        }
         switch (message.messageType) {
             case GameMessageType.ProposalOrder:
                 setPlayerList(message.data as string[]);
@@ -149,6 +140,7 @@ export function PlayerBoard(): JSX.Element {
                 break;
             case GameMessageType.MissionGoing:
                 setMajorMessage(message.data as MissionGoingMessage);
+                setAgravaine(undefined);
                 break;
             case GameMessageType.MissionResults:
                 setShowMissionResults(true);

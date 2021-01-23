@@ -138,7 +138,6 @@ pub enum Message {
 
 /// Severity of a toast notification
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
-#[serde(tag = "toastSeverity")]
 pub enum ToastSeverity {
     INFO,
     WARN,

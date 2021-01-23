@@ -1,0 +1,33 @@
+---
+version: '3'
+
+volumes:
+    mongodata:
+
+services:
+    database:
+        image: mongo:4.4
+        container_name: mongo_prod
+        environment: 
+            - MONGO_INITDB_DATABASE=master # database name
+            - MONGO_INITDB_ROOT_USERNAME=admin # root username
+            - MONGO_INITDB_ROOT_PASSWORD=secret # root password
+        volumes: 
+            - mongodata:/data/db
+        expose:
+            - "27017-27019"
+    
+    thavalon-api:
+        image: thavalon-api_prod
+        container_name: thavalon-api_prod
+        # This intentionally won't build without an env_vars file to prevent
+        # accidental deployments.
+        env_file: env_vars
+        ports:
+            - "127.0.0.1:8001:8001"
+    
+    thavalon-webapp:
+        image: thavalon-webapp_prod
+        container_name: thavalon-webapp_prod
+        ports:
+            - "127.0.0.1:8000:80"
