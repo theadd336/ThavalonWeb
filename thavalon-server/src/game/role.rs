@@ -216,6 +216,18 @@ impl Role {
                         .map(|player| player.role.to_string()),
                 );
             }
+            Role::Arthur => {
+                let _ = writeln!(
+                    &mut description,
+                    "You see all Good roles in the game, but not who has which role. If two missions have failed, but it's not yet mission 5, you may declare. After declaring, your vote counts twice, but you cannot go on missions until mission 5."
+                );
+                seen_players.extend(
+                    players
+                        .iter()
+                        .filter(|p| p.role.is_good())
+                        .map(|player| player.role.to_string()),
+                );
+            }
             Role::Mordred => {
                 let _ = writeln!(&mut description, "You are hidden from Merlin.");
             }
