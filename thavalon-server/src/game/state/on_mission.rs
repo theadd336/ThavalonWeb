@@ -221,6 +221,10 @@ impl GameState<WaitingForAgravaine> {
                     mission: mission_number,
                     player: player.to_string(),
                 }),
+                Effect::Broadcast(Message::Toast {
+                    severity: ToastSeverity::URGENT,
+                    message: format!("{} has declared as Agravaine!", player),
+                }),
                 Effect::ClearTimeout,
             ];
 

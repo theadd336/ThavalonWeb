@@ -4,6 +4,7 @@
 use crate::database::accounts;
 use crate::lobby::{Lobby, LobbyChannel, LobbyCommand, LobbyError, LobbyResponse};
 
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use tokio::{
     sync::oneshot,
@@ -17,6 +18,7 @@ use warp::{
 };
 
 use std::collections::HashMap;
+use std::env;
 use std::sync::{Arc, Mutex};
 
 /// Type used for a global GameCollection of all active games.
@@ -53,6 +55,11 @@ impl Reject for UnverifiedEmailRejection {}
 #[derive(Debug)]
 pub struct NonexistentGameRejection;
 impl Reject for NonexistentGameRejection {}
+
+lazy_static! {
+    static ref WEBSOCKET_URL: String =
+        env::var("WEBSOCKET_URL").unwrap_or(String::from("ws://localhost:8001"));
+}
 
 /// Creates a new game for the given player ID.
 ///
@@ -138,12 +145,12 @@ pub async fn join_game(
     player_id: String,
     game_collection: GameCollection,
 ) -> Result<impl Reply, Rejection> {
-    log::info!("Player {} is joining game {}.", player_id, info.friend_code);
-
-    let mut lobby_channel = match game_collection.lock().unwrap().get(&info.friend_code) {
+    let friend_code = &info.friend_code.to_uppercase();
+    log::info!("Player {} is joining game {}.", player_id, friend_code);
+    let mut lobby_channel = match game_collection.lock().unwrap().get(friend_code) {
         Some(channel) => channel.clone(),
         None => {
-            log::warn!("Game {} does not exist.", info.friend_code);
+            log::warn!("Game {} does not exist.", friend_code);
             return Err(reject::custom(NonexistentGameRejection));
         }
     };
@@ -178,11 +185,13 @@ pub async fn join_game(
     log::info!(
         "Successfully added player {} to game {}.",
         player_id,
-        info.friend_code
+        friend_code
     );
     let socket_url = format!(
-        "ws://localhost:8001/api/ws/{}/{}",
-        info.friend_code, client_id
+        "{}/api/ws/{}/{}",
+        WEBSOCKET_URL.to_string(),
+        friend_code,
+        client_id
     );
     let response = JoinGameResponse { socket_url };
     Ok(reply::json(&response))
