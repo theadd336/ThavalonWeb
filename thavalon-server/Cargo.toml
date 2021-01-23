@@ -38,6 +38,7 @@ features = [
     "rt-threaded",
     "stream",
     "sync",
+    "time",
 ]
 
 [dependencies.uuid]

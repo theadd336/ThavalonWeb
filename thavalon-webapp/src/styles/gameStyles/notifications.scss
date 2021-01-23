@@ -1,0 +1,39 @@
+@import 'gameGlobals';
+
+$toast-header-alpha: 0.3;
+
+#toastNotifications {
+    display: flex;
+    flex-direction: column-reverse;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-content: center;
+
+    .toast-notification {
+        margin-bottom: 20px;
+        flex-basis: 0rem;
+        width: 90%;
+        margin: auto;
+    }
+
+    .toast-header {
+        color: #444;
+    }
+
+    .toast-info {
+        background-color: rgba(green, $toast-header-alpha);
+    }
+
+    .toast-warn {
+        background-color: rgba(yellow, $toast-header-alpha);
+    }
+
+    .toast-urgent {
+        background-color: rgba(red, $toast-header-alpha);
+    }
+
+}
+
+.no-notifications {
+    text-align: center;
+}

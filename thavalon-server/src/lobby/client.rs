@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use tokio::{
     sync::mpsc::{self, Receiver, Sender},
     task,
+    time::{delay_for, Duration},
 };
 use warp::filters::ws::{self, WebSocket};
 
@@ -24,6 +25,7 @@ enum TaskType {
     FromGame,
     FromClient,
     ToClient,
+    HeartBeat,
 }
 
 /// Message types that can be sent to the outbound messaging task.
@@ -34,6 +36,7 @@ enum TaskType {
 enum OutboundTaskMessageType {
     ToClient(String),
     NewWebSocket(SplitSink<WebSocket, ws::Message>),
+    HeartBeat,
 }
 
 /// Manages the connection to the actual player.
@@ -149,6 +152,9 @@ impl PlayerClient {
                         client_id
                     );
 
+                    if (incoming_msg.is_pong()) {
+                        continue;
+                    }
                     let incoming_msg = match incoming_msg.to_str() {
                         Ok(msg) => msg,
                         Err(_) => {
@@ -353,6 +359,17 @@ impl PlayerClient {
                             log::info!("Received new connection for client {}.", client_id);
                             to_client = ws;
                         }
+
+                        OutboundTaskMessageType::HeartBeat => {
+                            if let Err(e) = to_client.send(ws::Message::ping("Ping")).await {
+                                log::debug!(
+                                    "Failed to send a heartbeat message to client {}. {}",
+                                    client_id,
+                                    e
+                                );
+                                continue;
+                            }
+                        }
                     }
                 }
             },
@@ -360,5 +377,22 @@ impl PlayerClient {
         );
         self.tasks.insert(TaskType::ToClient, abort_handle);
         task::spawn(outbound_to_client_future);
+
+        log::debug!("Creating heartbeat task for client {}.", self.client_id);
+        let mut to_outbound_task = self.to_outbound_task.clone();
+        let (abort_handle, abort_registration) = AbortHandle::new_pair();
+        let heartbeat_future = Abortable::new(
+            async move {
+                while true {
+                    delay_for(Duration::from_secs(30)).await;
+                    let _ = to_outbound_task
+                        .send(OutboundTaskMessageType::HeartBeat)
+                        .await;
+                }
+            },
+            abort_registration,
+        );
+        self.tasks.insert(TaskType::HeartBeat, abort_handle);
+        task::spawn(heartbeat_future);
     }
 }

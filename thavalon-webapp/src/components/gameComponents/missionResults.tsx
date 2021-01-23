@@ -79,6 +79,18 @@ export function MissionResults(): JSX.Element {
                 setMissionProps(newArr);
                 break;
             }
+            case GameMessageType.AgravaineDeclaration:
+                console.log("In Agravaine declaration handling.");
+                const newArr = new Array(...missionProps);
+                for (let i = newArr.length - 1; i >= 0; i--) {
+                    if (newArr[i].missionStatus !== MissionStatus.Pending) {
+                        console.log("Setting mission " + i + " to failed.");
+                        newArr[i].missionStatus = MissionStatus.Failed;
+                        i = -1;
+                    }
+                }
+                setMissionProps(newArr);
+                break;
         }
     }
 
@@ -103,7 +115,7 @@ export function MissionResults(): JSX.Element {
         }
         setMissionProps(newArr);
     }
-    
+
     /**
      * Handles any lobby messages that come from the server. If the message type
      * is a GameMessage, calls helper function handleGameMessage to handle it.
@@ -148,13 +160,13 @@ function MissionCard(props: MissionCardProps): JSX.Element {
         </div>}
     </Tooltip>
 
-return (
+    return (
         <OverlayTrigger
             placement="top"
-            delay={{show: 250, hide: 400}}
+            delay={{ show: 250, hide: 400 }}
             overlay={missionTooltip}
         >
-            <div className={`mission-card mission-${props.missionStatus}`} >
+            <div className={`mission-card mission-${ props.missionStatus }`} >
                 {props.missionPlayers.join(" ")}
             </div>
         </OverlayTrigger>
