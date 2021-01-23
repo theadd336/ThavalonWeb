@@ -6,7 +6,10 @@ use crate::lobby::{Lobby, LobbyChannel, LobbyCommand, LobbyError, LobbyResponse}
 
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use tokio::sync::oneshot;
+use tokio::{
+    sync::oneshot,
+    time::{Duration, Instant},
+};
 use warp::{
     reject::{self, Reject},
     reply,
@@ -88,7 +91,8 @@ pub async fn create_game(
     // TODO: Implement a database check to confirm the player isn't in a game.
 
     // Create a new game and add the player.
-    let mut lobby_channel = Lobby::new().await;
+    let (end_game_tx, end_game_rx) = oneshot::channel();
+    let mut lobby_channel = Lobby::new(end_game_tx).await;
     let (oneshot_tx, oneshot_rx) = oneshot::channel();
 
     // TODO: Error handling here.
@@ -103,10 +107,22 @@ pub async fn create_game(
         }
     };
 
+    let monitor_lobby_channel = lobby_channel.clone();
+    let monitor_friend_code = friend_code.clone();
+    let monitor_game_collection = game_collection.clone();
+
     game_collection
         .lock()
         .unwrap()
         .insert(friend_code.clone(), lobby_channel);
+
+    // Spawn a thread to monitor this lobby and remove it from game_collection when it's over or timed out.
+    tokio::spawn(monitor_lobby_task(
+        monitor_lobby_channel,
+        end_game_rx,
+        monitor_friend_code,
+        monitor_game_collection,
+    ));
 
     let response = NewGameResponse { friend_code };
     Ok(reply::json(&response))
@@ -269,6 +285,28 @@ async fn client_connection(socket: WebSocket, client_id: String, mut lobby_chann
             panic!("Error while updating player channels.");
         }
     }
+}
+
+/// Helper function for monitoring a lobby, intended to run as a tokio task. This will remove the lobby from
+/// GameCollection once the lobby ends or exceeds the maximum lobby lifetime.
+async fn monitor_lobby_task(
+    mut lobby_channel: LobbyChannel,
+    mut end_game_rx: oneshot::Receiver<bool>,
+    friend_code: String,
+    game_collection: GameCollection,
+) {
+    // Lobby timeout is 6 hours from creation across all phases.
+    let timeout = tokio::time::delay_until(Instant::now() + Duration::from_secs(60 * 60 * 6));
+    tokio::select! {
+        _ = timeout => {
+            log::error!("Lobby {} has exceeded timeout, killing this lobby now.", &friend_code);
+            lobby_channel.send((LobbyCommand::EndGame, None)).await;
+        }
+        _ = end_game_rx => {
+            log::info!("Lobby {} completed, removing it from game collection.", &friend_code);
+        }
+    }
+    game_collection.lock().unwrap().remove(&friend_code);
 }
 
 // /// Helper function to check if a player's email is verified or not.

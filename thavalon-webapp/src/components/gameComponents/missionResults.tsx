@@ -65,7 +65,7 @@ export function MissionResults(): JSX.Element {
                 break;
             }
             case GameMessageType.MissionResults: {
-                const missionResultsData = (message.data as MissionResultsMessage);
+                const missionResultsData = message.data as MissionResultsMessage;
                 const newArr = new Array(...missionProps);
                 newArr[missionResultsData.mission - 1] = {
                     missionPlayers: missionProps[missionResultsData.mission - 1].missionPlayers,

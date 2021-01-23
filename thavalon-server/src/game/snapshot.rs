@@ -158,7 +158,11 @@ impl GameSnapshot {
             Message::VotingResults { sent, counts } => {
                 let is_mission_1 = self.current_mission() == 1;
                 let mut mission = self.current_mut();
-                let expected_proposals = if is_mission_1 { 2 } else { mission.voting_results.len() + 1 };
+                let expected_proposals = if is_mission_1 {
+                    2
+                } else {
+                    mission.voting_results.len() + 1
+                };
                 if mission.proposals.len() != expected_proposals {
                     return Err(SnapshotError::UnexpectedMessage(Message::VotingResults {
                         sent,
@@ -175,7 +179,11 @@ impl GameSnapshot {
                 };
                 mission.voting_results.push(results);
                 mission.sent_proposal = if is_mission_1 {
-                    if sent { Some(0) } else { Some(1) }
+                    if sent {
+                        Some(0)
+                    } else {
+                        Some(1)
+                    }
                 } else {
                     Some(mission.voting_results.len() - 1)
                 };

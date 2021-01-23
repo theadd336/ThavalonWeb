@@ -116,6 +116,14 @@ export class GameSocket {
         console.log("Received on error message.");
     }
 
+    public sendGameMessage(gameMessage: GameMessage) {
+        const message: InboundMessage = {
+            messageType: InboundMessageType.GameMessage,
+            data: gameMessage
+        }
+        this._onGameEvent.dispatch(message);
+    }
+
     /**
      * Dispatch a game message, for sending game messages from client side.
      * @param gameMessage The game message to send.
