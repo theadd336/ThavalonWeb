@@ -199,7 +199,6 @@ impl Role {
                 seen_players.extend(
                     players
                         .iter()
-                        .filter(|p| p.role.is_good())
                         .map(|player| player.role.to_string()),
                 );
             }
