@@ -355,7 +355,7 @@ static THREE_PLAYER: GameSpec = GameSpec {
     mission_sizes: [1, 2, 2, 2, 3],
     good_roles: Role::ALL_GOOD,
     evil_roles: Role::ALL_EVIL,
-    good_players: 1,
+    good_players: 2,
     max_proposals: 3,
     max_maeve_obscures: 2,
     double_fail_mission_four: false,

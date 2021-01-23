@@ -46,7 +46,8 @@ impl GameState<Voting> {
                 effects.push(Effect::Broadcast(Message::Toast {
                     severity: ToastSeverity::WARN,
                     message: format!(
-                        "Maeve has obscured the votes!\nUpvotes: {}\nDownvotes: {}",
+                        "Mission {}: Maeve has obscured the votes!\nUpvotes: {}\nDownvotes: {}",
+                        mission,
                         upvotes.len(),
                         downvotes.len()
                     ),
