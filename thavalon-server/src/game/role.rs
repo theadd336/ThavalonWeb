@@ -196,7 +196,7 @@ impl Role {
             Role::Nimue => {
                 let _ = writeln!(
                     &mut description,
-                    "You see all Good roles in the game, but not who has which role."
+                    "You see all roles in the game, but not who has which role."
                 );
                 seen_players.extend(
                     players
