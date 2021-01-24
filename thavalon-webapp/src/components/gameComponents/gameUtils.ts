@@ -1,4 +1,4 @@
-import { GameMessageType, GameActionType } from "./constants";
+import { GameMessageType, GameActionType, Role } from "./constants";
 import { GameSocket, OutboundMessage, OutboundMessageType } from "../../utils/GameSocket";
 import { SelectedPlayerType } from "./constants";
 
@@ -78,4 +78,29 @@ export function createSelectedPlayerTypesList(
         selectedTypes.push(SelectedPlayerType.Secondary);
     }
     return selectedTypes;
+}
+
+/**
+ * Helper function to update a declared player
+ * @param player The player who declared
+ * @param role The role of the declaring player
+ * @param playersToRolesMap The current map of players to roles
+ * @param rolesToPlayersMap The current map of the roles to the players
+ * @param playersToRolesSetter The setter to set the players to roles map
+ * @param rolesToPlayersSetter The setter to set the roles to players map
+ */
+export function updateDeclaredPlayers(
+    player: string,
+    role: Role,
+    playersToRolesMap: Map<string, string>,
+    rolesToPlayersMap: Map<string, string>,
+    playersToRolesSetter: React.Dispatch<React.SetStateAction<Map<string, string>>>,
+    rolesToPlayersSetter: React.Dispatch<React.SetStateAction<Map<string, string>>>,
+): void {
+    const newPlayersToRoles = new Map(playersToRolesMap);
+    const newRolesToPlayers = new Map(rolesToPlayersMap);
+    newPlayersToRoles.set(player, role);
+    newRolesToPlayers.set(role, player);
+    rolesToPlayersSetter(newRolesToPlayers);
+    playersToRolesSetter(newPlayersToRoles);
 }
