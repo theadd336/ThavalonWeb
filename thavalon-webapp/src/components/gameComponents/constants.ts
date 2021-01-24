@@ -45,6 +45,9 @@ export enum GameMessageType {
     AssassinationResult = "assassinationResult",
     GameOver = "gameOver",
     Toast = "toast",
+    ArthurCanDeclare = "arthurCanDeclare",
+    ArthurCannotDeclare = "arthurCannotDeclare",
+    ArthurDeclaration = "arthurDeclaration",
 }
 
 /**
@@ -136,6 +139,7 @@ export interface InteractionProps {
     playerList: string[],
     tabbedOutPlayers: Set<string>,
     role: Role,
+    declarationMap: Map<string, string>,
 }
 
 /**
@@ -188,7 +192,8 @@ export enum Role {
     Morgana = "Morgana",
     Maelegant = "Maelegant",
     Maeve = "Maeve",
-    Agravaine = "Agravaine"
+    Agravaine = "Agravaine",
+    Arthur = "Arthur"
 }
 
 /** Length of time Agravaine has to declare in seconds */
@@ -199,5 +204,12 @@ export const AGRAVAINE_DECLARATION_TIME = 30;
  */
 export interface AgravaineDeclarationMessage {
     mission: number,
+    player: string,
+}
+
+/**
+ * Interface for an Arthur declaration message.
+ */
+export interface ArthurDeclarationMessage {
     player: string,
 }

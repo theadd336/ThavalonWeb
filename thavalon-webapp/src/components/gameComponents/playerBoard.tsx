@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
-import { Vote, GameMessageType, GameMessage, Snapshot, NextProposalMessage, MissionGoingMessage, VotingResultsMessage, MissionResultsMessage, Role, AgravaineDeclarationMessage } from "./constants";
+import { Vote, GameMessageType, GameMessage, Snapshot, NextProposalMessage, MissionGoingMessage, VotingResultsMessage, MissionResultsMessage, Role, AgravaineDeclarationMessage, ArthurDeclarationMessage } from "./constants";
 import { ProposalManager } from "./interactions/proposalManager";
 import { GamePhase, mapMessageToGamePhase } from "./gameUtils";
 import { VoteManager } from "./interactions/voteManager";
@@ -30,6 +30,7 @@ export function PlayerBoard(): JSX.Element {
         // document.onvisibilitychange = () => sendPlayerVisibilityChange();
         return () => {
             connection.onGameEvent.unsubscribe(handleMessage);
+            connection.onLobbyEvent.unsubscribe(handleMessage);
             // document.onvisibilitychange = null;
         }
     }, [handleMessage])
@@ -66,8 +67,8 @@ export function PlayerBoard(): JSX.Element {
     const [missionResults, setMissionResults] = useState<MissionResultsMessage>();
     // State for maintaining the role of a player
     const [role, setRole] = useState<Role>(Role.Merlin);
-    // State for tracking the Agravaine player. This should merge into a map eventually for all declarations.
-    const [agravaine, setAgravaine] = useState<string>();
+    // State for tracking declared players. 
+    const [declarationMap, setDeclarationMap] = useState<Map<string, string>>(new Map());
 
     /**
      * Generic message handler for all messages from the server
@@ -140,7 +141,6 @@ export function PlayerBoard(): JSX.Element {
                 break;
             case GameMessageType.MissionGoing:
                 setMajorMessage(message.data as MissionGoingMessage);
-                setAgravaine(undefined);
                 break;
             case GameMessageType.MissionResults:
                 setShowMissionResults(true);
@@ -149,12 +149,25 @@ export function PlayerBoard(): JSX.Element {
             case GameMessageType.AgravaineDeclaration:
                 if (missionResults !== undefined) {
                     const agravaineMessage = message.data as AgravaineDeclarationMessage;
+                    // Update the declaration map with the player
+                    const oldDeclarationMap = new Map(declarationMap);
+                    oldDeclarationMap.set(agravaineMessage.player, Role.Agravaine);
+                    oldDeclarationMap.set(Role.Agravaine, agravaineMessage.player);
+                    setDeclarationMap(oldDeclarationMap);
+
+                    // Update Mission Results and show modal
                     const newMissionResult = { ...missionResults };
                     newMissionResult.passed = false;
                     setShowMissionResults(true);
                     setMissionResults(newMissionResult);
-                    setAgravaine(agravaineMessage.player);
                 }
+                break;
+            case GameMessageType.ArthurDeclaration:
+                const arthurMessage = message.data as ArthurDeclarationMessage;
+                const newDeclarationMap = new Map(declarationMap);
+                newDeclarationMap.set(arthurMessage.player, Role.Arthur);
+                newDeclarationMap.set(Role.Arthur, arthurMessage.player);
+                setDeclarationMap(newDeclarationMap);
                 break;
         }
     }
@@ -199,6 +212,8 @@ export function PlayerBoard(): JSX.Element {
                     secondarySelectedPlayers={secondarySelectedPlayers}
                     setSecondarySelectedPlayers={setSecondarySelectedPlayers}
                     votes={votes}
+                    declarationMap={declarationMap}
+                    mission={missionNumber}
                 />
             }
             {
@@ -209,7 +224,9 @@ export function PlayerBoard(): JSX.Element {
                     playerList={playerList}
                     primarySelectedPlayers={primarySelectedPlayers}
                     secondarySelectedPlayers={secondarySelectedPlayers}
-                    tabbedOutPlayers={tabbedOutPlayers} />
+                    tabbedOutPlayers={tabbedOutPlayers}
+                    declarationMap={declarationMap}
+                />
             }
             {
                 gamePhase === GamePhase.Mission &&
@@ -221,14 +238,16 @@ export function PlayerBoard(): JSX.Element {
                     primarySelectedPlayers={primarySelectedPlayers}
                     secondarySelectedPlayers={secondarySelectedPlayers}
                     tabbedOutPlayers={tabbedOutPlayers}
-                    votes={votes} />
+                    votes={votes}
+                    declarationMap={declarationMap}
+                />
             }
             {
                 showMissionResults &&
                 <MissionResultModal
                     setOpen={setShowMissionResults}
                     message={missionResults}
-                    agravaine={agravaine} />
+                    agravaine={declarationMap.get(Role.Agravaine)} />
             }
         </div>
     );

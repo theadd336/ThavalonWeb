@@ -78,6 +78,7 @@ export function PlayerCard(props: PlayerCardProps): JSX.Element {
                         variant="dark"
                         animation="border" />}
                 {props.name}
+                {props.declaredAs !== undefined ? ` - ${ props.declaredAs }` : ""}
                 <div style={{ position: "relative", float: "right" }}>
                     {props.isProposing ? "Proposing" : ""}
                 </div>

@@ -8,6 +8,7 @@ use super::{Card, GameSpec, Player, Players};
 /// A THavalon role
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize)]
 pub enum Role {
+    // "Good" roles
     Merlin,
     Lancelot,
     Percival,
@@ -16,6 +17,7 @@ pub enum Role {
     Nimue,
     Arthur,
 
+    // "Misunderstood" roles
     Mordred,
     Morgana,
     Maelegant,
@@ -198,11 +200,7 @@ impl Role {
                     &mut description,
                     "You see all roles in the game, but not who has which role."
                 );
-                seen_players.extend(
-                    players
-                        .iter()
-                        .map(|player| player.role.to_string()),
-                );
+                seen_players.extend(players.iter().map(|player| player.role.to_string()));
             }
             Role::Arthur => {
                 let _ = writeln!(
@@ -212,6 +210,7 @@ impl Role {
                 seen_players.extend(
                     players
                         .iter()
+                        .filter(|player| player.role.is_good())
                         .map(|player| player.role.to_string()),
                 );
             }

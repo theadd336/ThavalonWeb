@@ -144,9 +144,16 @@ impl<P: Phase> GameState<P> {
             self.role_state.arthur.declare();
             (
                 P::wrap(self),
-                vec![Effect::Broadcast(Message::ArthurDeclaration {
-                    player: player.into(),
-                })],
+                vec![
+                    Effect::Broadcast(Message::ArthurCannotDeclare),
+                    Effect::Broadcast(Message::ArthurDeclaration {
+                        player: player.into(),
+                    }),
+                    Effect::Broadcast(Message::Toast {
+                        severity: prelude::ToastSeverity::URGENT,
+                        message: format!("{} has declared as Arthur!", player),
+                    }),
+                ],
             )
         } else {
             self.player_error("You cannot declare as Arthur right now")
@@ -301,12 +308,10 @@ impl GameStateWrapper {
                 }
             }
 
-            (state, Action::MoveToAssassination) => {
-                in_phases!(state,
-                    Proposing | Voting | OnMission | WaitingForAgravaine => |inner| inner.move_to_assassinate(player),
-                    |state| => (state, vec![player_error("You can't move to assassination right now")])
-                )
-            }
+            (state, Action::MoveToAssassination) => in_phases!(state,
+                Proposing | Voting | OnMission | WaitingForAgravaine => |inner| inner.move_to_assassinate(player),
+                |state| => (state, vec![player_error("You can't move to assassination right now")])
+            ),
 
             (state, _) => (state, vec![player_error("You can't do that right now")]),
         }
