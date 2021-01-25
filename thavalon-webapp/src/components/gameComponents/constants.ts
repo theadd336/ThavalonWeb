@@ -139,7 +139,7 @@ export interface InteractionProps {
     playerList: string[],
     tabbedOutPlayers: Set<string>,
     role: Role,
-    declarationMap: Map<string, string>,
+    declarationMap: Map<string, Role>,
 }
 
 /**

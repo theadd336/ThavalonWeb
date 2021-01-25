@@ -68,9 +68,9 @@ export function PlayerBoard(): JSX.Element {
     // State for maintaining the role of a player
     const [role, setRole] = useState<Role>(Role.Merlin);
     // State for tracking declared players keyed by role. 
-    const [declarationRolesToPlayers, setDeclarationRolesToPlayers] = useState<Map<string, string>>(new Map());
+    const [declarationRolesToPlayers, setDeclarationRolesToPlayers] = useState<Map<Role, string>>(new Map());
     // State for tracking declared players keyed by player name. 
-    const [declarationPlayersToRoles, setdeclarationPlayersToRoles] = useState<Map<string, string>>(new Map());
+    const [declarationPlayersToRoles, setDeclarationPlayersToRoles] = useState<Map<string, Role>>(new Map());
 
     /**
      * Generic message handler for all messages from the server
@@ -157,7 +157,7 @@ export function PlayerBoard(): JSX.Element {
                         Role.Agravaine,
                         declarationPlayersToRoles,
                         declarationRolesToPlayers,
-                        setdeclarationPlayersToRoles,
+                        setDeclarationPlayersToRoles,
                         setDeclarationRolesToPlayers
                     );
 
@@ -175,7 +175,7 @@ export function PlayerBoard(): JSX.Element {
                     Role.Arthur,
                     declarationPlayersToRoles,
                     declarationRolesToPlayers,
-                    setdeclarationPlayersToRoles,
+                    setDeclarationPlayersToRoles,
                     setDeclarationRolesToPlayers
                 );
                 break;

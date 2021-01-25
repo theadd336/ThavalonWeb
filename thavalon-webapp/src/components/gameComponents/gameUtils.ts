@@ -92,10 +92,10 @@ export function createSelectedPlayerTypesList(
 export function updateDeclaredPlayers(
     player: string,
     role: Role,
-    playersToRolesMap: Map<string, string>,
-    rolesToPlayersMap: Map<string, string>,
-    playersToRolesSetter: React.Dispatch<React.SetStateAction<Map<string, string>>>,
-    rolesToPlayersSetter: React.Dispatch<React.SetStateAction<Map<string, string>>>,
+    playersToRolesMap: Map<string, Role>,
+    rolesToPlayersMap: Map<Role, string>,
+    playersToRolesSetter: React.Dispatch<React.SetStateAction<Map<string, Role>>>,
+    rolesToPlayersSetter: React.Dispatch<React.SetStateAction<Map<Role, string>>>,
 ): void {
     const newPlayersToRoles = new Map(playersToRolesMap);
     const newRolesToPlayers = new Map(rolesToPlayersMap);
