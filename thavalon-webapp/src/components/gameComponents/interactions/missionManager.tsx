@@ -102,7 +102,9 @@ export function MissionManager(props: MissionManagerProps): JSX.Element {
             vote={props.votes.get(playerName)}
             tabbedOut={props.tabbedOutPlayers.has(playerName)}
             selectedTypes={selectedTypes}
-            enabled={false} />
+            enabled={false}
+            declaredAs={props.declarationMap.get(playerName)}
+        />
     });
 
     const playersOnMission = new Set(props.message.players);

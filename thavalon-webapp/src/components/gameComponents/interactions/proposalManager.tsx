@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { NextProposalMessage, GameMessage, GameMessageType, ProposalUpdatedMessage, Vote, GameActionType, InteractionProps } from "../constants";
+import { NextProposalMessage, GameMessage, GameMessageType, ProposalUpdatedMessage, Vote, GameActionType, InteractionProps, Role } from "../constants";
 import { ProgressBar } from "react-bootstrap";
 import { GameSocket, InboundMessage, InboundMessageType } from "../../../utils/GameSocket";
 import { sendGameAction } from "../gameUtils";
@@ -14,6 +14,7 @@ import "../../../styles/gameStyles/interactionStyles/proposalManager.scss";
 interface ProposalManagerProps extends InteractionProps {
     message: NextProposalMessage,
     me: string,
+    mission: number,
     setPrimarySelectedPlayers: React.Dispatch<React.SetStateAction<Set<string>>>,
     setSecondarySelectedPlayers: React.Dispatch<React.SetStateAction<Set<string>>>,
     votes: Map<string, Vote>
@@ -113,7 +114,9 @@ export function ProposalManager(props: ProposalManagerProps): JSX.Element {
     // Create the player cards
     const playerCards = props.playerList.map((playerName) => {
         const selectedTypes = createSelectedPlayerTypesList(playerName, primarySelectedPlayers, secondarySelectedPlayers);
-        const enabled = isProposing && (selectedPlayers.size < mission_size || selectedPlayers.has(playerName));
+        const enabled = isProposing
+            && (selectedPlayers.size < mission_size || selectedPlayers.has(playerName))
+            && (props.mission === 5 || props.declarationMap.get(playerName) !== Role.Arthur)
         const className = enabled ? (onSecondM1Proposal ? "player-card-secondary" : "player-card-primary") : "";
 
         return <PlayerCard
@@ -125,7 +128,9 @@ export function ProposalManager(props: ProposalManagerProps): JSX.Element {
             selectedTypes={selectedTypes}
             toggleSelected={updateSelectedPlayers}
             vote={props.votes.get(playerName)}
-            enabled={enabled} />
+            enabled={enabled}
+            declaredAs={props.declarationMap.get(playerName)}
+        />
     });
 
 
