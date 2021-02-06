@@ -221,6 +221,13 @@ impl Players {
         self.players.get(name)
     }
 
+    fn is(&self, name: &str, role: Role) -> bool {
+        match self.players.get(name) {
+            Some(player) => player.role == role,
+            None => false,
+        }
+    }
+
     fn good_players(&self) -> &[String] {
         self.good_players.as_slice()
     }
@@ -256,6 +263,7 @@ impl GameSpec {
             4 => Ok(&FOUR_PLAYER),
             5 => Ok(&FIVE_PLAYER),
             7 => Ok(&SEVEN_PLAYER),
+            8 => Ok(&EIGHT_PLAYER),
             _ => Err(CreateGameError::UnsupportedSize(players)),
         }
     }
@@ -270,11 +278,6 @@ impl GameSpec {
 
     pub fn evil_players(&self) -> usize {
         (self.players - self.good_players) as usize
-    }
-
-    /// The number of proposals in a round (after the first, which only has two)
-    pub fn proposals(&self) -> usize {
-        self.evil_players() + 1
     }
 
     pub fn double_fail_mission_four(&self) -> bool {
@@ -329,6 +332,30 @@ static SEVEN_PLAYER: GameSpec = GameSpec {
     ],
     good_players: 4,
     max_proposals: 7,
+    max_maeve_obscures: 3,
+    double_fail_mission_four: true,
+};
+
+static EIGHT_PLAYER: GameSpec = GameSpec {
+    players: 8,
+    mission_sizes: [3, 4, 4, 5, 5],
+    good_roles: &[
+        Role::Merlin,
+        Role::Lancelot,
+        Role::Percival,
+        Role::Tristan,
+        Role::Iseult,
+        Role::Arthur,
+    ],
+    evil_roles: &[
+        Role::Mordred,
+        Role::Morgana,
+        Role::Maelegant,
+        Role::Maeve,
+        Role::Agravaine,
+    ],
+    good_players: 5,
+    max_proposals: 10,
     max_maeve_obscures: 3,
     double_fail_mission_four: true,
 };

@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
-import { RoleInfo, Snapshot } from "./constants";
+import { GameActionType, RoleInfo, Snapshot, GameMessage, GameMessageType, Role } from "./constants";
 import "../../styles/gameStyles/roleInformation.scss";
+import { sendGameAction } from "./gameUtils";
 
 /**
  * The role info of the player in the game.
  */
 export function RoleInformation(): JSX.Element {
     const [roleInfo, setRoleInfo] = useState<RoleInfo | undefined>(undefined);
+    const [showDeclareButton, setShowDeclareButton] = useState(false);
 
     /**
      * Handles any lobby messages that come from the server. If the message type
@@ -21,7 +23,28 @@ export function RoleInformation(): JSX.Element {
                 setRoleInfo(snapshot.roleInfo);
                 break;
             }
+            case InboundMessageType.GameMessage: {
+                // For now, only Arthur has a declare button here.
+                if (roleInfo?.role !== Role.Arthur) {
+                    return;
+                }
+                const gameMessage = message.data as GameMessage;
+                if (gameMessage.messageType === GameMessageType.ArthurCanDeclare) {
+                    setShowDeclareButton(true);
+                } else if (gameMessage.messageType === GameMessageType.ArthurCannotDeclare) {
+                    setShowDeclareButton(false);
+                }
+                break;
+            }
         }
+    }
+
+    /**
+     * Wrapper function that sends a "Declare" action for Arthur.
+     */
+    function submitArthurDeclaration(): void {
+        sendGameAction(GameActionType.Declare);
+        setShowDeclareButton(false);
     }
 
     // useEffect handles componentDidMount and componentWillUnmount steps.
@@ -30,13 +53,12 @@ export function RoleInformation(): JSX.Element {
         // Then, get the player list.
         const connection = GameSocket.getInstance();
         connection.onGameEvent.subscribe(handleMessage);
-        connection.sendMessage({ messageType: OutboundMessageType.GetSnapshot });
 
         // On unmount, unsubscribe our event handlers.
         return () => {
             connection.onGameEvent.unsubscribe(handleMessage);
         }
-    }, []);
+    }, [handleMessage]);
 
     if (roleInfo === undefined) {
         return <></>
@@ -76,6 +98,15 @@ export function RoleInformation(): JSX.Element {
                     {roleInfo.priorityTarget === "None" && <span className="priority-target">There is no priority target.</span>}</li>
             }
         </ul>
+        <div className="center-content">
+            {showDeclareButton &&
+                <button
+                    className="declare-button-good"
+                    onClick={() => submitArthurDeclaration()}>
+
+                    Declare as Arthur
+            </button>}
+        </div>
     </div>
 
 }

@@ -11,3 +11,32 @@
         font-weight: bold;
     }
 }
+
+%declare-button {
+    @extend %game-button;
+    color: white;
+    padding: 2px 5px;
+}
+
+.declare-button-good {
+    @extend %declare-button;
+    background-color: $player-selected-color-primary;
+    &:hover {
+        background: rgba($player-selected-color-primary, $button-hover-opacity);
+    }
+}
+
+// Not currently used, but added to complete the good/evil pair
+.declare-button-evil {
+    @extend %declare-button;
+    background-color: $button-red;
+    &:hover {
+        background: rgba($button-red, $button-hover-opacity);
+    }
+}
+
+.center-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

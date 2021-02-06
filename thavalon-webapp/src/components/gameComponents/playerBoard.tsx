@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { GameSocket, InboundMessage, InboundMessageType, OutboundMessageType } from "../../utils/GameSocket";
-import { Vote, GameMessageType, GameMessage, Snapshot, NextProposalMessage, MissionGoingMessage, VotingResultsMessage, MissionResultsMessage, Role, AgravaineDeclarationMessage } from "./constants";
+import { Vote, GameMessageType, GameMessage, Snapshot, NextProposalMessage, MissionGoingMessage, VotingResultsMessage, MissionResultsMessage, Role, AgravaineDeclarationMessage, ArthurDeclarationMessage } from "./constants";
 import { ProposalManager } from "./interactions/proposalManager";
-import { GamePhase, mapMessageToGamePhase } from "./gameUtils";
+import { GamePhase, mapMessageToGamePhase, updateDeclaredPlayers } from "./gameUtils";
 import { VoteManager } from "./interactions/voteManager";
 import { MissionManager, MissionResultModal } from "./interactions/missionManager";
 import "../../styles/gameStyles/playerBoard.scss";
@@ -30,6 +30,7 @@ export function PlayerBoard(): JSX.Element {
         // document.onvisibilitychange = () => sendPlayerVisibilityChange();
         return () => {
             connection.onGameEvent.unsubscribe(handleMessage);
+            connection.onLobbyEvent.unsubscribe(handleMessage);
             // document.onvisibilitychange = null;
         }
     }, [handleMessage])
@@ -66,8 +67,10 @@ export function PlayerBoard(): JSX.Element {
     const [missionResults, setMissionResults] = useState<MissionResultsMessage>();
     // State for maintaining the role of a player
     const [role, setRole] = useState<Role>(Role.Merlin);
-    // State for tracking the Agravaine player. This should merge into a map eventually for all declarations.
-    const [agravaine, setAgravaine] = useState<string>();
+    // State for tracking declared players keyed by role. 
+    const [declarationRolesToPlayers, setDeclarationRolesToPlayers] = useState<Map<Role, string>>(new Map());
+    // State for tracking declared players keyed by player name. 
+    const [declarationPlayersToRoles, setDeclarationPlayersToRoles] = useState<Map<string, Role>>(new Map());
 
     /**
      * Generic message handler for all messages from the server
@@ -140,7 +143,6 @@ export function PlayerBoard(): JSX.Element {
                 break;
             case GameMessageType.MissionGoing:
                 setMajorMessage(message.data as MissionGoingMessage);
-                setAgravaine(undefined);
                 break;
             case GameMessageType.MissionResults:
                 setShowMissionResults(true);
@@ -149,12 +151,33 @@ export function PlayerBoard(): JSX.Element {
             case GameMessageType.AgravaineDeclaration:
                 if (missionResults !== undefined) {
                     const agravaineMessage = message.data as AgravaineDeclarationMessage;
+                    // Update the declaration map with the player
+                    updateDeclaredPlayers(
+                        agravaineMessage.player,
+                        Role.Agravaine,
+                        declarationPlayersToRoles,
+                        declarationRolesToPlayers,
+                        setDeclarationPlayersToRoles,
+                        setDeclarationRolesToPlayers
+                    );
+
+                    // Update Mission Results and show modal
                     const newMissionResult = { ...missionResults };
                     newMissionResult.passed = false;
                     setShowMissionResults(true);
                     setMissionResults(newMissionResult);
-                    setAgravaine(agravaineMessage.player);
                 }
+                break;
+            case GameMessageType.ArthurDeclaration:
+                const arthurMessage = message.data as ArthurDeclarationMessage;
+                updateDeclaredPlayers(
+                    arthurMessage.player,
+                    Role.Arthur,
+                    declarationPlayersToRoles,
+                    declarationRolesToPlayers,
+                    setDeclarationPlayersToRoles,
+                    setDeclarationRolesToPlayers
+                );
                 break;
         }
     }
@@ -199,6 +222,8 @@ export function PlayerBoard(): JSX.Element {
                     secondarySelectedPlayers={secondarySelectedPlayers}
                     setSecondarySelectedPlayers={setSecondarySelectedPlayers}
                     votes={votes}
+                    declarationMap={declarationPlayersToRoles}
+                    mission={missionNumber}
                 />
             }
             {
@@ -209,7 +234,9 @@ export function PlayerBoard(): JSX.Element {
                     playerList={playerList}
                     primarySelectedPlayers={primarySelectedPlayers}
                     secondarySelectedPlayers={secondarySelectedPlayers}
-                    tabbedOutPlayers={tabbedOutPlayers} />
+                    tabbedOutPlayers={tabbedOutPlayers}
+                    declarationMap={declarationPlayersToRoles}
+                />
             }
             {
                 gamePhase === GamePhase.Mission &&
@@ -221,14 +248,16 @@ export function PlayerBoard(): JSX.Element {
                     primarySelectedPlayers={primarySelectedPlayers}
                     secondarySelectedPlayers={secondarySelectedPlayers}
                     tabbedOutPlayers={tabbedOutPlayers}
-                    votes={votes} />
+                    votes={votes}
+                    declarationMap={declarationPlayersToRoles}
+                />
             }
             {
                 showMissionResults &&
                 <MissionResultModal
                     setOpen={setShowMissionResults}
                     message={missionResults}
-                    agravaine={agravaine} />
+                    agravaine={declarationRolesToPlayers.get(Role.Agravaine)} />
             }
         </div>
     );

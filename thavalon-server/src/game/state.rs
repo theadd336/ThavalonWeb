@@ -4,7 +4,7 @@ use std::fmt;
 use std::time::Duration;
 
 use super::messages::{Action, Message};
-use super::role::Team;
+use super::role::{Role, Team};
 use super::{Game, MissionNumber};
 
 use self::assassination::Assassination;
@@ -137,6 +137,29 @@ impl<P: Phase> GameState<P> {
             .saturating_sub(self.mission_results.len()) // Subtract 1 proposal for each sent mission
     }
 
+    /// Handles an Arthur declaration by recording it and announcing to all players.
+    fn handle_arthur_declaration(mut self, player: &str) -> ActionResult {
+        if self.role_state.arthur.can_declare(&self) {
+            log::debug!("{} declared as Arthur", player);
+            self.role_state.arthur.declare();
+            (
+                P::wrap(self),
+                vec![
+                    Effect::Broadcast(Message::ArthurCannotDeclare),
+                    Effect::Broadcast(Message::ArthurDeclaration {
+                        player: player.into(),
+                    }),
+                    Effect::Broadcast(Message::Toast {
+                        severity: prelude::ToastSeverity::URGENT,
+                        message: format!("{} has declared as Arthur!", player),
+                    }),
+                ],
+            )
+        } else {
+            self.player_error("You cannot declare as Arthur right now")
+        }
+    }
+
     /// Transition this game state into a new phase. All non-phase-specific state is copied over.
     fn with_phase<Q: Phase>(self, next_phase: Q) -> GameState<Q> {
         GameState {
@@ -199,6 +222,12 @@ macro_rules! in_phases {
     }
 }
 
+macro_rules! any_phase {
+    ($wrapper:expr, |$inner:pat| $action:expr) => {
+        in_phases!($wrapper, Proposing | Voting | OnMission | WaitingForAgravaine | Assassination => |$inner| $action, |_| => panic!("Missing case in any_phase macro!"))
+    }
+}
+
 impl GameStateWrapper {
     /// Creates the [`GameState`] wrapper for a new game.
     pub fn new(game: Game) -> ActionResult {
@@ -228,17 +257,16 @@ impl GameStateWrapper {
             mission_size: game.spec.mission_size(1),
         }));
 
-        let mut role_state = RoleState::new(&game);
-        role_state.on_round_start();
-
-        let state = GameStateWrapper::Proposing(GameState {
+        let mut state = GameState {
             phase,
-            role_state,
+            role_state: RoleState::new(&game),
             game,
             proposals: vec![],
             mission_results: vec![],
-        });
-        (state, effects)
+        };
+        RoleState::on_round_start(&mut state, &mut effects);
+
+        (GameStateWrapper::Proposing(state), effects)
     }
 
     /// Advance to the next game state given a player action
@@ -271,14 +299,19 @@ impl GameStateWrapper {
                 inner.handle_assassination(player, target, players)
             }
 
-            (state, Action::MoveToAssassination) => {
-                // For now, the in_phases! macro is somewhat overcomplicated, but it'll be useful for other cross-phase
-                // actions like declarations
-                in_phases!(state,
-                    Proposing | Voting | OnMission | WaitingForAgravaine => |inner| inner.move_to_assassinate(player),
-                    |state| => (state, vec![player_error("You can't move to assassination right now")])
-                )
+            (state, Action::Declare) if state.game().players.is(player, Role::Arthur) => {
+                let (state, effects) =
+                    any_phase!(state, |inner| inner.handle_arthur_declaration(player));
+                match state {
+                    GameStateWrapper::Voting(inner) => inner.cancel_vote(effects),
+                    state => (state, effects),
+                }
             }
+
+            (state, Action::MoveToAssassination) => in_phases!(state,
+                Proposing | Voting | OnMission | WaitingForAgravaine => |inner| inner.move_to_assassinate(player),
+                |state| => (state, vec![player_error("You can't move to assassination right now")])
+            ),
 
             (state, _) => (state, vec![player_error("You can't do that right now")]),
         }
@@ -301,6 +334,10 @@ impl GameStateWrapper {
     /// Returns whether or not the game is over
     pub fn is_done(&self) -> bool {
         matches!(self, GameStateWrapper::Done(_))
+    }
+
+    fn game(&self) -> &Game {
+        any_phase!(self, |inner| &inner.game)
     }
 }
 

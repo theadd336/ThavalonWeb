@@ -85,7 +85,9 @@ export function VoteManager(props: VoteManagerProps): JSX.Element {
             name={playerName}
             tabbedOut={props.tabbedOutPlayers.has(playerName)}
             selectedTypes={selectedTypes}
-            enabled={false} />
+            enabled={false}
+            declaredAs={props.declarationMap.get(playerName)}
+        />
     });
 
     const numPlayers = props.playerList.length;
