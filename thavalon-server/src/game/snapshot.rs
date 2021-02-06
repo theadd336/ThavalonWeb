@@ -1,7 +1,7 @@
 //! Snapshots of the current state of a game. These can be persisted or sent to clients.
 #![allow(dead_code)]
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
@@ -9,9 +9,8 @@ use serde::Serialize;
 use thiserror::Error;
 
 use super::interactions::Interactions;
-use super::messages::{Action, GameError, Message, VoteCounts};
-use super::role::{Role, RoleDetails};
-use super::MissionNumber;
+use super::messages::{Action, GameError, Message};
+use super::role::RoleDetails;
 
 /// Snapshot of game state.
 #[derive(Debug, Clone, Serialize)]
