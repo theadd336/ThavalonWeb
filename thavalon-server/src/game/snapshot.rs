@@ -17,67 +17,9 @@ use super::MissionNumber;
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GameSnapshot {
-    me: String,
+    pub me: String,
     pub role_info: Option<RoleDetails>,
-    missions: Vec<Mission>,
-    log: Vec<Message>,
-}
-
-/// Static information about a player, set at game creation time.
-#[derive(Debug, Clone)]
-pub struct PlayerInfo {
-    pub name: String,
-    pub role: Role,
-    pub info: RoleDetails,
-}
-
-/// Details about a mission. If the mission is in process, data may be missing.
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Mission {
-    /// Submitted proposals. Every proposal that has been voted on will have a corresponding entry in `voting_results`.
-    pub proposals: Vec<Proposal>,
-    /// Results from voting on proposals.
-    pub voting_results: Vec<VotingResults>,
-    /// If a proposal has been voted on and sent, this will be the index into `proposals` of the one that was sent. In most
-    /// cases, this will be the *last* proposal. However, on mission one it could be either of the two proposals.
-    pub sent_proposal: Option<usize>,
-    /// If the mission has gone, this has the results, including what cards were played and whether or not it passed. If Agravaine declares,
-    /// the mission's `passed` state may change again.
-    pub results: Option<MissionResults>,
-}
-
-/// The outcome of a mission, including details on which cards were played and whether or not the mission passed.
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MissionResults {
-    pub successes: usize,
-    pub fails: usize,
-    pub reverses: usize,
-    pub questing_beasts: usize,
-    pub passed: bool,
-    pub agravaine_declared: bool,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Proposal {
-    pub proposed_by: String,
-    pub players: HashSet<String>,
-}
-
-/// Results of voting on a mission. Normally, this includes exactly who upvoted or downvoted. If Maeve obscured the mission,
-/// only counts are known.
-#[derive(Debug, Clone, Serialize)]
-pub enum VotingResults {
-    Public {
-        upvotes: HashSet<String>,
-        downvotes: HashSet<String>,
-    },
-    Obscured {
-        upvotes: u32,
-        downvotes: u32,
-    },
+    pub log: Vec<Message>,
 }
 
 impl GameSnapshot {
@@ -85,40 +27,14 @@ impl GameSnapshot {
         GameSnapshot {
             me: player,
             role_info: None,
-            missions: Vec::new(),
             log: Vec::new(),
         }
     }
 
-    /// Looks up mission information by number. If the game has not reached `mission` yet, returns `None`.
-    pub fn mission(&self, mission: MissionNumber) -> Option<&Mission> {
-        self.missions.get((mission - 1) as usize)
-    }
-
-    /// Like [`Self::mission`], but returns a mutable reference
-    fn mission_mut(&mut self, mission: MissionNumber) -> &mut Mission {
-        &mut self.missions[(mission - 1) as usize]
-    }
-
-    /// The number of the mission currently in progress
-    pub fn current_mission(&self) -> MissionNumber {
-        self.missions.len() as MissionNumber
-    }
-
-    /// Get a mutable reference to the current mission
-    ///
-    /// # Panics
-    /// If there is *no* current mission, which would only happen if messages were received in an invalid
-    /// order.
-    fn current_mut(&mut self) -> &mut Mission {
-        self.missions.last_mut().unwrap()
-    }
-
     /// Updates the game snapshot based on a message sent to the player.
     ///
-    /// If the message cannot be reconciled with the current snapshot, this returns a [`SnapshotError`]. For example,
-    /// if some messages are lost, the snapshot might receive an Agravaine declaration when it has not received the
-    /// results of the mission, which is an error.
+    /// If the message cannot be reconciled with the current snapshot, this returns a [`SnapshotError`]. This should
+    /// never happen.
     pub fn on_message(&mut self, message: Message) -> Result<(), SnapshotError> {
         self.log.push(message.clone());
 
@@ -126,112 +42,6 @@ impl GameSnapshot {
             Message::RoleInformation { details } => {
                 self.role_info = Some(details);
                 Ok(())
-            }
-
-            Message::NextProposal { mission, .. } => {
-                // If it's the first proposal of a round, we need to add a new Mission struct
-                if self.missions.is_empty() || self.current_mission() != mission {
-                    self.missions.push(Mission {
-                        proposals: Vec::new(),
-                        voting_results: Vec::new(),
-                        sent_proposal: None,
-                        results: None,
-                    });
-                }
-                Ok(())
-            }
-
-            Message::ProposalMade {
-                proposer,
-                mission,
-                players,
-                ..
-            } => {
-                let state = self.mission_mut(mission);
-                state.proposals.push(Proposal {
-                    proposed_by: proposer,
-                    players,
-                });
-                Ok(())
-            }
-
-            Message::VotingResults { sent, counts } => {
-                let is_mission_1 = self.current_mission() == 1;
-                let mut mission = self.current_mut();
-                let expected_proposals = if is_mission_1 {
-                    2
-                } else {
-                    mission.voting_results.len() + 1
-                };
-                if mission.proposals.len() != expected_proposals {
-                    return Err(SnapshotError::UnexpectedMessage(Message::VotingResults {
-                        sent,
-                        counts,
-                    }));
-                }
-                let results = match counts {
-                    VoteCounts::Public { upvotes, downvotes } => {
-                        VotingResults::Public { upvotes, downvotes }
-                    }
-                    VoteCounts::Obscured { upvotes, downvotes } => {
-                        VotingResults::Obscured { upvotes, downvotes }
-                    }
-                };
-                mission.voting_results.push(results);
-                mission.sent_proposal = if is_mission_1 {
-                    if sent {
-                        Some(0)
-                    } else {
-                        Some(1)
-                    }
-                } else {
-                    Some(mission.voting_results.len() - 1)
-                };
-                Ok(())
-            }
-
-            Message::MissionResults {
-                mission,
-                successes,
-                fails,
-                reverses,
-                questing_beasts,
-                passed,
-            } => {
-                let state = self.mission_mut(mission);
-                if state.results.is_some() {
-                    // This means we already recorded results for this mission
-                    return Err(SnapshotError::UnexpectedMessage(Message::MissionResults {
-                        mission,
-                        successes,
-                        fails,
-                        reverses,
-                        questing_beasts,
-                        passed,
-                    }));
-                }
-                state.results = Some(MissionResults {
-                    successes,
-                    fails,
-                    reverses,
-                    questing_beasts,
-                    passed,
-                    agravaine_declared: false,
-                });
-                Ok(())
-            }
-
-            Message::AgravaineDeclaration { mission, player } => {
-                let state = self.mission_mut(mission);
-                if let Some(mut results) = state.results.as_mut() {
-                    results.agravaine_declared = true;
-                    results.passed = false;
-                    Ok(())
-                } else {
-                    Err(SnapshotError::UnexpectedMessage(
-                        Message::AgravaineDeclaration { mission, player },
-                    ))
-                }
             }
 
             _ => Ok(()), // Some messages don't require a state update
