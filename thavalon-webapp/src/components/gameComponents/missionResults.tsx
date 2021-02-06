@@ -94,28 +94,6 @@ export function MissionResults(): JSX.Element {
         }
     }
 
-    function handleSnapshotMessage(snapshot: Snapshot) {
-        const newArr = new Array(...missionProps);
-        for (let i = 0; i < snapshot.missions.length; i++) {
-            const mission = snapshot.missions[i];
-            const sentProposal = mission.sentProposal;
-            if (sentProposal === null) {
-                continue;
-            }
-            newArr[i].missionPlayers = mission.proposals[sentProposal].players;
-            const results = mission.results;
-            if (results === null) {
-                continue;
-            }
-            newArr[i].missionStatus = results.passed ? MissionStatus.Passed : MissionStatus.Failed;
-            newArr[i].passes = results.successes;
-            newArr[i].fails = results.fails;
-            newArr[i].reverses = results.reverses;
-            newArr[i].questing_beasts = results.questing_beasts;
-        }
-        setMissionProps(newArr);
-    }
-
     /**
      * Handles any lobby messages that come from the server. If the message type
      * is a GameMessage, calls helper function handleGameMessage to handle it.
@@ -125,10 +103,6 @@ export function MissionResults(): JSX.Element {
         switch (message.messageType) {
             case InboundMessageType.GameMessage: {
                 handleGameMessage(message.data as GameMessage);
-                break;
-            }
-            case InboundMessageType.Snapshot: {
-                handleSnapshotMessage(message.data as Snapshot);
                 break;
             }
         }
