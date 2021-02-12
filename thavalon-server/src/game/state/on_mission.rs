@@ -77,7 +77,7 @@ impl GameState<OnMission> {
                     self.add_lover_effects(&mut effects);
 
                     // TODO: how does Agravaine work on mission 4?
-                    if self.game.spec.has_role(Role::Agravaine) && passed {
+                    if self.game.spec.has_role(Role::Agravaine) && passed && fails != 0 {
                         effects.push(Effect::StartTimeout(AGRAVAINE_TIMEOUT));
                         let next_phase = WaitingForAgravaine {
                             proposal_index: self.phase.proposal_index,
