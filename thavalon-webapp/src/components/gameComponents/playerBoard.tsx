@@ -104,7 +104,14 @@ export function PlayerBoard(): JSX.Element {
      * @param message The GameMessage from the server
      */
     function handleGameMessage(message: GameMessage): void {
-        if (message.messageType !== GameMessageType.Error && message.messageType !== GameMessageType.Toast) {
+        // TODO: This has become a steaming pile of spaghetti and a large source of bugs.
+        // This could be updated to check for major messages, instead of an 
+        // exclusion list.
+        if (message.messageType !== GameMessageType.Error
+            && message.messageType !== GameMessageType.Toast
+            && message.messageType !== GameMessageType.ArthurCanDeclare
+            && message.messageType !== GameMessageType.ArthurCannotDeclare
+            && message.messageType !== GameMessageType.ArthurDeclaration) {
             setGamePhase(mapMessageToGamePhase(message.messageType));
         }
         switch (message.messageType) {
@@ -178,6 +185,12 @@ export function PlayerBoard(): JSX.Element {
                     setDeclarationPlayersToRoles,
                     setDeclarationRolesToPlayers
                 );
+                // If we're proposing, reset proposal to remove Arthur from
+                // the proposal.
+                if (gamePhase === GamePhase.Proposal) {
+                    setPrimarySelectedPlayers(new Set());
+                    setSecondarySelectedPlayers(new Set());
+                }
                 break;
         }
     }

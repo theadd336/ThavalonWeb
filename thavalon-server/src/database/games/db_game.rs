@@ -89,7 +89,7 @@ impl DatabaseGame {
             }
         };
 
-        let friend_code = utils::generate_random_string(FRIEND_CODE_LENGTH, true);
+        let friend_code = utils::generate_letter_string(FRIEND_CODE_LENGTH);
         let game = DatabaseGame {
             friend_code,
             _id,
