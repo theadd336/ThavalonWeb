@@ -376,7 +376,7 @@ static TWO_PLAYER: GameSpec = GameSpec {
 static THREE_PLAYER: GameSpec = GameSpec {
     players: 3,
     mission_sizes: [1, 2, 2, 2, 3],
-    good_roles: &[Role::Merlin, Role::Arthur],
+    good_roles: Role::ALL_GOOD,
     evil_roles: Role::ALL_EVIL,
     good_players: 2,
     max_proposals: 3,
