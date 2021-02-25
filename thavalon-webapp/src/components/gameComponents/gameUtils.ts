@@ -18,8 +18,8 @@ export enum GamePhase {
  * @param priorGamePhase The previous game phase. 
  * Used as a default if none of the messages match, if provided
  */
-export function mapMessageToGamePhase(messageType: GameMessageType): GamePhase {
-    let gamePhase = GamePhase.Proposal;
+export function mapMessageToGamePhase(messageType: GameMessageType): GamePhase | undefined {
+    let gamePhase: GamePhase | undefined = GamePhase.Proposal;
     switch (messageType) {
         case GameMessageType.BeginAssassination:
             gamePhase = GamePhase.Assassination;
@@ -37,6 +37,9 @@ export function mapMessageToGamePhase(messageType: GameMessageType): GamePhase {
         case GameMessageType.MissionGoing:
         case GameMessageType.MissionResults:
             gamePhase = GamePhase.Mission;
+            break;
+        default:
+            gamePhase = undefined;
             break;
     }
     return gamePhase;
