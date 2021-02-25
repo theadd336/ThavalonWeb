@@ -107,12 +107,9 @@ export function PlayerBoard(): JSX.Element {
         // TODO: This has become a steaming pile of spaghetti and a large source of bugs.
         // This could be updated to check for major messages, instead of an 
         // exclusion list.
-        if (message.messageType !== GameMessageType.Error
-            && message.messageType !== GameMessageType.Toast
-            && message.messageType !== GameMessageType.ArthurCanDeclare
-            && message.messageType !== GameMessageType.ArthurCannotDeclare
-            && message.messageType !== GameMessageType.ArthurDeclaration) {
-            setGamePhase(mapMessageToGamePhase(message.messageType));
+        const newGamePhase = mapMessageToGamePhase(message.messageType);
+        if (newGamePhase !== undefined) {
+            setGamePhase(newGamePhase);
         }
         switch (message.messageType) {
             case GameMessageType.ProposalOrder:
