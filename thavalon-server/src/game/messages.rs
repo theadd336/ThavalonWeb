@@ -36,6 +36,9 @@ pub enum Action {
         target: PriorityTarget,
     },
     MoveToAssassination,
+    GuinevereDoesGuinevere {
+        player: String,
+    },
 }
 
 /// A message from the game to a player
@@ -50,7 +53,9 @@ pub enum Message {
     ProposalOrder(Vec<String>),
 
     /// Sends the player their role and information
-    RoleInformation { details: RoleDetails },
+    RoleInformation {
+        details: RoleDetails,
+    },
 
     /// Announces that a new player is proposing
     NextProposal {
@@ -67,7 +72,9 @@ pub enum Message {
     },
 
     /// The current proposal was updated
-    ProposalUpdated { players: HashSet<String> },
+    ProposalUpdated {
+        players: HashSet<String>,
+    },
 
     /// Announces that a player made a proposal
     ProposalMade {
@@ -86,7 +93,10 @@ pub enum Message {
     VoteReceived,
 
     /// Announces the results of a vote
-    VotingResults { sent: bool, counts: VoteCounts },
+    VotingResults {
+        sent: bool,
+        counts: VoteCounts,
+    },
 
     /// Announces that a mission is going
     MissionGoing {
@@ -111,7 +121,9 @@ pub enum Message {
     },
 
     /// Assassination has begun. This can either be because 3 missions passed or because the assassin moved to assassinate.
-    BeginAssassination { assassin: String },
+    BeginAssassination {
+        assassin: String,
+    },
 
     /// The results of an assassination attempt.
     AssassinationResult {
@@ -131,7 +143,18 @@ pub enum Message {
 
     /// Announces that Arthur has declared
     // TODO: generic Declaration message with the player and role instead?
-    ArthurDeclaration { player: String },
+    ArthurDeclaration {
+        player: String,
+    },
+
+    // Sent to guinevere to indicate they can use their ability.
+    GuinevereCanGuinevere,
+
+    // Sent to Guinevere upon using their ability
+    GuinevereDidGuinevere {
+        player: String,
+        card: Card,
+    },
 
     /// Sent when the game is over to announce who won.
     GameOver {
