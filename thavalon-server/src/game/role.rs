@@ -16,6 +16,7 @@ pub enum Role {
     Iseult,
     Nimue,
     Arthur,
+    Guinevere,
 
     // "Misunderstood" roles
     Mordred,
@@ -98,7 +99,7 @@ impl Role {
     pub fn is_good(self) -> bool {
         use Role::*;
         match self {
-            Merlin | Lancelot | Percival | Tristan | Iseult | Nimue | Arthur => true,
+            Merlin | Lancelot | Percival | Tristan | Iseult | Nimue | Arthur | Guinevere => true,
             Mordred | Morgana | Maelegant | Maeve | Agravaine => false,
         }
     }
@@ -120,7 +121,10 @@ impl Role {
     }
 
     pub fn is_assassinatable(self) -> bool {
-        matches!(self, Role::Merlin | Role::Tristan | Role::Iseult)
+        matches!(
+            self,
+            Role::Merlin | Role::Tristan | Role::Iseult | Role::Guinevere
+        )
     }
 
     pub fn can_play(self, card: Card) -> bool {
@@ -213,6 +217,9 @@ impl Role {
                         .filter(|player| player.role.is_good())
                         .map(|player| player.role.to_string()),
                 );
+            }
+            Role::Guinevere => {
+                let _ = writeln!(&mut description,  "If you are not on a mission that is sent, you may choose one player on the mission to see that player's card.");
             }
             Role::Mordred => {
                 let _ = writeln!(&mut description, "You are hidden from Merlin.");
