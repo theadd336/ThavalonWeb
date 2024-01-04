@@ -50,7 +50,9 @@ async fn send_email(
 
     let sender = EmailAddress::name_address("ThavalonWeb", SMTP_USER);
 
-    if let Err(e) = task::spawn_blocking(move || client.send(&sender)).await {
+    if let Err(e) =
+        task::spawn_blocking(move || client.send(mailgun_rs::MailgunRegion::US, &sender)).await
+    {
         log::error!("ERROR: Failed to send the message to the recipient. {}.", e);
         return Err(NotificationError::MailServerError);
     }
