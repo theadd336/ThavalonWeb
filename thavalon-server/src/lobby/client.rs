@@ -1,7 +1,7 @@
 //! Module containing the PlayerClient struct, which contains connections
 //! to and from the game, lobby, and frontend.
 
-use super::{IncomingMessage, Lobby, LobbyChannel, LobbyCommand, OutgoingMessage};
+use super::{IncomingMessage, LobbyChannel, LobbyCommand, OutgoingMessage};
 use crate::game::{Action, Message};
 
 use std::collections::HashMap;
@@ -11,7 +11,7 @@ use futures::{
     stream::SplitSink,
     SinkExt, StreamExt,
 };
-use serde::{Deserialize, Serialize};
+
 use tokio::{
     sync::mpsc::{self, Receiver, Sender},
     task,
@@ -152,7 +152,7 @@ impl PlayerClient {
                         client_id
                     );
 
-                    if (incoming_msg.is_pong()) {
+                    if incoming_msg.is_pong() {
                         continue;
                     }
                     let incoming_msg = match incoming_msg.to_str() {
@@ -383,7 +383,7 @@ impl PlayerClient {
         let (abort_handle, abort_registration) = AbortHandle::new_pair();
         let heartbeat_future = Abortable::new(
             async move {
-                while true {
+                loop {
                     delay_for(Duration::from_secs(30)).await;
                     let _ = to_outbound_task
                         .send(OutboundTaskMessageType::HeartBeat)

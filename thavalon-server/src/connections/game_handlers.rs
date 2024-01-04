@@ -1,8 +1,8 @@
 //! Module for all game-related REST endpoint handlers. This module also handles
 //! all websocket related functions.
 
-use crate::database::accounts;
-use crate::lobby::{Lobby, LobbyChannel, LobbyCommand, LobbyError, LobbyResponse};
+
+use crate::lobby::{Lobby, LobbyChannel, LobbyCommand, LobbyResponse};
 
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -291,7 +291,7 @@ async fn client_connection(socket: WebSocket, client_id: String, mut lobby_chann
 /// GameCollection once the lobby ends or exceeds the maximum lobby lifetime.
 async fn monitor_lobby_task(
     mut lobby_channel: LobbyChannel,
-    mut end_game_rx: oneshot::Receiver<bool>,
+    end_game_rx: oneshot::Receiver<bool>,
     friend_code: String,
     game_collection: GameCollection,
 ) {

@@ -9,7 +9,7 @@ pub use lobby_impl::Lobby;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::sync::{mpsc::Sender, oneshot};
-use tokio::task;
+
 use warp::filters::ws::WebSocket;
 
 /// Type representing a oneshot sender back to the caller.
