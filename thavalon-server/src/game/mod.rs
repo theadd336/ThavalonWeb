@@ -264,6 +264,7 @@ impl GameSpec {
             5 => Ok(&FIVE_PLAYER),
             7 => Ok(&SEVEN_PLAYER),
             8 => Ok(&EIGHT_PLAYER),
+            10 => Ok(&TEN_PLAYER),
             _ => Err(CreateGameError::UnsupportedSize(players)),
         }
     }
@@ -357,6 +358,31 @@ static EIGHT_PLAYER: GameSpec = GameSpec {
     good_players: 5,
     max_proposals: 10,
     max_maeve_obscures: 3,
+    double_fail_mission_four: true,
+};
+
+static TEN_PLAYER: GameSpec = GameSpec {
+    players: 10,
+    mission_sizes: [3, 4, 4, 5, 5],
+    good_roles: &[
+        Role::Merlin,
+        Role::Lancelot,
+        Role::Percival,
+        Role::Tristan,
+        Role::Iseult,
+        Role::Arthur,
+    ],
+    evil_roles: &[
+        Role::Mordred,
+        Role::Morgana,
+        Role::Maelegant,
+        Role::Maeve,
+        Role::Agravaine,
+        Role::Colgrevance,
+    ],
+    good_players: 6,
+    max_proposals: 14,
+    max_maeve_obscures: 4,
     double_fail_mission_four: true,
 };
 
