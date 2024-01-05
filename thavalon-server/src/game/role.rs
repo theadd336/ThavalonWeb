@@ -18,6 +18,7 @@ pub enum Role {
     Arthur,
 
     // "Misunderstood" roles
+    Colgrevance,
     Mordred,
     Morgana,
     Maelegant,
@@ -99,7 +100,7 @@ impl Role {
         use Role::*;
         match self {
             Merlin | Lancelot | Percival | Tristan | Iseult | Nimue | Arthur => true,
-            Mordred | Morgana | Maelegant | Maeve | Agravaine => false,
+            Colgrevance | Mordred | Morgana | Maelegant | Maeve | Agravaine => false,
         }
     }
 
@@ -233,6 +234,15 @@ impl Role {
             }
             Role::Agravaine => {
                 let _ = writeln!(&mut abilities, "You may declare to fail a mission you were on that would have otherwise succeeded.");
+            }
+            Role::Colgrevance => {
+                let _ = writeln!(&mut description, "You know the exact roles of everyone on the evil team and may manipulate them like the puppet master you are.");
+                seen_players.extend(
+                    players
+                        .iter()
+                        .filter(|player| player.role.is_evil())
+                        .map(|player| format!("{} - {}", player.role.to_string(), player.name)),
+                )
             }
         }
 
