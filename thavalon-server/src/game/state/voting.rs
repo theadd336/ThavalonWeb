@@ -46,7 +46,7 @@ impl GameState<Voting> {
             let sent = upvotes.len() > downvotes.len();
 
             // TODO: This probably could be cleaner, but hacking this for pre-alpha.
-            if (self.phase.obscured) {
+            if self.phase.obscured {
                 effects.push(Effect::Broadcast(Message::Toast {
                     severity: ToastSeverity::WARN,
                     message: format!(

@@ -1,6 +1,6 @@
 //! Module for utility functions that may be useful across the entire application.
 
-use iter::repeat;
+
 use rand::{distributions::Alphanumeric, Rng};
 
 use std::iter;

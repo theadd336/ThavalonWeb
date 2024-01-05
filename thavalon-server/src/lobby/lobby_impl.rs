@@ -1,10 +1,10 @@
 use super::client::PlayerClient;
-use super::{IncomingMessage, LobbyState, OutgoingMessage};
+use super::{LobbyState, OutgoingMessage};
 use super::{LobbyChannel, LobbyCommand, LobbyError, LobbyResponse, ResponseChannel};
-use crate::database::games::{DBGameError, DBGameStatus, DatabaseGame};
+use crate::database::games::{DBGameError, DatabaseGame};
 use crate::game::{
     builder::GameBuilder,
-    snapshot::{GameSnapshot, Snapshots},
+    snapshot::{Snapshots},
 };
 use crate::utils;
 
@@ -342,7 +342,7 @@ impl Lobby {
 
     /// Sends the current player list to the client.
     async fn send_player_list(&mut self, client_id: String) -> LobbyResponse {
-        let mut client = self.clients.get_mut(&client_id).unwrap();
+        let client = self.clients.get_mut(&client_id).unwrap();
         let player_list = self.builder.as_ref().unwrap().get_player_list().to_vec();
         let player_list = OutgoingMessage::PlayerList(player_list);
         let player_list = serde_json::to_string(&player_list).unwrap();
@@ -352,7 +352,7 @@ impl Lobby {
 
     /// Sends the current state of the lobby to the client.
     async fn send_current_state(&mut self, client_id: String) -> LobbyResponse {
-        let mut client = self.clients.get_mut(&client_id).unwrap();
+        let client = self.clients.get_mut(&client_id).unwrap();
         let state = OutgoingMessage::LobbyState(self.status.clone());
         let message = serde_json::to_string(&state).unwrap();
         client.send_message(message).await;
@@ -371,7 +371,7 @@ impl Lobby {
             .lock()
             .unwrap()
             .clone();
-        let mut client = self.clients.get_mut(&client_id).unwrap();
+        let client = self.clients.get_mut(&client_id).unwrap();
         let message = OutgoingMessage::Snapshot(snapshot);
         let message = serde_json::to_string(&message).unwrap();
         client.send_message(message).await;
