@@ -14,6 +14,7 @@ THavalon follows the same rules as The Resistance: Avalon, with the modification
 - *Mordred*: is hidden from Merlin.
 - *Morgana*: appears like Merlin to Percival. 
 - *Maelagant*: may play Reversal cards while on missions.
+- *Maeve*: May obscure voting results
 - *Agravaine* (8+):  must play Fails; may declare after having been on a successful mission to cause it to Fail instead.
 - *Colgrevance* (10): is hidden from other Evil roles; knows which player has each Evil role.
 
